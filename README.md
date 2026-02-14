@@ -1,12 +1,42 @@
-# Sistema de Gestión de Inventario y Ventas – Farmacias San Gabriel
+# Proyecto 1 - Ingeniería de Software 1
+
+### Universidad del Valle de Guatemala
+### Facultad de Ingeniería
+### Departamento de Ciencias de la Computación
 
 ## Descripción del proyecto
-Este proyecto tiene como objetivo el desarrollo de una herramienta tecnológica para la gestión automatizada de inventario y control de ventas de la cadena de farmacias **San Gabriel**, ubicada en la región de Baja Verapaz, Guatemala. La solución busca optimizar los procesos internos, reducir el uso de controles manuales y proporcionar estadísticas de ventas consolidadas en tiempo real que apoyen la toma de decisiones administrativas y financieras.
 
-## Documento del proyecto
-Enlace al documento principal:  
-https://docs.google.com/document/d/1NzlW5ZmlPWZ9XeaGrqmK-v_a_dKt65eHq8aGyDdZM60/edit?usp=sharing
+Este repositorio contiene el proceso de análisis y diseño realizado para el proyecto del curso Ingeniería de Software 1. El trabajo se desarrolla para la cadena de farmacias "San Gabriel", con el objetivo de analizar sus procesos actuales, identificar áreas de oportunidad y documentar los hallazgos obtenidos a través de entrevistas, observación y aplicación de diversas técnicas de investigación.
 
-## Registro de tareas por integrante
-Enlace al registro de actividades y responsabilidades del equipo:  
-https://docs.google.com/spreadsheets/d/1ypNj7HF7U50eDfjyMDa7rLbJeJHUuNMgyNzShaK8cP8/edit?usp=sharing
+## Estructura del repositorio
+
+### Avances 1
+Documentos y materiales correspondientes al primer avance del proyecto.
+
+### Avances 2
+Documentos y materiales correspondientes al segundo avance del proyecto.
+
+### Corte 1
+Contiene los entregables del Corte 1, que incluyen:
+- Informe completo del primer corte
+- Formularios LOGT
+- Enlaces de los documentos trabajados.
+
+### Corte 2
+Contiene los entregables del Corte 2, que incluyen:
+- Informe completo del segundo corte
+- Formularios LOGT
+- Enlaces de los documentos trabajados.
+
+### Scrum
+Carpeta destinada para materiales relacionados con la metodología Scrum, que se utilizará en etapas posteriores del proyecto.
+
+## Integrantes del equipo
+
+| Nombre | Carnet |
+|--------|--------|
+| Josué Antonio Isaac García Barrera | 24918 |
+| José Manuel Sanchez Hernandez | 24092 |
+| José Alberto Abril Suchite | 24585 |
+| Pablo André Orellana Mijangos | 20555 |
+| Andrés Esteban Ismaelj González | 24005 |
