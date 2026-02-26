@@ -2,7 +2,7 @@
 
 ### Universidad del Valle de Guatemala
 ### Facultad de Ingeniería
-### Departamento de Ciencias de la Computación
+### Ingeniería en Ciencias de la Computación y Tecnologías de la información
 
 ## Descripción del proyecto
 
