@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     correo_usuario VARCHAR(150) NOT NULL UNIQUE,
     contrasena_hash TEXT NOT NULL,
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('dueno', 'administrador', 'dependiente')),
-    estado_usuario VARCHAR(20) DEFAULT 'activo' CHECK (estado_usuario IN ('activo', 'inactivo', 'suspendido'))
+    estado_usuario VARCHAR(20) DEFAULT 'activo' CHECK (estado_usuario IN ('activo', 'inactivo', 'suspendido')),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_usuario_sucursal
