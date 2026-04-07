@@ -72,6 +72,11 @@ const cambiarContrasena = async(req, res) => {
 };
 
 const cambiarEstado = async(req, res) => {
+    const errores = validationResult(req);
+    if (!errores.isEmpty()) {
+        return res.status(400).json({ errores: errores.array() });
+    }
+
     try {
         const { estado } = req.body;
         const usuario = await usuarioService.cambiarEstado(Number(req.params.id), estado);
