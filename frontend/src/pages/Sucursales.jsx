@@ -1,19 +1,128 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   Store, 
   ShieldCheck, 
   MapPin, 
   Search, 
-  Filter, 
-  PlusCircle, 
-  AlertCircle,
-  SearchX,
-  MapPinned
+  PlusCircle
 } from 'lucide-react';
 import SummaryCard from '../components/SummaryCard.jsx';
+import SucursalFormModal from '../components/sucursales/SucursalFormModal.jsx';
+import SucursalTable from '../components/sucursales/SucursalTable.jsx';
 import { motion } from 'motion/react';
+import useSucursales from '../hooks/useSucursales';
+import useCiudades from '../hooks/useCiudades';
+
+const estadoInicialFormulario = {
+  nombre_sucursal: '',
+  direccion: '',
+  id_ciudad: '',
+};
 
 export default function Sucursales() {
+  const { sucursales, cargando, error, crear, actualizar } = useSucursales();
+  const { ciudades, cargandoCiudades, errorCiudades } = useCiudades();
+
+  const [busqueda, setBusqueda] = useState('');
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errorFormulario, setErrorFormulario] = useState(null);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [idEditando, setIdEditando] = useState(null);
+  const [formulario, setFormulario] = useState(estadoInicialFormulario);
+
+  const mapaCiudades = useMemo(() => {
+    return ciudades.reduce((acc, ciudad) => {
+      acc[ciudad.id_ciudad] = ciudad.nombre_ciudad;
+      return acc;
+    }, {});
+  }, [ciudades]);
+
+  const sucursalesFiltradas = useMemo(() => {
+    const termino = busqueda.trim().toLowerCase();
+    if (!termino) {
+      return sucursales;
+    }
+    return sucursales.filter((sucursal) => {
+      const nombre = sucursal.nombre_sucursal?.toLowerCase() || '';
+      const direccion = sucursal.direccion?.toLowerCase() || '';
+      const ciudad = mapaCiudades[sucursal.id_ciudad]?.toLowerCase() || '';
+      return nombre.includes(termino) || direccion.includes(termino) || ciudad.includes(termino);
+    });
+  }, [busqueda, mapaCiudades, sucursales]);
+
+  const ciudadesConSucursales = useMemo(() => {
+    return new Set(sucursales.map((sucursal) => sucursal.id_ciudad)).size;
+  }, [sucursales]);
+
+  const abrirModalCrear = () => {
+    setModoEdicion(false);
+    setIdEditando(null);
+    setFormulario(estadoInicialFormulario);
+    setErrorFormulario(null);
+    setMostrarModal(true);
+  };
+
+  const abrirModalEditar = (sucursal) => {
+    setModoEdicion(true);
+    setIdEditando(sucursal.id_sucursal);
+    setFormulario({
+      nombre_sucursal: sucursal.nombre_sucursal || '',
+      direccion: sucursal.direccion || '',
+      id_ciudad: String(sucursal.id_ciudad || ''),
+    });
+    setErrorFormulario(null);
+    setMostrarModal(true);
+  };
+
+  const cerrarModal = () => {
+    if (guardando) {
+      return;
+    }
+    setMostrarModal(false);
+  };
+
+  const manejarCambio = (evento) => {
+    const { name, value } = evento.target;
+    setFormulario((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const manejarGuardar = async (evento) => {
+    evento.preventDefault();
+    setErrorFormulario(null);
+
+    const nombre = formulario.nombre_sucursal.trim();
+    const direccion = formulario.direccion.trim();
+    const idCiudad = Number(formulario.id_ciudad);
+
+    if (!nombre || !direccion || !idCiudad) {
+      setErrorFormulario('Completa todos los campos del formulario.');
+      return;
+    }
+
+    const payload = {
+      nombre_sucursal: nombre,
+      direccion,
+      id_ciudad: idCiudad,
+    };
+
+    try {
+      setGuardando(true);
+      if (modoEdicion && idEditando) {
+        await actualizar(idEditando, payload);
+      } else {
+        await crear(payload);
+      }
+      setMostrarModal(false);
+      setFormulario(estadoInicialFormulario);
+    } catch (err) {
+      const mensaje = err.response?.data?.mensaje || 'No se pudo guardar la sucursal.';
+      setErrorFormulario(mensaje);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
@@ -21,23 +130,23 @@ export default function Sucursales() {
         <SummaryCard 
           icon={Store}
           label="Total"
-          value="0"
+          value={String(sucursales.length)}
           description="Sucursales registradas"
           colorClass="bg-primary"
           delay={0.1}
         />
         <SummaryCard 
           icon={ShieldCheck}
-          label="Status"
-          value="0"
-          description="Activas actualmente"
+          label="Mostradas"
+          value={String(sucursalesFiltradas.length)}
+          description="Coinciden con la búsqueda"
           colorClass="bg-green-500"
           delay={0.2}
         />
         <SummaryCard 
           icon={MapPin}
           label="Cobertura"
-          value="0"
+          value={String(ciudadesConSucursales)}
           description="Ciudades presentes"
           colorClass="bg-blue-500"
           delay={0.3}
@@ -56,95 +165,47 @@ export default function Sucursales() {
           <input 
             type="text" 
             placeholder="Buscar por nombre o dirección..."
+            value={busqueda}
+            onChange={(evento) => setBusqueda(evento.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border-none rounded-xl text-sm font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
           />
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <button className="px-6 py-3 bg-surface-container-lowest text-slate-700 font-headline font-bold text-sm rounded-xl border border-slate-200/50 hover:bg-white hover:shadow-md transition-all flex items-center gap-2 flex-1 md:flex-none justify-center">
-            <Filter className="w-4 h-4" />
-            Filtrar
-          </button>
-          <button className="px-6 py-3 bg-gradient-to-br from-primary to-primary-container text-white font-headline font-bold text-sm rounded-xl shadow-[0_4px_12px_rgba(0,81,71,0.25)] hover:shadow-[0_6px_20px_rgba(0,81,71,0.3)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 flex-1 md:flex-none justify-center">
-            <PlusCircle className="w-4 h-4" />
-            + Nueva sucursal
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Alert Banner */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5 }}
-        className="bg-error-container/30 border-l-4 border-error p-5 rounded-xl flex items-center gap-4 shadow-sm"
-      >
-        <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center text-error">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <div>
-          <h4 className="text-sm font-headline font-bold text-on-error-container">Atención del Sistema</h4>
-          <p className="text-xs text-on-error-container/80 font-medium">No se han detectado sucursales activas en la base de datos centralizada. Por favor, verifique la conexión con el servidor regional.</p>
-        </div>
-        <button className="ml-auto text-xs font-bold text-error hover:underline uppercase tracking-wider font-headline">Ver detalles</button>
-      </motion.div>
-
-      {/* Empty State */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="bg-surface-container-low/50 rounded-[2rem] min-h-[400px] flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-200"
-      >
-        <div className="relative mb-8">
-          <div className="w-32 h-32 bg-slate-100 rounded-full flex items-center justify-center relative z-10">
-            <SearchX className="text-slate-300 w-16 h-16" />
-          </div>
-          <motion.div 
-            animate={{ y: [0, -10, 0] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="absolute -top-4 -right-4 w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center"
+        <div className="flex w-full md:w-auto">
+          <button
+            onClick={abrirModalCrear}
+            className="px-6 py-3 bg-linear-to-br from-primary to-primary-container text-white font-headline font-bold text-sm rounded-xl shadow-[0_4px_12px_rgba(0,81,71,0.25)] hover:shadow-[0_6px_20px_rgba(0,81,71,0.3)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 w-full md:w-auto justify-center"
           >
-            <MapPinned className="text-primary w-6 h-6" />
-          </motion.div>
-          <div className="absolute -bottom-2 -left-2 w-16 h-16 bg-primary/5 rounded-full blur-xl"></div>
-        </div>
-        
-        <h3 className="text-2xl font-headline font-extrabold text-primary mb-2">No hay sucursales que coincidan</h3>
-        <p className="text-slate-500 max-w-md mx-auto mb-8 font-medium leading-relaxed">
-          Actualmente no existen registros que coincidan con los criterios de búsqueda o el inventario está vacío. Intenta ajustar los filtros o agrega una nueva sucursal para comenzar.
-        </p>
-        
-        <div className="flex gap-4">
-          <button className="px-8 py-3 bg-white text-primary font-headline font-bold text-sm rounded-xl border border-primary/10 hover:bg-primary/5 transition-all">
-            Limpiar búsqueda
-          </button>
-          <button className="px-8 py-3 bg-primary text-white font-headline font-bold text-sm rounded-xl shadow-md hover:bg-primary-container transition-all">
-            Registrar primera sucursal
+            <PlusCircle className="w-4 h-4" />
+            Nueva sucursal
           </button>
         </div>
       </motion.div>
 
-      {/* Background Visuals */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 opacity-40">
-        <div className="rounded-2xl overflow-hidden h-48 relative grayscale hover:grayscale-0 transition-all duration-700 group">
-          <img 
-            src="https://picsum.photos/seed/pharmacy/800/400" 
-            alt="Pharmacy" 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+      {(error || errorCiudades) && (
+        <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
+          {error || errorCiudades}
         </div>
-        <div className="rounded-2xl overflow-hidden h-48 relative grayscale hover:grayscale-0 transition-all duration-700 group">
-          <img 
-            src="https://picsum.photos/seed/map/800/400" 
-            alt="Map" 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-        </div>
-      </div>
+      )}
+
+      <SucursalTable
+        cargando={cargando}
+        sucursales={sucursalesFiltradas}
+        mapaCiudades={mapaCiudades}
+        onEditar={abrirModalEditar}
+      />
+
+      <SucursalFormModal
+        isOpen={mostrarModal}
+        modoEdicion={modoEdicion}
+        formulario={formulario}
+        ciudades={ciudades}
+        cargandoCiudades={cargandoCiudades}
+        guardando={guardando}
+        errorFormulario={errorFormulario}
+        onClose={cerrarModal}
+        onSubmit={manejarGuardar}
+        onChange={manejarCambio}
+      />
     </div>
   );
 }

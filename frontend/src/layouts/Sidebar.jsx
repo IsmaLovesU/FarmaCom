@@ -15,13 +15,13 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Package, label: 'Inventario', path: '/inventario' },
   { icon: Store, label: 'Sucursales', path: '/sucursales' },
-  { icon: Users, label: 'Patients', path: '/patients' },
-  { icon: BarChart3, label: 'Reports', path: '/reports' },
+  { icon: Users, label: 'Clientes', path: '/patients' },
+  { icon: BarChart3, label: 'Reportes', path: '/reports' },
 ];
 
 const bottomNavItems = [
-  { icon: HelpCircle, label: 'Support', path: '/support' },
-  { icon: LogOut, label: 'Logout', path: '/logout', isError: true },
+  { icon: HelpCircle, label: 'Ayuda', path: '/support' },
+  { icon: LogOut, label: 'Cerrar sesión', path: '/logout', isError: true },
 ];
 
 export default function Sidebar() {
