@@ -1,1 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-headline: "Manrope", sans-serif;
+
+  --color-primary: #005147;
+  --color-primary-container: #006b5f;
+  --color-secondary: #4a635f;
+  --color-background: #f9f9f9;
+  --color-surface: #f9f9f9;
+  --color-surface-container-low: #f3f4f3;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-high: #e7e8e8;
+  --color-surface-container-highest: #e2e3e2;
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-variant: #3e4946;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-sans antialiased;
+  }
+}
+
+@layer components {
+  .clinical-glass {
+    @apply bg-white/70 backdrop-blur-md;
+  }
+
+  .medical-pattern {
+    background-image: radial-gradient(circle at 2px 2px, #005147 1px, transparent 0);
+    background-size: 24px 24px;
+    opacity: 0.02;
+  }
+}
