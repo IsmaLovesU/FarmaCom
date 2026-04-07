@@ -1,4 +1,12 @@
 -- =========================
+-- TABLA: ciudad
+-- =========================
+CREATE TABLE IF NOT EXISTS ciudad (
+    id_ciudad SERIAL PRIMARY KEY,
+    nombre_ciudad VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- =========================
 -- TABLA: sucursal
 -- =========================
 CREATE TABLE IF NOT EXISTS sucursal (
