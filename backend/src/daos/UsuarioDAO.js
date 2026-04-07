@@ -3,7 +3,7 @@ const pool = require('../database/db');
 class UsuarioDAO {
     // ─── CREATE ────
 
-    static async crear(usuario) {
+    async crear(usuario) {
         const { id_sucursal, nombre_usuario, correo_usuario, contrasena_hash, rol } = usuario;
 
         const query = `
@@ -19,25 +19,25 @@ class UsuarioDAO {
 
     // ─── OBTENER ────
 
-    static async obtenerTodos() {
+    async obtenerTodos() {
         const query = `SELECT * FROM usuario ORDER BY id_usuario`;
         const { rows } = await pool.query(query);
         return rows;
     }
 
-    static async obtenerPorId(id_usuario) {
+    async obtenerPorId(id_usuario) {
         const query = `SELECT * FROM usuario WHERE id_usuario = $1`;
         const { rows } = await pool.query(query, [id_usuario]);
         return rows[0] || null;
     }
 
-    static async obtenerPorCorreo(correo_usuario) {
+    async obtenerPorCorreo(correo_usuario) {
         const query = `SELECT * FROM usuario WHERE correo_usuario = $1`;
         const { rows } = await pool.query(query, [correo_usuario]);
         return rows[0] || null;
     }
 
-    static async obtenerPorSucursal(id_sucursal) {
+    async obtenerPorSucursal(id_sucursal) {
         const query = `SELECT * FROM usuario WHERE id_sucursal = $1 ORDER BY id_usuario`;
         const { rows } = await pool.query(query, [id_sucursal]);
         return rows;
@@ -46,7 +46,7 @@ class UsuarioDAO {
 
     // ─── UPDATE ────
 
-    static async actualizar(id_usuario, campos) {
+    async actualizar(id_usuario, campos) {
         const { nombre_usuario, correo_usuario, rol, id_sucursal } = campos;
 
         const query = `
@@ -64,7 +64,7 @@ class UsuarioDAO {
         return rows[0] || null;
     }
 
-    static async actualizarContrasena(id_usuario, nueva_contrasena_hash) {
+    async actualizarContrasena(id_usuario, nueva_contrasena_hash) {
         const query = `
       UPDATE usuario
       SET contrasena_hash = $1
@@ -75,7 +75,7 @@ class UsuarioDAO {
         return rows[0] || null;
     }
 
-    static async cambiarEstado(id_usuario, nuevo_estado) {
+    async cambiarEstado(id_usuario, nuevo_estado) {
         const query = `
       UPDATE usuario
       SET estado_usuario = $1
@@ -87,13 +87,13 @@ class UsuarioDAO {
     }
 
 
-    // ─── DELETE ───────────────────────────────────────────────────────────────
+    // ─── DELETE ────
 
-    static async eliminar(id_usuario) {
+    async eliminar(id_usuario) {
         const query = `DELETE FROM usuario WHERE id_usuario = $1 RETURNING *`;
         const { rows } = await pool.query(query, [id_usuario]);
         return rows[0] || null;
     }
 }
 
-module.exports = UsuarioDAO;
+module.exports = new UsuarioDAO();
