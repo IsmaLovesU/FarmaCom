@@ -109,14 +109,7 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="mt-10 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-slate-300">
-            Powered by FarmaCom
-          </p>
         </section>
-
-        <p className="mt-10 text-center text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
-          c 2026 FarmaCom
-        </p>
       </div>
     </div>
   );
