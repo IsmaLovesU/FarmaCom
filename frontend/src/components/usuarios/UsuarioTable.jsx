@@ -30,12 +30,12 @@ export default function UsuarioTable({
   return (
     <section className="bg-surface-container-low/60 border border-slate-200 rounded-2xl overflow-hidden">
       <div className="grid grid-cols-12 gap-4 px-5 py-4 text-xs uppercase tracking-wider font-bold text-slate-500 border-b border-slate-200 bg-surface-container-low">
-        <span className="col-span-3">Nombre</span>
+        <span className="col-span-2">Nombre</span>
         <span className="col-span-3">Correo</span>
         <span className="col-span-2">Rol</span>
         <span className="col-span-2">Sucursal</span>
         <span className="col-span-1">Estado</span>
-        <span className="col-span-1 text-right">Acciones</span>
+        <span className="col-span-2 text-right">Acciones</span>
       </div>
 
       {cargando ? (
@@ -53,7 +53,7 @@ export default function UsuarioTable({
                 key={usuario.id_usuario}
                 className="grid grid-cols-12 gap-4 px-5 py-4 items-center bg-white/60"
               >
-                <span className="col-span-3 font-semibold text-primary truncate">
+                <span className="col-span-2 font-semibold text-primary truncate">
                   {usuario.nombre_usuario}
                 </span>
                 <span className="col-span-3 text-slate-700 truncate text-sm">
@@ -74,7 +74,7 @@ export default function UsuarioTable({
                     {ETIQUETAS_ESTADO[usuario.estado_usuario] || usuario.estado_usuario}
                   </span>
                 </span>
-                <div className="col-span-1 flex justify-end">
+                <div className="col-span-2 flex justify-end">
                   <div className="flex gap-2">
                     <button
                       onClick={() => onEditar(usuario)}
