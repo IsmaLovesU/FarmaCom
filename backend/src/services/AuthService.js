@@ -2,7 +2,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const UsuarioDAO = require('../daos/UsuarioDAO');
 
-const TOKEN_EXPIRY = '8h';
+const TOKEN_EXPIRY = process.env.JWT_EXPIRES_IN;
+const SALT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS);
 
 const login = async(correo_usuario, contrasena) => {
 
