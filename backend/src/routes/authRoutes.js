@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const authController = require('../controllers/AuthController');
+const verificarToken = require('../middlewares/verificarToken');
 
 const router = Router();
 
@@ -9,10 +10,10 @@ const validarLogin = [
     body('contrasena').notEmpty().withMessage('La contraseña es requerida'),
 ];
 
-// POST /api/auth/login
 router.post('/login', validarLogin, authController.login);
 
-// POST /api/auth/logout
 router.post('/logout', authController.logout);
+
+router.get('/me', verificarToken, authController.me);
 
 module.exports = router;
