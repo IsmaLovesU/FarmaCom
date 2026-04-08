@@ -1,9 +1,15 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { isAuthenticated } from '../../utils/auth';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PublicRoute() {
-  if (isAuthenticated()) {
+  const { isAuthenticated, status } = useAuth();
+
+  if (status === 'checking') {
+    return null;
+  }
+
+  if (isAuthenticated) {
     return <Navigate to="/sucursales" replace />;
   }
 

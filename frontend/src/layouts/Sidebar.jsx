@@ -11,14 +11,14 @@ import {
 } from 'lucide-react';
 import { logout } from '../api/auth';
 import BrandLogo from '../components/BrandLogo.jsx';
-import { clearSession } from '../utils/auth';
+import { useAuth, AUTH_ACTIONS } from '../context/AuthContext';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { icon: Package, label: 'Inventario', path: '/inventario' },
-  { icon: Store, label: 'Sucursales', path: '/sucursales' },
-  { icon: Users, label: 'Clientes', path: '/patients' },
-  { icon: BarChart3, label: 'Reportes', path: '/reports' },
+  { icon: LayoutDashboard, label: 'Dashboard',  path: '/' },
+  { icon: Package,         label: 'Inventario', path: '/inventario' },
+  { icon: Store,           label: 'Sucursales', path: '/sucursales' },
+  { icon: Users,           label: 'Clientes',   path: '/patients' },
+  { icon: BarChart3,       label: 'Reportes',   path: '/reports' },
 ];
 
 const bottomNavItems = [
@@ -27,14 +27,15 @@ const bottomNavItems = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const { dispatch } = useAuth();
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch {
-      // Local cleanup still matters even if the backend request fails.
+      // El logout local sigue aunque falle la petición al backend
     } finally {
-      clearSession();
+      dispatch({ type: AUTH_ACTIONS.LOGOUT });
       navigate('/login', { replace: true });
     }
   };
@@ -81,7 +82,7 @@ export default function Sidebar() {
           className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium text-slate-600 transition-all hover:bg-primary/5 hover:text-primary"
         >
           <LogOut className="h-5 w-5 text-error transition-transform duration-300 group-hover:translate-x-1" />
-          <span className="text-sm font-headline">Cerrar sesion</span>
+          <span className="text-sm font-headline">Cerrar sesión</span>
         </button>
       </div>
     </aside>

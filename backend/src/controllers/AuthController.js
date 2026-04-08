@@ -32,4 +32,13 @@ const logout = (req, res) => {
     return res.status(200).json(authService.logout());
 };
 
-module.exports = { login, logout };
+const me = async(req, res) => {
+    try {
+        const usuario = await authService.obtenerSesionActual(req.usuario.id_usuario);
+        return res.status(200).json({ usuario });
+    } catch (error) {
+        return res.status(error.status || 500).json({ mensaje: error.message });
+    }
+};
+
+module.exports = { login, logout, me };
