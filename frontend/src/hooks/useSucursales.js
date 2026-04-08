@@ -20,20 +20,35 @@ const useSucursales = () => {
   }, []);
 
   const crear = async (datos) => {
-    const { data } = await api.post('/sucursales', datos);
-    setSucursales(prev => [...prev, data]);
-    return data;
+    try {
+      const { data } = await api.post('/sucursales', datos);
+      setSucursales((prev) => [...prev, data]);
+      return data;
+    } catch (err) {
+      const mensaje = err.response?.data?.mensaje || 'Error al crear sucursal';
+      throw new Error(mensaje);
+    }
   };
 
   const actualizar = async (id, datos) => {
-    const { data } = await api.put(`/sucursales/${id}`, datos);
-    setSucursales(prev => prev.map(s => s.id_sucursal === id ? data : s));
-    return data;
+    try {
+      const { data } = await api.put(`/sucursales/${id}`, datos);
+      setSucursales((prev) => prev.map((s) => (s.id_sucursal === id ? data : s)));
+      return data;
+    } catch (err) {
+      const mensaje = err.response?.data?.mensaje || 'Error al actualizar sucursal';
+      throw new Error(mensaje);
+    }
   };
 
   const eliminar = async (id) => {
-    await api.delete(`/sucursales/${id}`);
-    setSucursales(prev => prev.filter(s => s.id_sucursal !== id));
+    try {
+      await api.delete(`/sucursales/${id}`);
+      setSucursales((prev) => prev.filter((s) => s.id_sucursal !== id));
+    } catch (err) {
+      const mensaje = err.response?.data?.mensaje || 'Error al eliminar sucursal';
+      throw new Error(mensaje);
+    }
   };
 
   useEffect(() => {

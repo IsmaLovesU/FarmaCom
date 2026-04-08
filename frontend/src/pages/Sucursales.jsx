@@ -20,13 +20,15 @@ const estadoInicialFormulario = {
 };
 
 export default function Sucursales() {
-  const { sucursales, cargando, error, crear, actualizar } = useSucursales();
+  const { sucursales, cargando, error, crear, actualizar, eliminar } = useSucursales();
   const { ciudades, cargandoCiudades, errorCiudades } = useCiudades();
 
   const [busqueda, setBusqueda] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [eliminandoId, setEliminandoId] = useState(null);
   const [errorFormulario, setErrorFormulario] = useState(null);
+  const [errorAccion, setErrorAccion] = useState(null);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [idEditando, setIdEditando] = useState(null);
   const [formulario, setFormulario] = useState(estadoInicialFormulario);
@@ -116,10 +118,27 @@ export default function Sucursales() {
       setMostrarModal(false);
       setFormulario(estadoInicialFormulario);
     } catch (err) {
-      const mensaje = err.response?.data?.mensaje || 'No se pudo guardar la sucursal.';
+      const mensaje = err.message || 'No se pudo guardar la sucursal.';
       setErrorFormulario(mensaje);
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const manejarEliminar = async (sucursal) => {
+    const confirmar = window.confirm(`¿Seguro que deseas eliminar la sucursal "${sucursal.nombre_sucursal}"?`);
+    if (!confirmar) {
+      return;
+    }
+
+    try {
+      setErrorAccion(null);
+      setEliminandoId(sucursal.id_sucursal);
+      await eliminar(sucursal.id_sucursal);
+    } catch (err) {
+      setErrorAccion(err.message || 'No se pudo eliminar la sucursal.');
+    } finally {
+      setEliminandoId(null);
     }
   };
 
@@ -187,11 +206,19 @@ export default function Sucursales() {
         </div>
       )}
 
+      {errorAccion && (
+        <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
+          {errorAccion}
+        </div>
+      )}
+
       <SucursalTable
         cargando={cargando}
         sucursales={sucursalesFiltradas}
         mapaCiudades={mapaCiudades}
         onEditar={abrirModalEditar}
+        onEliminar={manejarEliminar}
+        eliminandoId={eliminandoId}
       />
 
       <SucursalFormModal

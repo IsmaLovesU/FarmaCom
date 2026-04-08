@@ -27,9 +27,8 @@ app.use((req, res, next) => {
 
 // ─── Rutas ─────
 const authRoutes = require('./routes/authRoutes');
-const usuarioRoutes = require('./routes/usuarioRoutes');
+const usuarioRoutes = require('./routes/UsuarioRoutes');
 const sucursalRoutes = require('./routes/SucursalRoutes');
-const productosRoutes = require('./routes/ProductosRoutes');
 
 app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'pong' });
@@ -38,7 +37,6 @@ app.get('/api/ping', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/sucursales', sucursalRoutes);
-app.use('/api/productos', productosRoutes);
 
 // ─── Inicio ────
 const PORT = process.env.PORT || 3000;

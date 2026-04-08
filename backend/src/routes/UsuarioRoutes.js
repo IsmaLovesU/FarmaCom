@@ -1,6 +1,8 @@
 const { Router } = require('express');
 const { body } = require('express-validator');
 const UsuarioController = require('../controllers/UsuarioController');
+const verificarToken = require('../middlewares/verificarToken');
+const verificarRol = require('../middlewares/verificarRol');
 
 const router = Router();
 
@@ -31,27 +33,27 @@ const validarCambioEstado = [
 // ─── Rutas ────
 
 // GET    /api/usuarios
-router.get('/', UsuarioController.obtenerTodos);
+router.get('/', verificarToken, verificarRol('dueno', 'administrador'), UsuarioController.obtenerTodos);
 
 // GET    /api/usuarios/:id
-router.get('/:id', UsuarioController.obtenerPorId);
+router.get('/:id', verificarToken, UsuarioController.obtenerPorId);
 
 // GET    /api/usuarios/sucursal/:id_sucursal
-router.get('/sucursal/:id_sucursal', UsuarioController.obtenerPorSucursal);
+router.get('/sucursal/:id_sucursal', verificarToken, verificarRol('dueno', 'administrador'), UsuarioController.obtenerPorSucursal);
 
 // POST   /api/usuarios
-router.post('/', validarCreacion, UsuarioController.crear);
+router.post('/', verificarToken, verificarRol('dueno'), validarCreacion, UsuarioController.crear);
 
 // PUT    /api/usuarios/:id
-router.put('/:id', validarActualizacion, UsuarioController.actualizar);
+router.put('/:id', verificarToken, verificarRol('dueno', 'administrador'), validarActualizacion, UsuarioController.actualizar);
 
 // PATCH  /api/usuarios/:id/contrasena
-router.patch('/:id/contrasena', validarCambioContrasena, UsuarioController.cambiarContrasena);
+router.patch('/:id/contrasena', verificarToken, validarCambioContrasena, UsuarioController.cambiarContrasena);
 
 // PATCH  /api/usuarios/:id/estado
-router.patch('/:id/estado', validarCambioEstado, UsuarioController.cambiarEstado);
+router.patch('/:id/estado', verificarToken, verificarRol('dueno'), validarCambioEstado, UsuarioController.cambiarEstado);
 
 // DELETE /api/usuarios/:id
-router.delete('/:id', UsuarioController.eliminar);
+router.delete('/:id', verificarToken, verificarRol('dueno'), UsuarioController.eliminar);
 
 module.exports = router;
