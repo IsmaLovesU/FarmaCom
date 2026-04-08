@@ -1,15 +1,17 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Store, 
-  Users, 
-  BarChart3, 
-  HelpCircle, 
+import { NavLink, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Package,
+  Store,
+  Users,
+  BarChart3,
+  HelpCircle,
   LogOut,
-  Pill
 } from 'lucide-react';
+import { logout } from '../api/auth';
+import BrandLogo from '../components/BrandLogo.jsx';
+import { clearSession } from '../utils/auth';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -21,20 +23,26 @@ const navItems = [
 
 const bottomNavItems = [
   { icon: HelpCircle, label: 'Ayuda', path: '/support' },
-  { icon: LogOut, label: 'Cerrar sesión', path: '/logout', isError: true },
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // Local cleanup still matters even if the backend request fails.
+    } finally {
+      clearSession();
+      navigate('/login', { replace: true });
+    }
+  };
+
   return (
-    <aside className="h-screen w-64 fixed left-0 top-0 z-40 flex flex-col p-4 border-r border-slate-100 bg-slate-50/50 backdrop-blur-sm">
-      <div className="mb-8 px-4 py-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-lg shadow-primary/20">
-          <Pill className="text-white w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-lg font-extrabold text-primary font-headline tracking-tighter leading-none">FarmaCom</h1>
-          <p className="text-[10px] uppercase tracking-[0.1em] text-primary/60 font-bold mt-0.5">San Gabriel</p>
-        </div>
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-100 bg-slate-50/50 p-4 backdrop-blur-sm">
+      <div className="mb-8 px-4 py-6">
+        <BrandLogo subtitle="San Gabriel" />
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -43,29 +51,38 @@ export default function Sidebar() {
             key={item.path}
             to={item.path}
             className={({ isActive }) => `
-              flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group
-              ${isActive 
-                ? 'bg-white shadow-sm border border-primary/5 text-primary font-bold' 
-                : 'text-slate-600 hover:text-primary hover:bg-primary/5 font-medium'}
+              flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 group
+              ${isActive
+                ? 'border border-primary/5 bg-white font-bold text-primary shadow-sm'
+                : 'font-medium text-slate-600 hover:bg-primary/5 hover:text-primary'}
             `}
           >
-            <item.icon className={`w-5 h-5 transition-transform duration-300 group-hover:scale-110`} />
+            <item.icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
             <span className="text-sm font-headline">{item.label}</span>
           </NavLink>
         ))}
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-slate-200/50 space-y-1">
+      <div className="mt-auto space-y-1 border-t border-slate-200/50 pt-6">
         {bottomNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-primary hover:bg-primary/5 transition-all rounded-xl group font-medium"
+            className="group flex items-center gap-3 rounded-xl px-4 py-3 font-medium text-slate-600 transition-all hover:bg-primary/5 hover:text-primary"
           >
-            <item.icon className={`w-5 h-5 ${item.isError ? 'text-error' : ''} transition-transform duration-300 group-hover:translate-x-1`} />
+            <item.icon className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
             <span className="text-sm font-headline">{item.label}</span>
           </NavLink>
         ))}
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium text-slate-600 transition-all hover:bg-primary/5 hover:text-primary"
+        >
+          <LogOut className="h-5 w-5 text-error transition-transform duration-300 group-hover:translate-x-1" />
+          <span className="text-sm font-headline">Cerrar sesion</span>
+        </button>
       </div>
     </aside>
   );

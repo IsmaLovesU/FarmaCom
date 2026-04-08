@@ -34,3 +34,36 @@ CREATE TABLE IF NOT EXISTS usuario (
         REFERENCES sucursal(id_sucursal)
         ON DELETE CASCADE
 );
+
+-- =========================
+-- EXTENSIONES
+-- =========================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- =========================
+-- DATOS SEMILLA DESARROLLO
+-- =========================
+INSERT INTO ciudad (nombre_ciudad)
+VALUES ('Guatemala')
+ON CONFLICT (nombre_ciudad) DO NOTHING;
+
+INSERT INTO sucursal (id_ciudad, nombre_sucursal, direccion)
+SELECT id_ciudad, 'Sucursal Central', 'Zona 1, Ciudad de Guatemala'
+FROM ciudad
+WHERE nombre_ciudad = 'Guatemala'
+ON CONFLICT (nombre_sucursal) DO NOTHING;
+
+INSERT INTO usuario (id_sucursal, nombre_usuario, correo_usuario, contrasena_hash, rol)
+SELECT
+    s.id_sucursal,
+    'Dueno General',
+    'dueno@farma.com',
+    crypt('123456', gen_salt('bf')),
+    'dueno'
+FROM sucursal s
+WHERE s.nombre_sucursal = 'Sucursal Central'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM usuario u
+      WHERE u.correo_usuario = 'dueno@farma.com'
+  );
