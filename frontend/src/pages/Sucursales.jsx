@@ -1,12 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { 
-  Store, 
-  ShieldCheck, 
-  MapPin, 
   Search, 
   PlusCircle
 } from 'lucide-react';
-import SummaryCard from '../components/SummaryCard.jsx';
 import SucursalFormModal from '../components/sucursales/SucursalFormModal.jsx';
 import SucursalTable from '../components/sucursales/SucursalTable.jsx';
 import SucursalDeleteModal from '../components/sucursales/SucursalDeleteModal.jsx';
@@ -54,10 +50,6 @@ export default function Sucursales() {
       return nombre.includes(termino) || direccion.includes(termino) || ciudad.includes(termino);
     });
   }, [busqueda, mapaCiudades, sucursales]);
-
-  const ciudadesConSucursales = useMemo(() => {
-    return new Set(sucursales.map((sucursal) => sucursal.id_ciudad)).size;
-  }, [sucursales]);
 
   const abrirModalCrear = () => {
     setModoEdicion(false);
@@ -157,33 +149,18 @@ export default function Sucursales() {
 
   return (
     <div className="space-y-8">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <SummaryCard 
-          icon={Store}
-          label="Total"
-          value={String(sucursales.length)}
-          description="Sucursales registradas"
-          colorClass="bg-primary"
-          delay={0.1}
-        />
-        <SummaryCard 
-          icon={ShieldCheck}
-          label="Mostradas"
-          value={String(sucursalesFiltradas.length)}
-          description="Coinciden con la búsqueda"
-          colorClass="bg-green-500"
-          delay={0.2}
-        />
-        <SummaryCard 
-          icon={MapPin}
-          label="Cobertura"
-          value={String(ciudadesConSucursales)}
-          description="Ciudades presentes"
-          colorClass="bg-blue-500"
-          delay={0.3}
-        />
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="bg-white/70 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600"
+      >
+        Mostrando
+        <span className="mx-1.5 inline-block font-bold text-primary">{sucursalesFiltradas.length}</span>
+        de
+        <span className="mx-1.5 inline-block font-bold text-primary">{sucursales.length}</span>
+        <span className="inline-block">sucursales registradas.</span>
+      </motion.div>
 
       {/* Action Bar */}
       <motion.div 

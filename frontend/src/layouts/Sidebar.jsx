@@ -41,8 +41,8 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-100 bg-slate-50/50 p-4 backdrop-blur-sm">
-      <div className="mb-8 px-4 py-6">
-        <BrandLogo subtitle="San Gabriel" />
+      <div className="mb-8 flex justify-center py-6">
+        <BrandLogo subtitle="San Gabriel" centered />
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -81,7 +81,7 @@ export default function Sidebar() {
           className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium text-slate-600 transition-all hover:bg-primary/5 hover:text-primary"
         >
           <LogOut className="h-5 w-5 text-error transition-transform duration-300 group-hover:translate-x-1" />
-          <span className="text-sm font-headline">Cerrar sesion</span>
+          <span className="text-sm font-headline">Cerrar sesión</span>
         </button>
       </div>
     </aside>
