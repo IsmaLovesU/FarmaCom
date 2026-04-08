@@ -5,6 +5,7 @@ import PublicRoute from '../components/auth/PublicRoute.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import Login from '../pages/Login.jsx';
 import Sucursales from '../pages/Sucursales.jsx';
+import Usuarios from '../pages/Usuarios.jsx';
 
 export default function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ export default function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Navigate to="/sucursales" replace />} />
           <Route path="/sucursales" element={<Sucursales />} />
+          <Route path="/usuarios" element={<Usuarios />} />
           <Route
             path="/inventario"
             element={<div className="p-8 font-headline text-2xl font-bold">Inventario (Proximamente)</div>}

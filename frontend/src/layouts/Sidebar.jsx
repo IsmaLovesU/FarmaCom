@@ -5,6 +5,7 @@ import {
   Package,
   Store,
   Users,
+  UserCog,
   BarChart3,
   HelpCircle,
   LogOut,
@@ -14,11 +15,20 @@ import BrandLogo from '../components/BrandLogo.jsx';
 import { useAuth, AUTH_ACTIONS } from '../context/AuthContext';
 
 const navItems = [
+<<<<<<< HEAD
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  { icon: Package, label: 'Inventario', path: '/inventario' },
+  { icon: Store, label: 'Sucursales', path: '/sucursales' },
+  { icon: UserCog, label: 'Usuarios', path: '/usuarios' },
+  { icon: Users, label: 'Clientes', path: '/patients' },
+  { icon: BarChart3, label: 'Reportes', path: '/reports' },
+=======
   { icon: LayoutDashboard, label: 'Dashboard',  path: '/' },
   { icon: Package,         label: 'Inventario', path: '/inventario' },
   { icon: Store,           label: 'Sucursales', path: '/sucursales' },
   { icon: Users,           label: 'Clientes',   path: '/patients' },
   { icon: BarChart3,       label: 'Reportes',   path: '/reports' },
+>>>>>>> origin/develop
 ];
 
 const bottomNavItems = [
