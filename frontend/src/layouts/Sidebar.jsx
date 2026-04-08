@@ -12,15 +12,23 @@ import {
 } from 'lucide-react';
 import { logout } from '../api/auth';
 import BrandLogo from '../components/BrandLogo.jsx';
-import { clearSession } from '../utils/auth';
+import { useAuth, AUTH_ACTIONS } from '../context/AuthContext';
 
 const navItems = [
+<<<<<<< HEAD
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Package, label: 'Inventario', path: '/inventario' },
   { icon: Store, label: 'Sucursales', path: '/sucursales' },
   { icon: UserCog, label: 'Usuarios', path: '/usuarios' },
   { icon: Users, label: 'Clientes', path: '/patients' },
   { icon: BarChart3, label: 'Reportes', path: '/reports' },
+=======
+  { icon: LayoutDashboard, label: 'Dashboard',  path: '/' },
+  { icon: Package,         label: 'Inventario', path: '/inventario' },
+  { icon: Store,           label: 'Sucursales', path: '/sucursales' },
+  { icon: Users,           label: 'Clientes',   path: '/patients' },
+  { icon: BarChart3,       label: 'Reportes',   path: '/reports' },
+>>>>>>> origin/develop
 ];
 
 const bottomNavItems = [
@@ -29,14 +37,15 @@ const bottomNavItems = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const { dispatch } = useAuth();
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch {
-      // Local cleanup still matters even if the backend request fails.
+      // El logout local sigue aunque falle la petición al backend
     } finally {
-      clearSession();
+      dispatch({ type: AUTH_ACTIONS.LOGOUT });
       navigate('/login', { replace: true });
     }
   };

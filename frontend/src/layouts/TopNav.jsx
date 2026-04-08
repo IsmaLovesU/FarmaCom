@@ -1,9 +1,10 @@
 import React from 'react';
 import { Bell, Settings } from 'lucide-react';
-import { getStoredUser } from '../utils/auth';
+import { useAuth } from '../context/AuthContext';
 
 export default function TopNav() {
-  const usuario = getStoredUser();
+  const { usuario } = useAuth();
+
   const initials = (usuario?.nombre_usuario || 'Usuario')
     .split(' ')
     .filter(Boolean)
@@ -14,9 +15,9 @@ export default function TopNav() {
 
   const currentDate = new Intl.DateTimeFormat('es-ES', {
     weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    day:     'numeric',
+    month:   'long',
+    year:    'numeric',
   }).format(new Date());
 
   return (

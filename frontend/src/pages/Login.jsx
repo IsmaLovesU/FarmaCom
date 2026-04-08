@@ -3,15 +3,17 @@ import { ArrowRight, Lock, Mail } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
 import BrandLogo from '../components/BrandLogo.jsx';
-import { saveSession } from '../utils/auth';
+import { useAuth, AUTH_ACTIONS } from '../context/AuthContext';
 
 export default function Login() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [correo, setCorreo] = useState('');
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { dispatch } = useAuth();
+
+  const [correo,    setCorreo]    = useState('');
   const [contrasena, setContrasena] = useState('');
-  const [error, setError] = useState('');
-  const [cargando, setCargando] = useState(false);
+  const [error,     setError]     = useState('');
+  const [cargando,  setCargando]  = useState(false);
 
   const destination = location.state?.from?.pathname || '/sucursales';
 
@@ -22,7 +24,15 @@ export default function Login() {
 
     try {
       const data = await login(correo, contrasena);
-      saveSession(data.usuario);
+
+      dispatch({
+        type: AUTH_ACTIONS.LOGIN,
+        payload: {
+          usuario: data.usuario,
+          sucursalActivaId: data.usuario.id_sucursal ?? null,
+        },
+      });
+
       navigate(destination, { replace: true });
     } catch (err) {
       setError(err.response?.data?.mensaje || 'Credenciales incorrectas');
@@ -108,15 +118,7 @@ export default function Login() {
               {!cargando && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
-
-          <p className="mt-10 text-center text-[10px] font-bold uppercase tracking-[0.3em] text-slate-300">
-            Powered by FarmaCom
-          </p>
         </section>
-
-        <p className="mt-10 text-center text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
-          c 2026 FarmaCom
-        </p>
       </div>
     </div>
   );
