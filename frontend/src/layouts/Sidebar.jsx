@@ -5,6 +5,7 @@ import {
   Package,
   Store,
   Users,
+  UserCog,
   BarChart3,
   HelpCircle,
   LogOut,
@@ -17,6 +18,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Package, label: 'Inventario', path: '/inventario' },
   { icon: Store, label: 'Sucursales', path: '/sucursales' },
+  { icon: UserCog, label: 'Usuarios', path: '/usuarios' },
   { icon: Users, label: 'Clientes', path: '/patients' },
   { icon: BarChart3, label: 'Reportes', path: '/reports' },
 ];
