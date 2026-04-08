@@ -9,6 +9,7 @@ import {
 import SummaryCard from '../components/SummaryCard.jsx';
 import SucursalFormModal from '../components/sucursales/SucursalFormModal.jsx';
 import SucursalTable from '../components/sucursales/SucursalTable.jsx';
+import SucursalDeleteModal from '../components/sucursales/SucursalDeleteModal.jsx';
 import { motion } from 'motion/react';
 import useSucursales from '../hooks/useSucursales';
 import useCiudades from '../hooks/useCiudades';
@@ -32,6 +33,7 @@ export default function Sucursales() {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [idEditando, setIdEditando] = useState(null);
   const [formulario, setFormulario] = useState(estadoInicialFormulario);
+  const [sucursalAEliminar, setSucursalAEliminar] = useState(null);
 
   const mapaCiudades = useMemo(() => {
     return ciudades.reduce((acc, ciudad) => {
@@ -125,16 +127,27 @@ export default function Sucursales() {
     }
   };
 
-  const manejarEliminar = async (sucursal) => {
-    const confirmar = window.confirm(`¿Seguro que deseas eliminar la sucursal "${sucursal.nombre_sucursal}"?`);
-    if (!confirmar) {
+  const solicitarEliminar = (sucursal) => {
+    setSucursalAEliminar(sucursal);
+  };
+
+  const cerrarModalEliminar = () => {
+    if (eliminandoId) {
+      return;
+    }
+    setSucursalAEliminar(null);
+  };
+
+  const confirmarEliminar = async () => {
+    if (!sucursalAEliminar) {
       return;
     }
 
     try {
       setErrorAccion(null);
-      setEliminandoId(sucursal.id_sucursal);
-      await eliminar(sucursal.id_sucursal);
+      setEliminandoId(sucursalAEliminar.id_sucursal);
+      await eliminar(sucursalAEliminar.id_sucursal);
+      setSucursalAEliminar(null);
     } catch (err) {
       setErrorAccion(err.message || 'No se pudo eliminar la sucursal.');
     } finally {
@@ -217,7 +230,7 @@ export default function Sucursales() {
         sucursales={sucursalesFiltradas}
         mapaCiudades={mapaCiudades}
         onEditar={abrirModalEditar}
-        onEliminar={manejarEliminar}
+        onEliminar={solicitarEliminar}
         eliminandoId={eliminandoId}
       />
 
@@ -232,6 +245,14 @@ export default function Sucursales() {
         onClose={cerrarModal}
         onSubmit={manejarGuardar}
         onChange={manejarCambio}
+      />
+
+      <SucursalDeleteModal
+        isOpen={Boolean(sucursalAEliminar)}
+        sucursal={sucursalAEliminar}
+        eliminando={Boolean(eliminandoId)}
+        onClose={cerrarModalEliminar}
+        onConfirm={confirmarEliminar}
       />
     </div>
   );
