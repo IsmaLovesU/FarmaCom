@@ -16,7 +16,10 @@ export default function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Navigate to="/sucursales" replace />} />
+          <Route
+            path="/dashboard"
+            element={<div className="p-8 font-headline text-2xl font-bold">Dashboard (Proximamente)</div>}
+          />
           <Route path="/sucursales" element={<Sucursales />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route
@@ -25,7 +28,7 @@ export default function AppRoutes() {
           />
           <Route
             path="/patients"
-            element={<div className="p-8 font-headline text-2xl font-bold">Pacientes (Proximamente)</div>}
+            element={<div className="p-8 font-headline text-2xl font-bold">Clientes (Proximamente)</div>}
           />
           <Route
             path="/reports"
@@ -37,6 +40,8 @@ export default function AppRoutes() {
           />
         </Route>
       </Route>
+
+      <Route path="/" element={<Navigate to="/login" replace />} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

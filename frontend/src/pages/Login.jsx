@@ -53,10 +53,10 @@ export default function Login() {
         <section className="w-full max-w-[34rem] rounded-[2rem] bg-white px-8 py-10 shadow-[0_24px_60px_rgba(26,28,28,0.08)] ring-1 ring-primary/5 sm:px-10 sm:py-12">
           <header className="text-center">
             <h2 className="font-headline text-4xl font-extrabold tracking-tight text-primary">
-              Bienvenido de nuevo
+              Bienvenido/a de nuevo
             </h2>
             <p className="mt-3 text-sm font-medium text-on-surface-variant/70">
-              Gestion farmaceutica
+              Gestión farmacéutica
             </p>
           </header>
 
@@ -87,7 +87,7 @@ export default function Login() {
                 htmlFor="contrasena"
                 className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-on-surface-variant"
               >
-                Contrasena
+                Contraseña
               </label>
               <div className="flex items-center gap-3 border-b border-slate-200 pb-3 transition-colors focus-within:border-primary">
                 <input
@@ -114,7 +114,7 @@ export default function Login() {
               disabled={cargando}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-headline text-base font-bold text-white shadow-[0_12px_24px_rgba(0,81,71,0.20)] transition-all hover:-translate-y-0.5 hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <span>{cargando ? 'Iniciando sesion...' : 'Iniciar sesion'}</span>
+              <span>{cargando ? 'Iniciando sesión...' : 'Iniciar sesión'}</span>
               {!cargando && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
