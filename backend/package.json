@@ -5,10 +5,15 @@
     "dependencies": {
         "bcrypt": "^5.1.1",
         "dotenv": "^16.3.1",
-        "express": "^4.18.2",
+        "express": "4.21.2",
         "cookie-parser": "^1.4.7",
-        "express-validator": "^7.0.1",
+        "express-validator": "7.3.2",
         "jsonwebtoken": "^9.0.2",
         "pg": "^8.11.3"
+    },
+    "overrides": {
+        "tar": "6.2.1",
+        "path-to-regexp": "0.1.13",
+        "qs": "6.14.1"
     }
 }
