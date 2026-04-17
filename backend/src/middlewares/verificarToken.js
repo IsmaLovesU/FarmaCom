@@ -1,18 +1,39 @@
 const jwt = require('jsonwebtoken');
+const UsuarioDAO = require('../daos/UsuarioDAO');
 
-const verificarToken = (req, res, next) => {
+const verificarToken = async(req, res, next) => {
     const token = req.cookies.auth_token;
 
     if (!token) {
-        return res.status(401).json({ mensaje: 'Acceso denegado. Inicia sesión primero.' });
+        return res.status(401).json({ mensaje: 'Acceso denegado. Inicia sesion primero.' });
     }
 
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        req.usuario = payload; // { id_usuario, id_sucursal, rol }
+        const usuario = await UsuarioDAO.obtenerPorId(payload.id_usuario);
+
+        if (!usuario) {
+            return res.status(401).json({ mensaje: 'Token invalido o expirado.' });
+        }
+
+        if (usuario.estado_usuario !== 'activo') {
+            return res.status(403).json({ mensaje: 'La cuenta esta inactiva o suspendida.' });
+        }
+
+        if ((payload.token_version ?? 0) !== (usuario.token_version ?? 0)) {
+            return res.status(401).json({ mensaje: 'La sesion ya no es valida. Inicia sesion de nuevo.' });
+        }
+
+        req.usuario = {
+            id_usuario: usuario.id_usuario,
+            id_sucursal: usuario.id_sucursal,
+            rol: usuario.rol,
+            token_version: usuario.token_version,
+        };
+
         next();
     } catch (error) {
-        return res.status(401).json({ mensaje: 'Token inválido o expirado.' });
+        return res.status(401).json({ mensaje: 'Token invalido o expirado.' });
     }
 };
 

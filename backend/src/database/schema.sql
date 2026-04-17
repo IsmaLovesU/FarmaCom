@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     nombre_usuario VARCHAR(100) NOT NULL,
     correo_usuario VARCHAR(150) NOT NULL UNIQUE,
     contrasena_hash TEXT NOT NULL,
+    token_version INTEGER NOT NULL DEFAULT 0,
     rol VARCHAR(20) NOT NULL CHECK (rol IN ('dueno', 'administrador', 'dependiente')),
     estado_usuario VARCHAR(20) DEFAULT 'activo' CHECK (estado_usuario IN ('activo', 'inactivo', 'suspendido')),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

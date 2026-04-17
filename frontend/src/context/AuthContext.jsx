@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { getCurrentUser } from '../api/auth';
-import { clearSession, getStoredAuth, saveSession } from '../utils/auth';
+import { setUnauthorizedHandler } from '../api/authSession';
+import { clearSession, saveSession } from '../utils/auth';
 
 const AuthContext = createContext(null);
 
@@ -11,11 +12,9 @@ export const AUTH_ACTIONS = {
   SET_SUCURSAL_ACTIVA: 'SET_SUCURSAL_ACTIVA',
 };
 
-const storedAuth = getStoredAuth();
-
 const initialState = {
-  usuario: storedAuth?.usuario ?? null,
-  sucursalActivaId: storedAuth?.sucursalActivaId ?? null,
+  usuario: null,
+  sucursalActivaId: null,
   status: 'checking',
 };
 
@@ -64,6 +63,14 @@ export function AuthProvider({ children }) {
   }, [state.sucursalActivaId, state.usuario]);
 
   useEffect(() => {
+    const cleanup = setUnauthorizedHandler(() => {
+      dispatch({ type: AUTH_ACTIONS.LOGOUT });
+    });
+
+    return cleanup;
+  }, []);
+
+  useEffect(() => {
     let ignore = false;
 
     const restoreSession = async () => {
@@ -78,7 +85,7 @@ export function AuthProvider({ children }) {
           type: AUTH_ACTIONS.RESTORE_SESSION,
           payload: {
             usuario: data.usuario,
-            sucursalActivaId: storedAuth?.sucursalActivaId ?? data.usuario.id_sucursal ?? null,
+            sucursalActivaId: data.usuario.id_sucursal ?? null,
           },
         });
       } catch {

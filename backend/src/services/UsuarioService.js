@@ -78,6 +78,7 @@ const cambiarContrasena = async(id_usuario, contrasena_actual, contrasena_nueva)
 
     const nueva_hash = await bcrypt.hash(contrasena_nueva, SALT_ROUNDS);
     await UsuarioDAO.actualizarContrasena(id_usuario, nueva_hash);
+    await UsuarioDAO.incrementarTokenVersion(id_usuario);
     return { mensaje: 'Contraseña actualizada correctamente' };
 };
 

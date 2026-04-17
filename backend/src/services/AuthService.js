@@ -1,8 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const UsuarioDAO = require('../daos/UsuarioDAO');
-
-const TOKEN_EXPIRY = process.env.JWT_EXPIRES_IN || '8h';
+const { TOKEN_EXPIRY } = require('../config/auth');
 
 const mapUsuarioSesion = (usuario) => ({
     id_usuario: usuario.id_usuario,
@@ -15,20 +14,20 @@ const mapUsuarioSesion = (usuario) => ({
 const login = async(correo_usuario, contrasena) => {
     const usuario = await UsuarioDAO.obtenerPorCorreo(correo_usuario);
     if (!usuario) {
-        const error = new Error('Credenciales inválidas');
+        const error = new Error('Credenciales invalidas');
         error.status = 401;
         throw error;
     }
 
     if (usuario.estado_usuario !== 'activo') {
-        const error = new Error('La cuenta está inactiva o suspendida');
+        const error = new Error('La cuenta esta inactiva o suspendida');
         error.status = 403;
         throw error;
     }
 
     const contrasenaValida = await bcrypt.compare(contrasena, usuario.contrasena_hash);
     if (!contrasenaValida) {
-        const error = new Error('Credenciales inválidas');
+        const error = new Error('Credenciales invalidas');
         error.status = 401;
         throw error;
     }
@@ -37,6 +36,7 @@ const login = async(correo_usuario, contrasena) => {
         id_usuario: usuario.id_usuario,
         id_sucursal: usuario.id_sucursal,
         rol: usuario.rol,
+        token_version: usuario.token_version ?? 0,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
@@ -57,7 +57,7 @@ const obtenerSesionActual = async(id_usuario) => {
     }
 
     if (usuario.estado_usuario !== 'activo') {
-        const error = new Error('La cuenta está inactiva o suspendida');
+        const error = new Error('La cuenta esta inactiva o suspendida');
         error.status = 403;
         throw error;
     }
@@ -65,8 +65,23 @@ const obtenerSesionActual = async(id_usuario) => {
     return mapUsuarioSesion(usuario);
 };
 
-const logout = () => {
-    return { mensaje: 'Sesión cerrada correctamente' };
+const logout = async(token) => {
+    if (!token) {
+        return { mensaje: 'Sesion cerrada correctamente' };
+    }
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        const usuario = await UsuarioDAO.obtenerPorId(payload.id_usuario);
+
+        if (usuario && (usuario.token_version ?? 0) === (payload.token_version ?? 0)) {
+            await UsuarioDAO.incrementarTokenVersion(payload.id_usuario);
+        }
+    } catch (error) {
+        // Si el token ya expiro o es invalido, igual respondemos como logout exitoso.
+    }
+
+    return { mensaje: 'Sesion cerrada correctamente' };
 };
 
 module.exports = { login, obtenerSesionActual, logout };

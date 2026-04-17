@@ -1,7 +1,10 @@
 const { validationResult } = require('express-validator');
 const authService = require('../services/AuthService');
-
-const COOKIE_NAME = 'auth_token';
+const {
+    COOKIE_NAME,
+    buildAuthCookieOptions,
+    buildAuthCookieClearOptions,
+} = require('../config/auth');
 
 const login = async(req, res) => {
     const errores = validationResult(req);
@@ -13,13 +16,8 @@ const login = async(req, res) => {
         const { correo_usuario, contrasena } = req.body;
         const { token, usuario } = await authService.login(correo_usuario, contrasena);
 
-        // Guardar el JWT en una cookie httpOnly 
-        res.cookie(COOKIE_NAME, token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 8 * 60 * 60 * 1000,
-        });
+        // Guardar el JWT en una cookie httpOnly con la misma expiracion que el token.
+        res.cookie(COOKIE_NAME, token, buildAuthCookieOptions());
 
         return res.status(200).json({ usuario });
     } catch (error) {
@@ -27,9 +25,10 @@ const login = async(req, res) => {
     }
 };
 
-const logout = (req, res) => {
-    res.clearCookie(COOKIE_NAME);
-    return res.status(200).json(authService.logout());
+const logout = async(req, res) => {
+    const resultado = await authService.logout(req.cookies[COOKIE_NAME]);
+    res.clearCookie(COOKIE_NAME, buildAuthCookieClearOptions());
+    return res.status(200).json(resultado);
 };
 
 const me = async(req, res) => {
