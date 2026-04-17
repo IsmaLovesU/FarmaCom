@@ -75,6 +75,17 @@ class UsuarioDAO {
         return rows[0] || null;
     }
 
+    async incrementarTokenVersion(id_usuario) {
+        const query = `
+      UPDATE usuario
+      SET token_version = token_version + 1
+      WHERE id_usuario = $1
+      RETURNING *
+    `;
+        const { rows } = await pool.query(query, [id_usuario]);
+        return rows[0] || null;
+    }
+
     async cambiarEstado(id_usuario, nuevo_estado) {
         const query = `
       UPDATE usuario

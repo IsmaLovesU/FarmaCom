@@ -1,6 +1,8 @@
 const { validationResult } = require('express-validator');
 const usuarioService = require('../services/UsuarioService');
 
+const esRolElevado = (rol) => ['dueno', 'administrador'].includes(rol);
+
 const crear = async(req, res) => {
     const errores = validationResult(req);
     if (!errores.isEmpty()) {
@@ -25,8 +27,18 @@ const obtenerTodos = async(req, res) => {
 };
 
 const obtenerPorId = async(req, res) => {
+    const idObjetivo = Number(req.params.id);
+
+    if (!Number.isInteger(idObjetivo) || idObjetivo < 1) {
+        return res.status(400).json({ mensaje: 'id de usuario invalido' });
+    }
+
+    if (req.usuario.id_usuario !== idObjetivo && !esRolElevado(req.usuario.rol)) {
+        return res.status(403).json({ mensaje: 'No puedes consultar la informacion de otro usuario.' });
+    }
+
     try {
-        const usuario = await usuarioService.obtenerPorId(Number(req.params.id));
+        const usuario = await usuarioService.obtenerPorId(idObjetivo);
         return res.status(200).json(usuario);
     } catch (error) {
         return res.status(error.status || 500).json({ mensaje: error.message });
@@ -62,9 +74,18 @@ const cambiarContrasena = async(req, res) => {
         return res.status(400).json({ errores: errores.array() });
     }
 
+    const idObjetivo = Number(req.params.id);
+    if (!Number.isInteger(idObjetivo) || idObjetivo < 1) {
+        return res.status(400).json({ mensaje: 'id de usuario invalido' });
+    }
+
+    if (req.usuario.id_usuario !== idObjetivo) {
+        return res.status(403).json({ mensaje: 'Solo puedes cambiar tu propia contrasena.' });
+    }
+
     try {
         const { contrasena_actual, contrasena_nueva } = req.body;
-        const resultado = await usuarioService.cambiarContrasena(Number(req.params.id), contrasena_actual, contrasena_nueva);
+        const resultado = await usuarioService.cambiarContrasena(idObjetivo, contrasena_actual, contrasena_nueva);
         return res.status(200).json(resultado);
     } catch (error) {
         return res.status(error.status || 500).json({ mensaje: error.message });
