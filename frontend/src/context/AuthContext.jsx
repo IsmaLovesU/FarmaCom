@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import { getCurrentUser } from '../api/auth';
+import { setUnauthorizedHandler } from '../api/authSession';
 import { clearSession, getStoredAuth, saveSession } from '../utils/auth';
 
 const AuthContext = createContext(null);
@@ -62,6 +63,14 @@ export function AuthProvider({ children }) {
 
     clearSession();
   }, [state.sucursalActivaId, state.usuario]);
+
+  useEffect(() => {
+    const cleanup = setUnauthorizedHandler(() => {
+      dispatch({ type: AUTH_ACTIONS.LOGOUT });
+    });
+
+    return cleanup;
+  }, []);
 
   useEffect(() => {
     let ignore = false;

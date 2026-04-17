@@ -18,7 +18,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Package, label: 'Inventario', path: '/inventario' },
   { icon: Store, label: 'Sucursales', path: '/sucursales' },
-  { icon: UserCog, label: 'Usuarios', path: '/usuarios' },
+  { icon: UserCog, label: 'Usuarios', path: '/usuarios', roles: ['dueno', 'administrador'] },
   { icon: Users, label: 'Clientes', path: '/patients' },
   { icon: BarChart3, label: 'Reportes', path: '/reports' },
 ];
@@ -29,16 +29,31 @@ const bottomNavItems = [
 
 export default function Sidebar() {
   const navigate = useNavigate();
-  const { dispatch } = useAuth();
+  const { dispatch, usuario } = useAuth();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!item.roles) {
+      return true;
+    }
+
+    return item.roles.includes(usuario?.rol);
+  });
 
   const handleLogout = async () => {
     try {
       await logout();
-    } catch {
-      // El logout local sigue aunque falle la petición al backend
-    } finally {
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
       navigate('/login', { replace: true });
+    } catch (error) {
+      const status = error.response?.status;
+
+      if (status === 401 || status === 403) {
+        dispatch({ type: AUTH_ACTIONS.LOGOUT });
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      window.alert(error.response?.data?.mensaje || 'No se pudo cerrar sesión. Intenta de nuevo.');
     }
   };
 
@@ -49,7 +64,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}

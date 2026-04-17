@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import PublicRoute from '../components/auth/PublicRoute.jsx';
+import RoleRoute from '../components/auth/RoleRoute.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import Login from '../pages/Login.jsx';
 import Sucursales from '../pages/Sucursales.jsx';
@@ -21,7 +22,9 @@ export default function AppRoutes() {
             element={<div className="p-8 font-headline text-2xl font-bold">Dashboard (Proximamente)</div>}
           />
           <Route path="/sucursales" element={<Sucursales />} />
-          <Route path="/usuarios" element={<Usuarios />} />
+          <Route element={<RoleRoute allowedRoles={['dueno', 'administrador']} />}>
+            <Route path="/usuarios" element={<Usuarios />} />
+          </Route>
           <Route
             path="/inventario"
             element={<div className="p-8 font-headline text-2xl font-bold">Inventario (Proximamente)</div>}
