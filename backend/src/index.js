@@ -26,6 +26,8 @@ app.use(cookieParser());
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/UsuarioRoutes');
 const sucursalRoutes = require('./routes/SucursalRoutes');
+const telefonoSucursalRoutes = require('./routes/TelefonoSucursalRoutes');
+const correoSucursalRoutes = require('./routes/CorreoSucursalRoutes');
 
 app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'pong' });
@@ -34,6 +36,14 @@ app.get('/api/ping', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/sucursales', sucursalRoutes);
+
+// Rutas anidadas: GET y POST bajo /api/sucursales/:id_sucursal/telefonos|correos
+app.use('/api/sucursales/:id_sucursal/telefonos', telefonoSucursalRoutes);
+app.use('/api/sucursales/:id_sucursal/correos', correoSucursalRoutes);
+
+// Rutas planas: GET, PUT, DELETE por ID propio
+app.use('/api/telefonos', telefonoSucursalRoutes);
+app.use('/api/correos', correoSucursalRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
