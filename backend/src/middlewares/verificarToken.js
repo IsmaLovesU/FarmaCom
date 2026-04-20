@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const UsuarioDAO = require('../daos/UsuarioDAO');
 
-const verificarToken = async(req, res, next) => {
+const verificarToken = async (req, res, next) => {
     const token = req.cookies.auth_token;
 
     if (!token) {
@@ -17,7 +17,7 @@ const verificarToken = async(req, res, next) => {
         }
 
         if (usuario.estado_usuario !== 'activo') {
-            return res.status(403).json({ mensaje: 'La cuenta esta inactiva o suspendida.' });
+            return res.status(403).json({ mensaje: 'La cuenta está inactiva.' });
         }
 
         if ((payload.token_version ?? 0) !== (usuario.token_version ?? 0)) {

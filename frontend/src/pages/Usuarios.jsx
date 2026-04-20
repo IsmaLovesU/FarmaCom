@@ -52,7 +52,7 @@ export default function Usuarios() {
   );
 
   const totalInactivos = useMemo(
-    () => usuarios.filter((u) => u.estado_usuario !== 'activo').length,
+    () => usuarios.filter((u) => u.estado_usuario === 'inactivo').length,
     [usuarios],
   );
 
@@ -188,7 +188,7 @@ export default function Usuarios() {
           icon={UserX}
           label="Inactivos"
           value={String(totalInactivos)}
-          description="Inactivos o suspendidos"
+          description="Usuarios inactivos"
           colorClass="bg-red-500"
           delay={0.3}
         />

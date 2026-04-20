@@ -58,7 +58,7 @@ const validarCambioContrasena = [
 ];
 
 const validarCambioEstado = [
-    body('estado').isIn(['activo', 'inactivo', 'suspendido']).withMessage('Estado no válido'),
+    body('estado').isIn(['activo', 'inactivo']).withMessage('Estado no válido'),
 ];
 
 // Rutas
@@ -71,9 +71,9 @@ router.get('/',
 );
 
 // GET    /api/usuarios/sucursal/:id_sucursal
-router.get('/sucursal/:id_sucursal', 
-    verificarToken, 
-    verificarRol('dueno', 'administrador'), 
+router.get('/sucursal/:id_sucursal',
+    verificarToken,
+    verificarRol('dueno', 'administrador'),
     validarParamIdSucursal,
     UsuarioController.obtenerPorSucursal,
 );
