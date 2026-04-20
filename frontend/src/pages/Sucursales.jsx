@@ -96,6 +96,16 @@ export default function Sucursales() {
       return;
     }
 
+    if (nombre.length > 100) {
+      setErrorFormulario('El nombre de la sucursal no puede superar los 100 caracteres.');
+      return;
+    }
+
+    if (direccion.length > 255) {
+      setErrorFormulario('La dirección no puede superar los 255 caracteres.');
+      return;
+    }
+
     const payload = {
       nombre_sucursal: nombre,
       direccion,
