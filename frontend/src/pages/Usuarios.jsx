@@ -52,7 +52,7 @@ export default function Usuarios() {
   );
 
   const totalInactivos = useMemo(
-    () => usuarios.filter((u) => u.estado_usuario !== 'activo').length,
+    () => usuarios.filter((u) => u.estado_usuario === 'inactivo').length,
     [usuarios],
   );
 
@@ -102,7 +102,18 @@ export default function Usuarios() {
       return;
     }
 
-    if (!modoEdicion && formulario.contrasena.length < 6) {
+    if (nombre.length > 100) {
+      setErrorFormulario('El nombre no puede superar los 100 caracteres.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo)) {
+      setErrorFormulario('El correo electrónico no tiene un formato válido.');
+      return;
+    }
+
+    if (!modoEdicion && formulario.contrasena.trim().length < 6) {
       setErrorFormulario('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
@@ -110,9 +121,20 @@ export default function Usuarios() {
     try {
       setGuardando(true);
       if (modoEdicion && idEditando) {
-        await actualizar(idEditando, { nombre_usuario: nombre, correo_usuario: correo, rol, id_sucursal: idSucursal });
+        await actualizar(idEditando, {
+          nombre_usuario: nombre,
+          correo_usuario: correo,
+          rol,
+          id_sucursal: idSucursal,
+        });
       } else {
-        await crear({ nombre_usuario: nombre, correo_usuario: correo, contrasena: formulario.contrasena, rol, id_sucursal: idSucursal });
+        await crear({
+          nombre_usuario: nombre,
+          correo_usuario: correo,
+          contrasena: formulario.contrasena.trim(),
+          rol,
+          id_sucursal: idSucursal,
+        });
       }
       setMostrarModal(false);
       setFormulario(estadoInicialFormulario);
@@ -166,7 +188,7 @@ export default function Usuarios() {
           icon={UserX}
           label="Inactivos"
           value={String(totalInactivos)}
-          description="Inactivos o suspendidos"
+          description="Usuarios inactivos"
           colorClass="bg-red-500"
           delay={0.3}
         />

@@ -11,7 +11,7 @@ const mapUsuarioSesion = (usuario) => ({
     id_sucursal: usuario.id_sucursal,
 });
 
-const login = async(correo_usuario, contrasena) => {
+const login = async (correo_usuario, contrasena) => {
     const usuario = await UsuarioDAO.obtenerPorCorreo(correo_usuario);
     if (!usuario) {
         const error = new Error('Credenciales invalidas');
@@ -20,7 +20,7 @@ const login = async(correo_usuario, contrasena) => {
     }
 
     if (usuario.estado_usuario !== 'activo') {
-        const error = new Error('La cuenta esta inactiva o suspendida');
+        const error = new Error('La cuenta está inactiva.');
         error.status = 403;
         throw error;
     }
@@ -47,7 +47,7 @@ const login = async(correo_usuario, contrasena) => {
     };
 };
 
-const obtenerSesionActual = async(id_usuario) => {
+const obtenerSesionActual = async (id_usuario) => {
     const usuario = await UsuarioDAO.obtenerPorId(id_usuario);
 
     if (!usuario) {
@@ -57,7 +57,7 @@ const obtenerSesionActual = async(id_usuario) => {
     }
 
     if (usuario.estado_usuario !== 'activo') {
-        const error = new Error('La cuenta esta inactiva o suspendida');
+        const error = new Error('La cuenta está inactiva.');
         error.status = 403;
         throw error;
     }
@@ -65,9 +65,9 @@ const obtenerSesionActual = async(id_usuario) => {
     return mapUsuarioSesion(usuario);
 };
 
-const logout = async(token) => {
+const logout = async (token) => {
     if (!token) {
-        return { mensaje: 'Sesion cerrada correctamente' };
+        return { mensaje: 'Sesión cerrada correctamente' };
     }
 
     try {
@@ -78,10 +78,10 @@ const logout = async(token) => {
             await UsuarioDAO.incrementarTokenVersion(payload.id_usuario);
         }
     } catch (error) {
-        // Si el token ya expiro o es invalido, igual respondemos como logout exitoso.
+        // Si el token ya expiró o es inválido, igual se responde como logout exitoso.
     }
 
-    return { mensaje: 'Sesion cerrada correctamente' };
+    return { mensaje: 'Sesión cerrada correctamente' };
 };
 
 module.exports = { login, obtenerSesionActual, logout };

@@ -10,13 +10,11 @@ const ETIQUETAS_ROL = {
 const ESTILOS_ESTADO = {
   activo: 'bg-green-100 text-green-700 border border-green-200',
   inactivo: 'bg-red-100 text-red-700 border border-red-200',
-  suspendido: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
 };
 
 const ETIQUETAS_ESTADO = {
   activo: 'Activo',
   inactivo: 'Inactivo',
-  suspendido: 'Suspendido',
 };
 
 export default function UsuarioTable({
