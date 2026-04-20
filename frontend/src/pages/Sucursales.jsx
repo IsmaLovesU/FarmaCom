@@ -1,14 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { 
-  Search, 
-  PlusCircle
-} from 'lucide-react';
-import SucursalFormModal from '../components/sucursales/SucursalFormModal.jsx';
-import SucursalTable from '../components/sucursales/SucursalTable.jsx';
+import SucursalActionBar from '../components/sucursales/SucursalActionBar.jsx';
+import SucursalAlert from '../components/sucursales/SucursalAlert.jsx';
 import SucursalDeleteModal from '../components/sucursales/SucursalDeleteModal.jsx';
-import { motion } from 'motion/react';
-import useSucursales from '../hooks/useSucursales';
+import SucursalFormModal from '../components/sucursales/SucursalFormModal.jsx';
+import SucursalStatsBanner from '../components/sucursales/SucursalStatsBanner.jsx';
+import SucursalTable from '../components/sucursales/SucursalTable.jsx';
 import useCiudades from '../hooks/useCiudades';
+import useSucursales from '../hooks/useSucursales';
 
 const estadoInicialFormulario = {
   nombre_sucursal: '',
@@ -43,6 +41,7 @@ export default function Sucursales() {
     if (!termino) {
       return sucursales;
     }
+
     return sucursales.filter((sucursal) => {
       const nombre = sucursal.nombre_sucursal?.toLowerCase() || '';
       const direccion = sucursal.direccion?.toLowerCase() || '';
@@ -75,6 +74,7 @@ export default function Sucursales() {
     if (guardando) {
       return;
     }
+
     setMostrarModal(false);
   };
 
@@ -102,7 +102,7 @@ export default function Sucursales() {
     }
 
     if (direccion.length > 255) {
-      setErrorFormulario('La dirección no puede superar los 255 caracteres.');
+      setErrorFormulario('La direcci\u00f3n no puede superar los 255 caracteres.');
       return;
     }
 
@@ -114,11 +114,13 @@ export default function Sucursales() {
 
     try {
       setGuardando(true);
+
       if (modoEdicion && idEditando) {
         await actualizar(idEditando, payload);
       } else {
         await crear(payload);
       }
+
       setMostrarModal(false);
       setFormulario(estadoInicialFormulario);
     } catch (err) {
@@ -137,6 +139,7 @@ export default function Sucursales() {
     if (eliminandoId) {
       return;
     }
+
     setSucursalAEliminar(null);
   };
 
@@ -159,58 +162,19 @@ export default function Sucursales() {
 
   return (
     <div className="space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-        className="bg-white/70 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-600"
-      >
-        Mostrando
-        <span className="mx-1.5 inline-block font-bold text-primary">{sucursalesFiltradas.length}</span>
-        de
-        <span className="mx-1.5 inline-block font-bold text-primary">{sucursales.length}</span>
-        <span className="inline-block">sucursales registradas.</span>
-      </motion.div>
+      <SucursalStatsBanner
+        totalFiltradas={sucursalesFiltradas.length}
+        totalSucursales={sucursales.length}
+      />
 
-      {/* Action Bar */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-surface-container-low p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center"
-      >
-        <div className="relative flex-1 group w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-          <input 
-            type="text" 
-            placeholder="Buscar por nombre o dirección..."
-            value={busqueda}
-            onChange={(evento) => setBusqueda(evento.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border-none rounded-xl text-sm font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
-          />
-        </div>
-        <div className="flex w-full md:w-auto">
-          <button
-            onClick={abrirModalCrear}
-            className="px-6 py-3 bg-linear-to-br from-primary to-primary-container text-white font-headline font-bold text-sm rounded-xl shadow-[0_4px_12px_rgba(0,81,71,0.25)] hover:shadow-[0_6px_20px_rgba(0,81,71,0.3)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 w-full md:w-auto justify-center"
-          >
-            <PlusCircle className="w-4 h-4" />
-            Nueva sucursal
-          </button>
-        </div>
-      </motion.div>
+      <SucursalActionBar
+        busqueda={busqueda}
+        onBusquedaChange={(evento) => setBusqueda(evento.target.value)}
+        onCrear={abrirModalCrear}
+      />
 
-      {(error || errorCiudades) && (
-        <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
-          {error || errorCiudades}
-        </div>
-      )}
-
-      {errorAccion && (
-        <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
-          {errorAccion}
-        </div>
-      )}
+      <SucursalAlert mensaje={error || errorCiudades} />
+      <SucursalAlert mensaje={errorAccion} />
 
       <SucursalTable
         cargando={cargando}
