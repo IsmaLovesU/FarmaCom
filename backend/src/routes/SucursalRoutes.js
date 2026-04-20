@@ -1,63 +1,74 @@
 const { Router } = require('express');
 const { body, param } = require('express-validator');
 const SucursalController = require('../controllers/SucursalController');
+const verificarToken = require('../middlewares/verificarToken');
+const verificarRol = require('../middlewares/verificarRol');
 
 const router = Router();
 
-const validarParamId = [
-    param('id')
-    .isInt({ min: 1 }).withMessage('El id debe ser un entero positivo')
-    .toInt(),
-];
+const validarParamId = [param('id').isInt({ min: 1 }).withMessage('El id debe ser un entero positivo').toInt()];
 
 const validarCreacion = [
     body('id_ciudad')
-    .isInt({ min: 1 }).withMessage('id_ciudad debe ser un entero positivo')
-    .toInt(),
+        .isInt({ min: 1 }).withMessage('id_ciudad debe ser un entero positivo')
+        .toInt(),
 
     body('nombre_sucursal')
-    .trim()
-    .notEmpty().withMessage('nombre_sucursal es requerido')
-    .isLength({ max: 100 }).withMessage('nombre_sucursal no puede superar los 100 caracteres'),
+        .trim()
+        .notEmpty().withMessage('nombre_sucursal es requerido')
+        .isLength({ max: 100 }).withMessage('nombre_sucursal no puede superar los 100 caracteres'),
 
     body('direccion')
-    .trim()
-    .notEmpty().withMessage('direccion es requerida'),
+        .trim()
+        .notEmpty().withMessage('direccion es requerida')
+        .isLength({ max: 255 }).withMessage('direccion no puede superar los 255 caracteres'),
 ];
 
 const validarActualizacion = [
     body('id_ciudad')
-    .optional()
-    .isInt({ min: 1 }).withMessage('id_ciudad debe ser un entero positivo')
-    .toInt(),
+        .optional()
+        .isInt({ min: 1 }).withMessage('id_ciudad debe ser un entero positivo')
+        .toInt(),
 
     body('nombre_sucursal')
-    .optional()
-    .trim()
-    .notEmpty().withMessage('nombre_sucursal no puede estar vacío')
-    .isLength({ max: 100 }).withMessage('nombre_sucursal no puede superar los 100 caracteres'),
+        .optional()
+        .trim()
+        .notEmpty().withMessage('nombre_sucursal no puede estar vacío')
+        .isLength({ max: 100 }).withMessage('nombre_sucursal no puede superar los 100 caracteres'),
 
     body('direccion')
-    .optional()
-    .trim()
-    .notEmpty().withMessage('direccion no puede estar vacía'),
+        .optional()
+        .trim()
+        .notEmpty().withMessage('direccion no puede estar vacía')
+        .isLength({ max: 255 }).withMessage('direccion no puede superar los 255 caracteres'),
 ];
 
-// ─── Rutas ─────
+// Rutas
 
 // GET    /api/sucursales
-router.get('/', SucursalController.obtenerTodas);
+router.get('/', verificarToken, SucursalController.obtenerTodas);
 
 // GET    /api/sucursales/:id
-router.get('/:id', validarParamId, SucursalController.obtenerPorId);
+router.get('/:id', verificarToken, validarParamId, SucursalController.obtenerPorId);
 
 // POST   /api/sucursales
-router.post('/', validarCreacion, SucursalController.crear);
+router.post('/', verificarToken, verificarRol('dueno'), validarCreacion, SucursalController.crear);
 
 // PUT    /api/sucursales/:id
-router.put('/:id', validarParamId, validarActualizacion, SucursalController.actualizar);
+router.put('/:id',
+    verificarToken,
+    verificarRol('dueno', 'administrador'),
+    validarParamId,
+    validarActualizacion,
+    SucursalController.actualizar,
+);
 
 // DELETE /api/sucursales/:id
-router.delete('/:id', validarParamId, SucursalController.eliminar);
+router.delete('/:id',
+    verificarToken,
+    verificarRol('dueno'),
+    validarParamId,
+    SucursalController.eliminar,
+);
 
 module.exports = router;
