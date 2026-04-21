@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import UsuarioActionBar from '../components/usuarios/UsuarioActionBar.jsx';
-import UsuarioAlert from '../components/usuarios/UsuarioAlert.jsx';
-import UsuarioFormModal from '../components/usuarios/UsuarioFormModal.jsx';
-import UsuarioStatsGrid from '../components/usuarios/UsuarioStatsGrid.jsx';
+import { Users, UserCheck, UserX, Search, PlusCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+import SummaryCard from '../components/SummaryCard.jsx';
 import UsuarioTable from '../components/usuarios/UsuarioTable.jsx';
-import useSucursales from '../hooks/useSucursales';
+import UsuarioFormModal from '../components/usuarios/UsuarioFormModal.jsx';
+import UsuarioEstadoModal from '../components/usuarios/UsuarioEstadoModal.jsx';
 import useUsuarios from '../hooks/useUsuarios';
+import useSucursales from '../hooks/useSucursales';
 
 const estadoInicialFormulario = {
   nombre_usuario: '',
@@ -29,33 +30,33 @@ export default function Usuarios() {
   const [idEditando, setIdEditando] = useState(null);
   const [formulario, setFormulario] = useState(estadoInicialFormulario);
 
+  // Estado para el modal de cambio de estado
+  const [usuarioAcambiarEstado, setUsuarioACambiarEstado] = useState(null);
+
   const mapaSucursales = useMemo(() => {
-    return sucursales.reduce((acc, sucursal) => {
-      acc[sucursal.id_sucursal] = sucursal.nombre_sucursal;
+    return sucursales.reduce((acc, s) => {
+      acc[s.id_sucursal] = s.nombre_sucursal;
       return acc;
     }, {});
   }, [sucursales]);
 
   const usuariosFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
-    if (!termino) {
-      return usuarios;
-    }
-
-    return usuarios.filter((usuario) => {
-      const nombre = usuario.nombre_usuario?.toLowerCase() || '';
-      const correo = usuario.correo_usuario?.toLowerCase() || '';
+    if (!termino) return usuarios;
+    return usuarios.filter((u) => {
+      const nombre = u.nombre_usuario?.toLowerCase() || '';
+      const correo = u.correo_usuario?.toLowerCase() || '';
       return nombre.includes(termino) || correo.includes(termino);
     });
   }, [busqueda, usuarios]);
 
   const totalActivos = useMemo(
-    () => usuarios.filter((usuario) => usuario.estado_usuario === 'activo').length,
+    () => usuarios.filter((u) => u.estado_usuario === 'activo').length,
     [usuarios],
   );
 
   const totalInactivos = useMemo(
-    () => usuarios.filter((usuario) => usuario.estado_usuario === 'inactivo').length,
+    () => usuarios.filter((u) => u.estado_usuario === 'inactivo').length,
     [usuarios],
   );
 
@@ -82,10 +83,7 @@ export default function Usuarios() {
   };
 
   const cerrarModal = () => {
-    if (guardando) {
-      return;
-    }
-
+    if (guardando) return;
     setMostrarModal(false);
   };
 
@@ -126,7 +124,6 @@ export default function Usuarios() {
 
     try {
       setGuardando(true);
-
       if (modoEdicion && idEditando) {
         await actualizar(idEditando, {
           nombre_usuario: nombre,
@@ -143,7 +140,6 @@ export default function Usuarios() {
           id_sucursal: idSucursal,
         });
       }
-
       setMostrarModal(false);
       setFormulario(estadoInicialFormulario);
     } catch (err) {
@@ -153,24 +149,29 @@ export default function Usuarios() {
     }
   };
 
-  const manejarCambiarEstado = async (usuario) => {
-    const esActivo = usuario.estado_usuario === 'activo';
-    const nuevoEstado = esActivo ? 'inactivo' : 'activo';
-    const accion = esActivo ? 'desactivar' : 'activar';
-    const confirmar = window.confirm(
-      `\u00bfSeguro que deseas ${accion} a "${usuario.nombre_usuario}"?`,
-    );
+  // Abre el modal de confirmación de estado
+  const solicitarCambioEstado = (usuario) => {
+    setUsuarioACambiarEstado(usuario);
+  };
 
-    if (!confirmar) {
-      return;
-    }
+  const cerrarModalEstado = () => {
+    if (cambiandoEstadoId) return;
+    setUsuarioACambiarEstado(null);
+  };
+
+  const confirmarCambioEstado = async () => {
+    if (!usuarioAambiarEstado) return;
+
+    const esActivo = usuarioAambiarEstado.estado_usuario === 'activo';
+    const nuevoEstado = esActivo ? 'inactivo' : 'activo';
 
     try {
       setErrorAccion(null);
-      setCambiandoEstadoId(usuario.id_usuario);
-      await cambiarEstado(usuario.id_usuario, nuevoEstado);
+      setCambiandoEstadoId(usuarioAambiarEstado.id_usuario);
+      await cambiarEstado(usuarioAambiarEstado.id_usuario, nuevoEstado);
+      setUsuarioACambiarEstado(null);
     } catch (err) {
-      setErrorAccion(err.message || `No se pudo ${accion} el usuario.`);
+      setErrorAccion(err.message || 'No se pudo cambiar el estado del usuario.');
     } finally {
       setCambiandoEstadoId(null);
     }
@@ -178,27 +179,78 @@ export default function Usuarios() {
 
   return (
     <div className="space-y-8">
-      <UsuarioStatsGrid
-        totalUsuarios={usuarios.length}
-        totalActivos={totalActivos}
-        totalInactivos={totalInactivos}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SummaryCard
+          icon={Users}
+          label="Total"
+          value={String(usuarios.length)}
+          description="Usuarios registrados"
+          colorClass="bg-primary"
+          delay={0.1}
+        />
+        <SummaryCard
+          icon={UserCheck}
+          label="Activos"
+          value={String(totalActivos)}
+          description="Usuarios activos"
+          colorClass="bg-green-500"
+          delay={0.2}
+        />
+        <SummaryCard
+          icon={UserX}
+          label="Inactivos"
+          value={String(totalInactivos)}
+          description="Usuarios inactivos"
+          colorClass="bg-red-500"
+          delay={0.3}
+        />
+      </div>
 
-      <UsuarioActionBar
-        busqueda={busqueda}
-        onBusquedaChange={(evento) => setBusqueda(evento.target.value)}
-        onCrear={abrirModalCrear}
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-surface-container-low p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center"
+      >
+        <div className="relative flex-1 group w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre o correo..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border-none rounded-xl text-sm font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+          />
+        </div>
+        <div className="flex w-full md:w-auto">
+          <button
+            onClick={abrirModalCrear}
+            className="px-6 py-3 bg-linear-to-br from-primary to-primary-container text-white font-headline font-bold text-sm rounded-xl shadow-[0_4px_12px_rgba(0,81,71,0.25)] hover:shadow-[0_6px_20px_rgba(0,81,71,0.3)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 w-full md:w-auto justify-center"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Nuevo usuario
+          </button>
+        </div>
+      </motion.div>
 
-      <UsuarioAlert mensaje={error} />
-      <UsuarioAlert mensaje={errorAccion} />
+      {error && (
+        <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
+          {error}
+        </div>
+      )}
+
+      {errorAccion && (
+        <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
+          {errorAccion}
+        </div>
+      )}
 
       <UsuarioTable
         cargando={cargando}
         usuarios={usuariosFiltrados}
         mapaSucursales={mapaSucursales}
         onEditar={abrirModalEditar}
-        onCambiarEstado={manejarCambiarEstado}
+        onCambiarEstado={solicitarCambioEstado}
         cambiandoEstadoId={cambiandoEstadoId}
       />
 
@@ -213,6 +265,14 @@ export default function Usuarios() {
         onClose={cerrarModal}
         onSubmit={manejarGuardar}
         onChange={manejarCambio}
+      />
+
+      <UsuarioEstadoModal
+        isOpen={Boolean(usuarioAambiarEstado)}
+        usuario={usuarioAambiarEstado}
+        cambiando={Boolean(cambiandoEstadoId)}
+        onClose={cerrarModalEstado}
+        onConfirm={confirmarCambioEstado}
       />
     </div>
   );
