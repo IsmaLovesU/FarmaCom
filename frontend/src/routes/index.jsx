@@ -21,8 +21,8 @@ export default function AppRoutes() {
             path="/dashboard"
             element={<div className="p-8 font-headline text-2xl font-bold">Dashboard (Proximamente)</div>}
           />
-          <Route path="/sucursales" element={<Sucursales />} />
           <Route element={<RoleRoute allowedRoles={['dueno', 'administrador']} />}>
+            <Route path="/sucursales" element={<Sucursales />} />
             <Route path="/usuarios" element={<Usuarios />} />
           </Route>
           <Route

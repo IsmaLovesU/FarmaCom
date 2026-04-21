@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
 import BrandLogo from '../components/BrandLogo.jsx';
 import { useAuth, AUTH_ACTIONS } from '../context/AuthContext';
+import { getDefaultRouteForRole } from '../utils/navigation';
 
 export default function Login() {
   const navigate  = useNavigate();
@@ -14,8 +15,6 @@ export default function Login() {
   const [contrasena, setContrasena] = useState('');
   const [error,     setError]     = useState('');
   const [cargando,  setCargando]  = useState(false);
-
-  const destination = location.state?.from?.pathname || '/sucursales';
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -33,6 +32,7 @@ export default function Login() {
         },
       });
 
+      const destination = location.state?.from?.pathname || getDefaultRouteForRole(data.usuario?.rol);
       navigate(destination, { replace: true });
     } catch (err) {
       setError(err.response?.data?.mensaje || 'Credenciales incorrectas');

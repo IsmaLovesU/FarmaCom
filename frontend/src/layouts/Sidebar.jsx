@@ -17,7 +17,7 @@ import { useAuth, AUTH_ACTIONS } from '../context/AuthContext';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Package, label: 'Inventario', path: '/inventario' },
-  { icon: Store, label: 'Sucursales', path: '/sucursales' },
+  { icon: Store, label: 'Sucursales', path: '/sucursales', roles: ['dueno', 'administrador'] },
   { icon: UserCog, label: 'Usuarios', path: '/usuarios', roles: ['dueno', 'administrador'] },
   { icon: Users, label: 'Clientes', path: '/patients' },
   { icon: BarChart3, label: 'Reportes', path: '/reports' },
