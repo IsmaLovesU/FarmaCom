@@ -30,8 +30,8 @@ export default function Usuarios() {
   const [idEditando, setIdEditando] = useState(null);
   const [formulario, setFormulario] = useState(estadoInicialFormulario);
 
-  // Estado para el modal de cambio de estado
-  const [usuarioAcambiarEstado, setUsuarioACambiarEstado] = useState(null);
+  // FIX: nombre de variable unificado (antes: usuarioAcambiarEstado con 'c' minúscula)
+  const [usuarioACambiarEstado, setUsuarioACambiarEstado] = useState(null);
 
   const mapaSucursales = useMemo(() => {
     return sucursales.reduce((acc, s) => {
@@ -149,7 +149,6 @@ export default function Usuarios() {
     }
   };
 
-  // Abre el modal de confirmación de estado
   const solicitarCambioEstado = (usuario) => {
     setUsuarioACambiarEstado(usuario);
   };
@@ -160,15 +159,16 @@ export default function Usuarios() {
   };
 
   const confirmarCambioEstado = async () => {
-    if (!usuarioAambiarEstado) return;
+    // FIX: variable corregida (antes era usuarioAambiarEstado con doble 'a')
+    if (!usuarioACambiarEstado) return;
 
-    const esActivo = usuarioAambiarEstado.estado_usuario === 'activo';
+    const esActivo = usuarioACambiarEstado.estado_usuario === 'activo';
     const nuevoEstado = esActivo ? 'inactivo' : 'activo';
 
     try {
       setErrorAccion(null);
-      setCambiandoEstadoId(usuarioAambiarEstado.id_usuario);
-      await cambiarEstado(usuarioAambiarEstado.id_usuario, nuevoEstado);
+      setCambiandoEstadoId(usuarioACambiarEstado.id_usuario);
+      await cambiarEstado(usuarioACambiarEstado.id_usuario, nuevoEstado);
       setUsuarioACambiarEstado(null);
     } catch (err) {
       setErrorAccion(err.message || 'No se pudo cambiar el estado del usuario.');
@@ -268,8 +268,8 @@ export default function Usuarios() {
       />
 
       <UsuarioEstadoModal
-        isOpen={Boolean(usuarioAambiarEstado)}
-        usuario={usuarioAambiarEstado}
+        isOpen={Boolean(usuarioACambiarEstado)}
+        usuario={usuarioACambiarEstado}
         cambiando={Boolean(cambiandoEstadoId)}
         onClose={cerrarModalEstado}
         onConfirm={confirmarCambioEstado}
