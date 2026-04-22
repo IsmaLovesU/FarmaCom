@@ -70,6 +70,40 @@ CREATE TABLE IF NOT EXISTS usuario (
 );
 
 -- =========================
+-- TABLA: producto
+-- =========================
+CREATE TABLE IF NOT EXISTS producto (
+    id_producto SERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL UNIQUE,
+    nombre_comercial VARCHAR(150) NOT NULL,
+    nombre_generico VARCHAR(150),
+    presentacion VARCHAR(100),
+    categoria VARCHAR(100),
+    precio_compra NUMERIC(10,2) NOT NULL DEFAULT 0,
+    precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0,
+    fecha_vencimiento DATE,
+    activo BOOLEAN DEFAULT TRUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
+-- TABLA: inventario_sucursal
+-- =========================
+CREATE TABLE IF NOT EXISTS inventario_sucursal (
+    id_inventario SERIAL PRIMARY KEY,
+    id_sucursal INTEGER NOT NULL,
+    id_producto INTEGER NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
+    stock_minimo INTEGER NOT NULL DEFAULT 5,
+
+    CONSTRAINT fk_inv_sucursal
+        FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal) ON DELETE CASCADE,
+    CONSTRAINT fk_inv_producto
+        FOREIGN KEY (id_producto) REFERENCES producto(id_producto) ON DELETE CASCADE,
+    CONSTRAINT uq_inv_sucursal_producto UNIQUE (id_sucursal, id_producto)
+);
+
+-- =========================
 -- EXTENSIONES
 -- =========================
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
