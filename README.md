@@ -144,4 +144,4 @@ docker compose logs -f db
 | José Manuel Sanchez Hernandez | 24092 |
 | José Alberto Abril Suchite | 24585 |
 | Pablo André Orellana Mijangos | 20555 |
-| Andrés Esteban Ismaelj González | 24005 |
+| Andrés Esteban Ismalej González | 24005 |
