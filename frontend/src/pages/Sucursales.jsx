@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import SucursalActionBar from '../components/sucursales/SucursalActionBar.jsx';
 import SucursalAlert from '../components/sucursales/SucursalAlert.jsx';
 import SucursalDeleteModal from '../components/sucursales/SucursalDeleteModal.jsx';
+import ContactosSucursalModal from '../components/sucursales/ContactosSucursalModal.jsx';
 import SucursalFormModal from '../components/sucursales/SucursalFormModal.jsx';
 import SucursalStatsBanner from '../components/sucursales/SucursalStatsBanner.jsx';
 import SucursalTable from '../components/sucursales/SucursalTable.jsx';
@@ -28,6 +29,7 @@ export default function Sucursales() {
   const [idEditando, setIdEditando] = useState(null);
   const [formulario, setFormulario] = useState(estadoInicialFormulario);
   const [sucursalAEliminar, setSucursalAEliminar] = useState(null);
+  const [sucursalContactos, setSucursalContactos] = useState(null);
 
   const mapaCiudades = useMemo(() => {
     return ciudades.reduce((acc, ciudad) => {
@@ -182,6 +184,7 @@ export default function Sucursales() {
         mapaCiudades={mapaCiudades}
         onEditar={abrirModalEditar}
         onEliminar={solicitarEliminar}
+        onContactos={setSucursalContactos}
         eliminandoId={eliminandoId}
       />
 
@@ -196,6 +199,12 @@ export default function Sucursales() {
         onClose={cerrarModal}
         onSubmit={manejarGuardar}
         onChange={manejarCambio}
+      />
+
+      <ContactosSucursalModal
+        isOpen={Boolean(sucursalContactos)}
+        sucursal={sucursalContactos}
+        onClose={() => setSucursalContactos(null)}
       />
 
       <SucursalDeleteModal

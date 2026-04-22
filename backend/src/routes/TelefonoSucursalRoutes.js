@@ -26,8 +26,12 @@ router.get('/', verificarToken, TelefonoSucursalController.obtenerPorSucursal);
 router.post('/', verificarToken, verificarRol('dueno', 'administrador'), validarCreacion, TelefonoSucursalController.crear);
 
 // GET    /api/telefonos/:id
+router.get('/:id', verificarToken, TelefonoSucursalController.obtenerPorId);
+
 // PUT    /api/telefonos/:id
+router.put('/:id', verificarToken, verificarRol('dueno', 'administrador'), validarActualizacion, TelefonoSucursalController.actualizar);
+
 // DELETE /api/telefonos/:id
-// Estas rutas se montan en un router separado en index.js (ver abajo)
+router.delete('/:id', verificarToken, verificarRol('dueno', 'administrador'), TelefonoSucursalController.eliminar);
 
 module.exports = router;
