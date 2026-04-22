@@ -24,4 +24,13 @@ router.get('/', verificarToken, CorreoSucursalController.obtenerPorSucursal);
 // POST   /api/sucursales/:id_sucursal/correos
 router.post('/', verificarToken, verificarRol('dueno', 'administrador'), validarCreacion, CorreoSucursalController.crear);
 
+// GET    /api/correos/:id
+router.get('/:id', verificarToken, CorreoSucursalController.obtenerPorId);
+
+// PUT    /api/correos/:id
+router.put('/:id', verificarToken, verificarRol('dueno', 'administrador'), validarActualizacion, CorreoSucursalController.actualizar);
+
+// DELETE /api/correos/:id
+router.delete('/:id', verificarToken, verificarRol('dueno', 'administrador'), CorreoSucursalController.eliminar);
+
 module.exports = router;

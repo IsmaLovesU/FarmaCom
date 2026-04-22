@@ -8,6 +8,7 @@ export default function SucursalTable({
   mapaCiudades,
   onEditar,
   onEliminar,
+  onContactos,
   eliminandoId,
 }) {
   return (
@@ -29,6 +30,7 @@ export default function SucursalTable({
               nombreCiudad={mapaCiudades[sucursal.id_ciudad] || `Ciudad #${sucursal.id_ciudad}`}
               onEditar={onEditar}
               onEliminar={onEliminar}
+              onContactos={onContactos}
               eliminando={eliminandoId === sucursal.id_sucursal}
             />
           ))}
