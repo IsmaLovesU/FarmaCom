@@ -1,8 +1,6 @@
 # Proyecto 1 - Ingeniería de Software 1
 
-### Universidad del Valle de Guatemala
-### Facultad de Ingeniería
-### Ingeniería en Ciencias de la Computación y Tecnologías de la información
+### Grupo 1
 
 ---
 
@@ -44,6 +42,11 @@ Contiene los entregables del Corte 3, que incluyen:
 Contiene los entregables del Sprint 1, que incluyen:
 - Proyecto del Sprint 1
 - Formulario LOGT del Sprint 1
+
+### Sprint 2
+Contiene los entregables del Sprint 2, que incluyen:
+- Proyecto del Sprint 2
+- Formulario LOGT del Sprint 2
 
 ### Scrum
 Carpeta destinada para materiales relacionados con la metodología Scrum, utilizada en etapas posteriores del proyecto.
@@ -104,14 +107,7 @@ El backend espera a que la base de datos esté lista antes de arrancar (healthch
 - **Frontend:** [http://localhost:5173](http://localhost:5173)
 - **API:** [http://localhost:3000/api](http://localhost:3000/api)
 
-### 5. Usuario de acceso para desarrollo
-
-| Campo    | Valor              |
-|----------|--------------------|
-| Correo   | `dueno@farma.com`  |
-| Contraseña | `123456`         |
-
-### 6. Detener los servicios
+### 5. Detener los servicios
 
 ```bash
 docker compose down
@@ -133,6 +129,11 @@ docker compose logs -f backend
 docker compose logs -f frontend
 docker compose logs -f db
 ```
+# Cómo acceder al sistema desplegado en el servidor
+
+Ingresar a la siguiente dirección: http://209.126.125.149:5173/login
+
+El usuario de acceso para desarrollo se compartirá por otro medio para mayor seguridad.
 
 ---
 
