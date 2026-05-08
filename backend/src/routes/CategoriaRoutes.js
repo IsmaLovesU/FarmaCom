@@ -11,10 +11,10 @@ const validarParamId = [
 ];
 
 const validarCreacion = [
-    body('nombre_categoria')
+    body('nombre')
     .trim()
-    .notEmpty().withMessage('nombre_categoria es requerido')
-    .isLength({ max: 100 }).withMessage('nombre_categoria no puede superar los 100 caracteres'),
+    .notEmpty().withMessage('nombre es requerido')
+    .isLength({ max: 100 }).withMessage('nombre no puede superar los 100 caracteres'),
 
     body('descripcion')
     .optional()
@@ -23,11 +23,11 @@ const validarCreacion = [
 ];
 
 const validarActualizacion = [
-    body('nombre_categoria')
+    body('nombre')
     .optional()
     .trim()
-    .notEmpty().withMessage('nombre_categoria no puede estar vacío')
-    .isLength({ max: 100 }).withMessage('nombre_categoria no puede superar los 100 caracteres'),
+    .notEmpty().withMessage('nombre no puede estar vacío')
+    .isLength({ max: 100 }).withMessage('nombre no puede superar los 100 caracteres'),
 
     body('descripcion')
     .optional()

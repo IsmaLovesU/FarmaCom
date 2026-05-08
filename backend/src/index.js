@@ -25,6 +25,10 @@ app.use(cookieParser());
 
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/UsuarioRoutes');
+const categoriaRoutes = require('./routes/CategoriaRoutes');
+const productoRoutes = require('./routes/ProductoRoutes');
+const presentacionRoutes = require('./routes/PresentacionRoutes');
+const promocionRoutes = require('./routes/PromocionRoutes');
 const sucursalRoutes = require('./routes/SucursalRoutes');
 const telefonoSucursalRoutes = require('./routes/TelefonoSucursalRoutes');
 const correoSucursalRoutes = require('./routes/CorreoSucursalRoutes');
@@ -35,6 +39,10 @@ app.get('/api/ping', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/categorias', categoriaRoutes);
+app.use('/api/productos', productoRoutes);
+app.use('/api/presentaciones', presentacionRoutes);
+app.use('/api/promociones', promocionRoutes);
 app.use('/api/sucursales', sucursalRoutes);
 
 // Rutas anidadas: GET y POST bajo /api/sucursales/:id_sucursal/telefonos|correos
