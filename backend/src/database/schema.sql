@@ -87,6 +87,16 @@ CREATE TABLE IF NOT EXISTS producto (
 );
 
 -- =========================
+-- TABLA: categoria
+-- =========================
+CREATE TABLE IF NOT EXISTS categoria (
+    id_categoria     SERIAL PRIMARY KEY,
+    nombre_categoria VARCHAR(100) NOT NULL UNIQUE,
+    descripcion      TEXT,
+    fecha_creacion   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+ 
+-- =========================
 -- TABLA: inventario_sucursal
 -- =========================
 CREATE TABLE IF NOT EXISTS inventario_sucursal (
@@ -153,3 +163,14 @@ WHERE s.nombre_sucursal = 'Sucursal Central'
       FROM usuario u
       WHERE u.correo_usuario = 'dueno@farma.com'
   );
+
+INSERT INTO categoria (nombre_categoria, descripcion)
+VALUES
+  ('Analgésico',          'Medicamentos para el alivio del dolor'),
+  ('Antibiótico',         'Medicamentos para combatir infecciones bacterianas'),
+  ('Antiinflamatorio',    'Medicamentos que reducen la inflamación'),
+  ('Antihistamínico',     'Medicamentos para tratar alergias'),
+  ('Gastroenterológico',  'Medicamentos para el sistema digestivo'),
+  ('Vitaminas',           'Suplementos vitamínicos y minerales')
+ON CONFLICT (nombre_categoria) DO NOTHING;
+ 
