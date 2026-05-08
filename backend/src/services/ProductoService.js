@@ -1,68 +1,94 @@
-const productosMock = [
-  {
-    id_producto: 1,
-    codigo: 'MED001',
-    nombre_comercial: 'Paracetamol 500mg',
-    nombre_generico: 'Acetaminofén',
-    presentacion: 'Tabletas',
-    categoria: 'Analgésico',
-    precio_compra: 15.00,
-    precio_venta: 25.00,
-    stock: 150,
-    proveedor: 'Farmacéutica XYZ',
-  },
-  {
-    id_producto: 2,
-    codigo: 'MED002',
-    nombre_comercial: 'Ibuprofeno 400mg',
-    nombre_generico: 'Ibuprofeno',
-    presentacion: 'Tabletas',
-    categoria: 'Antiinflamatorio',
-    precio_compra: 20.00,
-    precio_venta: 35.00,
-    stock: 200,
-    proveedor: 'Farmacéutica ABC',
-  },
-  {
-    id_producto: 3,
-    codigo: 'MED003',
-    nombre_comercial: 'Amoxicilina 500mg',
-    nombre_generico: 'Amoxicilina',
-    presentacion: 'Cápsulas',
-    categoria: 'Antibiótico',
-    precio_compra: 30.00,
-    precio_venta: 50.00,
-    stock: 80,
-    proveedor: 'Farmacéutica XYZ',
-  },
-  {
-    id_producto: 4,
-    codigo: 'MED004',
-    nombre_comercial: 'Omeprazol 20mg',
-    nombre_generico: 'Omeprazol',
-    presentacion: 'Cápsulas',
-    categoria: 'Gastroenterológico',
-    precio_compra: 25.00,
-    precio_venta: 40.00,
-    stock: 120,
-    proveedor: 'Farmacéutica DEF',
-  },
-  {
-    id_producto: 5,
-    codigo: 'MED005',
-    nombre_comercial: 'Loratadina 10mg',
-    nombre_generico: 'Loratadina',
-    presentacion: 'Tabletas',
-    categoria: 'Antihistamínico',
-    precio_compra: 12.00,
-    precio_venta: 22.00,
-    stock: 95,
-    proveedor: 'Farmacéutica ABC',
-  },
-];
+const ProductoDAO = require('../daos/ProductoDAO');
 
-const obtenerProductos = () => {
-  return productosMock;
+// Helpers
+
+const lanzarError = (mensaje, status) => {
+  const err = new Error(mensaje);
+  err.status = status;
+  throw err;
 };
 
-module.exports = { obtenerProductos };
+// Operaciones
+
+const crearProducto = async (datos) => {
+  const { codigo, precio_compra, meses_alerta_vencimiento } = datos;
+
+  if (!codigo || codigo.trim() === '')   lanzarError('El código es requerido', 400);
+  if (precio_compra < 0)                 lanzarError('El precio de compra no puede ser negativo', 400);
+  if (meses_alerta_vencimiento <= 0)     lanzarError('Los meses de alerta deben ser mayores a 0', 400);
+
+  const existente = await ProductoDAO.obtenerPorCodigo(codigo);
+  if (existente) lanzarError(`Ya existe un producto con el código "${codigo}"`, 409);
+
+  return await ProductoDAO.crear(datos);
+};
+
+const obtenerTodos = async () => {
+  return await ProductoDAO.obtenerTodos();
+};
+
+const obtenerPorId = async (id_producto) => {
+  const producto = await ProductoDAO.obtenerPorId(id_producto);
+  if (!producto) lanzarError('Producto no encontrado', 404);
+  return producto;
+};
+
+const actualizarProducto = async (id_producto, campos) => {
+  const existente = await ProductoDAO.obtenerPorId(id_producto);
+  if (!existente) lanzarError('Producto no encontrado', 404);
+
+  if (campos.codigo && campos.codigo.toLowerCase() !== existente.codigo.toLowerCase()) {
+    const duplicado = await ProductoDAO.obtenerPorCodigo(campos.codigo);
+    if (duplicado) lanzarError(`Ya existe un producto con el código "${campos.codigo}"`, 409);
+  }
+
+  if (campos.precio_compra !== undefined && campos.precio_compra < 0) {
+    lanzarError('El precio de compra no puede ser negativo', 400);
+  }
+
+  if (campos.meses_alerta_vencimiento !== undefined && campos.meses_alerta_vencimiento <= 0) {
+    lanzarError('Los meses de alerta deben ser mayores a 0', 400);
+  }
+
+  const actualizado = await ProductoDAO.actualizar(id_producto, campos);
+  if (!actualizado) lanzarError('No se pudo actualizar el producto', 500);
+  return actualizado;
+};
+
+// Solo el dependiente puede usar este método 
+const cambiarAplicaMayoreo = async (id_producto, aplica_mayoreo) => {
+  const existente = await ProductoDAO.obtenerPorId(id_producto);
+  if (!existente) lanzarError('Producto no encontrado', 404);
+
+  const actualizado = await ProductoDAO.cambiarAplicaMayoreo(id_producto, aplica_mayoreo);
+  if (!actualizado) lanzarError('No se pudo actualizar el campo aplica_mayoreo', 500);
+  return { mensaje: `Mayoreo ${aplica_mayoreo ? 'activado' : 'desactivado'} correctamente`, producto: actualizado };
+};
+
+const desactivarProducto = async (id_producto) => {
+  const existente = await ProductoDAO.obtenerPorId(id_producto);
+  if (!existente)        lanzarError('Producto no encontrado', 404);
+  if (!existente.activo) lanzarError('El producto ya está desactivado', 409);
+
+  const resultado = await ProductoDAO.cambiarActivo(id_producto, false);
+  return { mensaje: 'Producto desactivado correctamente', producto: resultado };
+};
+
+const reactivarProducto = async (id_producto) => {
+  const existente = await ProductoDAO.obtenerPorId(id_producto);
+  if (!existente)       lanzarError('Producto no encontrado', 404);
+  if (existente.activo) lanzarError('El producto ya está activo', 409);
+
+  const resultado = await ProductoDAO.cambiarActivo(id_producto, true);
+  return { mensaje: 'Producto reactivado correctamente', producto: resultado };
+};
+
+module.exports = {
+  crearProducto,
+  obtenerTodos,
+  obtenerPorId,
+  actualizarProducto,
+  cambiarAplicaMayoreo,
+  desactivarProducto,
+  reactivarProducto,
+};

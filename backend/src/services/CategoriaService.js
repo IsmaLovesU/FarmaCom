@@ -1,14 +1,14 @@
 const CategoriaDAO = require('../daos/CategoriaDAO');
 
-const crearCategoria = async({ nombre_categoria, descripcion }) => {
-    const existente = await CategoriaDAO.obtenerPorNombre(nombre_categoria);
+const crearCategoria = async({ nombre }) => {
+    const existente = await CategoriaDAO.obtenerPorNombre(nombre);
     if (existente) {
         const error = new Error('Ya existe una categoría con ese nombre');
         error.status = 409;
         throw error;
     }
 
-    return await CategoriaDAO.crear({ nombre_categoria, descripcion });
+    return await CategoriaDAO.crear({ nombre });
 };
 
 const obtenerTodas = async() => {
@@ -34,10 +34,10 @@ const actualizarCategoria = async(id_categoria, campos) => {
     }
 
     if (
-        campos.nombre_categoria &&
-        campos.nombre_categoria.toLowerCase() !== existente.nombre_categoria.toLowerCase()
+        campos.nombre &&
+        campos.nombre.toLowerCase() !== existente.nombre.toLowerCase()
     ) {
-        const duplicado = await CategoriaDAO.obtenerPorNombre(campos.nombre_categoria);
+        const duplicado = await CategoriaDAO.obtenerPorNombre(campos.nombre);
         if (duplicado) {
             const error = new Error('Ya existe una categoría con ese nombre');
             error.status = 409;

@@ -73,17 +73,82 @@ CREATE TABLE IF NOT EXISTS usuario (
 -- TABLA: producto
 -- =========================
 CREATE TABLE IF NOT EXISTS producto (
-    id_producto SERIAL PRIMARY KEY,
-    codigo VARCHAR(50) NOT NULL UNIQUE,
-    nombre_comercial VARCHAR(150) NOT NULL,
-    nombre_generico VARCHAR(150),
-    presentacion VARCHAR(100),
-    categoria VARCHAR(100),
-    precio_compra NUMERIC(10,2) NOT NULL DEFAULT 0,
-    precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0,
-    fecha_vencimiento DATE,
-    activo BOOLEAN DEFAULT TRUE,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id_producto              SERIAL PRIMARY KEY,
+    codigo                   VARCHAR(50)   NOT NULL UNIQUE,
+    nombre_comercial         VARCHAR(150)  NOT NULL,
+    nombre_generico          VARCHAR(150),
+    descripcion              TEXT,
+    id_categoria             INTEGER       NOT NULL,
+    id_casa                  INTEGER       NOT NULL,
+    id_proveedor             INTEGER,
+    precio_compra            NUMERIC(10,2) NOT NULL CHECK (precio_compra >= 0),
+    stock_minimo             INTEGER       NOT NULL DEFAULT 5,
+    meses_alerta_vencimiento INTEGER       NOT NULL,
+    aplica_mayoreo           BOOLEAN       NOT NULL DEFAULT FALSE,
+    activo                   BOOLEAN       NOT NULL DEFAULT TRUE,
+    fecha_creacion           TIMESTAMP     NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_producto_categoria
+        FOREIGN KEY (id_categoria)
+        REFERENCES categoria(id_categoria)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_producto_casa
+        FOREIGN KEY (id_casa)
+        REFERENCES casa_farmaceutica(id_casa)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_producto_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE SET NULL
+);
+
+-- =========================
+-- TABLA: presentacion
+-- =========================
+CREATE TABLE IF NOT EXISTS presentacion (
+    id_presentacion   SERIAL PRIMARY KEY,
+    id_producto       INTEGER      NOT NULL,
+    nombre            VARCHAR(100) NOT NULL,
+    factor_conversion NUMERIC(10,4) NOT NULL CHECK (factor_conversion >= 1),
+    es_base           BOOLEAN      NOT NULL DEFAULT FALSE,
+    activo            BOOLEAN      NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT fk_presentacion_producto
+        FOREIGN KEY (id_producto)
+        REFERENCES producto(id_producto)
+        ON DELETE CASCADE
+);
+
+-- =========================
+-- TABLA: promocion
+-- =========================
+CREATE TABLE IF NOT EXISTS promocion (
+    id_promocion     SERIAL PRIMARY KEY,
+    id_producto      INTEGER       NOT NULL,
+    id_sucursal      INTEGER       NOT NULL,
+    id_presentacion  INTEGER       NOT NULL,
+    cantidad_minima  INTEGER       NOT NULL,
+    precio_promocion NUMERIC(10,2) NOT NULL,
+    fecha_inicio     DATE          NOT NULL,
+    fecha_fin        DATE          NOT NULL,
+    activo           BOOLEAN       NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT fk_promocion_producto
+        FOREIGN KEY (id_producto)
+        REFERENCES producto(id_producto)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_promocion_sucursal
+        FOREIGN KEY (id_sucursal)
+        REFERENCES sucursal(id_sucursal)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_promocion_presentacion
+        FOREIGN KEY (id_presentacion)
+        REFERENCES presentacion(id_presentacion)
+        ON DELETE RESTRICT
 );
 
 -- =========================
@@ -91,9 +156,7 @@ CREATE TABLE IF NOT EXISTS producto (
 -- =========================
 CREATE TABLE IF NOT EXISTS categoria (
     id_categoria     SERIAL PRIMARY KEY,
-    nombre_categoria VARCHAR(100) NOT NULL UNIQUE,
-    descripcion      TEXT,
-    fecha_creacion   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    nombre VARCHAR(100) NOT NULL UNIQUE
 );
  
 -- =========================
@@ -164,13 +227,13 @@ WHERE s.nombre_sucursal = 'Sucursal Central'
       WHERE u.correo_usuario = 'dueno@farma.com'
   );
 
-INSERT INTO categoria (nombre_categoria, descripcion)
+INSERT INTO categoria (nombre)
 VALUES
-  ('Analgésico',          'Medicamentos para el alivio del dolor'),
-  ('Antibiótico',         'Medicamentos para combatir infecciones bacterianas'),
-  ('Antiinflamatorio',    'Medicamentos que reducen la inflamación'),
-  ('Antihistamínico',     'Medicamentos para tratar alergias'),
-  ('Gastroenterológico',  'Medicamentos para el sistema digestivo'),
-  ('Vitaminas',           'Suplementos vitamínicos y minerales')
-ON CONFLICT (nombre_categoria) DO NOTHING;
+  ('Analgésico'),
+  ('Antibiótico'),
+  ('Antiinflamatorio'),
+  ('Antihistamínico'),
+  ('Gastroenterológico'),
+  ('Vitaminas')
+ON CONFLICT (nombre) DO NOTHING;
  

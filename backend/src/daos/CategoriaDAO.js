@@ -4,13 +4,13 @@ class CategoriaDAO {
 
     // ─── CREATE ────
 
-    async crear({ nombre_categoria, descripcion }) {
+    async crear({ nombre }) {
         const query = `
-      INSERT INTO categoria (nombre_categoria, descripcion)
-      VALUES ($1, $2)
+      INSERT INTO categoria (nombre)
+      VALUES ($1)
       RETURNING *
     `;
-        const { rows } = await pool.query(query, [nombre_categoria, descripcion || null]);
+        const { rows } = await pool.query(query, [nombre]);
         return rows[0];
     }
 
@@ -28,25 +28,23 @@ class CategoriaDAO {
         return rows[0] || null;
     }
 
-    async obtenerPorNombre(nombre_categoria) {
-        const query = `SELECT * FROM categoria WHERE LOWER(nombre_categoria) = LOWER($1)`;
-        const { rows } = await pool.query(query, [nombre_categoria]);
+    async obtenerPorNombre(nombre) {
+        const query = `SELECT * FROM categoria WHERE LOWER(nombre) = LOWER($1)`;
+        const { rows } = await pool.query(query, [nombre]);
         return rows[0] || null;
     }
 
     // ─── UPDATE ────
 
     async actualizar(id_categoria, campos) {
-        const { nombre_categoria, descripcion } = campos;
+        const { nombre } = campos;
         const query = `
       UPDATE categoria
-      SET
-        nombre_categoria = COALESCE($1, nombre_categoria),
-        descripcion      = COALESCE($2, descripcion)
-      WHERE id_categoria = $3
+      SET nombre = COALESCE($1, nombre)
+      WHERE id_categoria = $2
       RETURNING *
     `;
-        const { rows } = await pool.query(query, [nombre_categoria, descripcion, id_categoria]);
+        const { rows } = await pool.query(query, [nombre, id_categoria]);
         return rows[0] || null;
     }
 
