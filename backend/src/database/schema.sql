@@ -158,6 +158,100 @@ CREATE TABLE IF NOT EXISTS categoria (
     id_categoria     SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE
 );
+
+-- =========================
+-- TABLA: casa_farmaceutica
+-- =========================
+CREATE TABLE IF NOT EXISTS casa_farmaceutica (
+    id_casa  SERIAL PRIMARY KEY,
+    nombre   VARCHAR(150) NOT NULL UNIQUE,
+    activo   BOOLEAN      NOT NULL DEFAULT TRUE
+);
+
+-- =========================
+-- TABLA: casa_telefono
+-- =========================
+CREATE TABLE IF NOT EXISTS casa_telefono (
+    id_telefono SERIAL PRIMARY KEY,
+    id_casa     INTEGER     NOT NULL,
+    numero      VARCHAR(20) NOT NULL,
+
+    CONSTRAINT fk_casa_telefono_casa
+        FOREIGN KEY (id_casa)
+        REFERENCES casa_farmaceutica(id_casa)
+        ON DELETE CASCADE
+);
+
+-- =========================
+-- TABLA: casa_email
+-- =========================
+CREATE TABLE IF NOT EXISTS casa_email (
+    id_email SERIAL PRIMARY KEY,
+    id_casa  INTEGER      NOT NULL,
+    correo   VARCHAR(150) NOT NULL UNIQUE,
+
+    CONSTRAINT fk_casa_email_casa
+        FOREIGN KEY (id_casa)
+        REFERENCES casa_farmaceutica(id_casa)
+        ON DELETE CASCADE
+);
+
+-- =========================
+-- TABLA: proveedor
+-- =========================
+CREATE TABLE IF NOT EXISTS proveedor (
+    id_proveedor SERIAL PRIMARY KEY,
+    nombre       VARCHAR(150) NOT NULL UNIQUE,
+    activo       BOOLEAN      NOT NULL DEFAULT TRUE
+);
+
+-- =========================
+-- TABLA: proveedor_telefono
+-- =========================
+CREATE TABLE IF NOT EXISTS proveedor_telefono (
+    id_telefono  SERIAL PRIMARY KEY,
+    id_proveedor INTEGER     NOT NULL,
+    numero       VARCHAR(20) NOT NULL,
+
+    CONSTRAINT fk_proveedor_telefono_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE CASCADE
+);
+
+-- =========================
+-- TABLA: proveedor_email
+-- =========================
+CREATE TABLE IF NOT EXISTS proveedor_email (
+    id_email     SERIAL PRIMARY KEY,
+    id_proveedor INTEGER      NOT NULL,
+    correo       VARCHAR(150) NOT NULL UNIQUE,
+
+    CONSTRAINT fk_proveedor_email_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE CASCADE
+);
+
+-- =========================
+-- TABLA: casa_proveedor (cruce)
+-- =========================
+CREATE TABLE IF NOT EXISTS casa_proveedor (
+    id_casa      INTEGER NOT NULL,
+    id_proveedor INTEGER NOT NULL,
+
+    PRIMARY KEY (id_casa, id_proveedor),
+
+    CONSTRAINT fk_casa_proveedor_casa
+        FOREIGN KEY (id_casa)
+        REFERENCES casa_farmaceutica(id_casa)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_casa_proveedor_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE CASCADE
+);
  
 -- =========================
 -- TABLA: inventario_sucursal
