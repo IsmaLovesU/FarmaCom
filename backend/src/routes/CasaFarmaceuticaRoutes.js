@@ -99,5 +99,67 @@ router.delete(
   CasaFarmaceuticaController.eliminar,
 );
 
+// Rutas anidadas: Teléfonos
+
+// GET    /api/casas/:id_casa/telefonos
+router.get('/:id_casa/telefonos', verificarToken, CasaTelefonoController.obtenerPorCasa);
+
+// POST   /api/casas/:id_casa/telefonos
+router.post(
+  '/:id_casa/telefonos',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarTelefonoCreacion,
+  CasaTelefonoController.crear,
+);
+
+// PUT    /api/casas/:id_casa/telefonos/:id_telefono
+router.put(
+  '/:id_casa/telefonos/:id_telefono',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarTelefonoActualizacion,
+  CasaTelefonoController.actualizar,
+);
+
+// DELETE /api/casas/:id_casa/telefonos/:id_telefono
+router.delete(
+  '/:id_casa/telefonos/:id_telefono',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  CasaTelefonoController.eliminar,
+);
+
+// Rutas anidadas: Correos
+
+// GET    /api/casas/:id_casa/correos
+router.get('/:id_casa/correos', verificarToken, CasaEmailController.obtenerPorCasa);
+
+// POST   /api/casas/:id_casa/correos
+router.post(
+  '/:id_casa/correos',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarEmailCreacion,
+  CasaEmailController.crear,
+);
+
+// PUT    /api/casas/:id_casa/correos/:id_email
+router.put(
+  '/:id_casa/correos/:id_email',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarEmailActualizacion,
+  CasaEmailController.actualizar,
+);
+
+// DELETE /api/casas/:id_casa/correos/:id_email
+router.delete(
+  '/:id_casa/correos/:id_email',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  CasaEmailController.eliminar,
+);
+
 
 module.exports = router;
