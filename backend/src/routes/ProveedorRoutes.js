@@ -8,7 +8,7 @@ const verificarRol = require('../middlewares/verificarRol');
 
 const router = Router();
 
-// Validadores 
+// Validadores
 
 const validarParamId = [
   param('id').isInt({ min: 1 }).withMessage('El id debe ser un entero positivo').toInt(),
@@ -98,3 +98,67 @@ router.delete(
   validarParamId,
   ProveedorController.eliminar,
 );
+
+// Rutas anidadas: Teléfonos
+
+// GET    /api/proveedores/:id_proveedor/telefonos
+router.get('/:id_proveedor/telefonos', verificarToken, ProveedorTelefonoController.obtenerPorProveedor);
+
+// POST   /api/proveedores/:id_proveedor/telefonos
+router.post(
+  '/:id_proveedor/telefonos',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarTelefonoCreacion,
+  ProveedorTelefonoController.crear,
+);
+
+// PUT   /api/:id_proveedor/telefonos/:id_telefono
+router.put(
+  '/:id_proveedor/telefonos/:id_telefono',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarTelefonoActualizacion,
+  ProveedorTelefonoController.actualizar,
+);
+
+// DELETE   /api/:id_proveedor/telefonos/:id_telefono
+router.delete(
+  '/:id_proveedor/telefonos/:id_telefono',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  ProveedorTelefonoController.eliminar,
+);
+
+// Rutas anidadas: Correos
+
+// GET    /api/proveedores/:id_proveedor/correos
+router.get('/:id_proveedor/correos', verificarToken, ProveedorEmailController.obtenerPorProveedor);
+
+// POST   /api/proveedores/:id_proveedor/correos
+router.post(
+  '/:id_proveedor/correos',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarEmailCreacion,
+  ProveedorEmailController.crear,
+);
+
+// PUT   /api/:id_proveedor/correos/:id_email
+router.put(
+  '/:id_proveedor/correos/:id_email',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  validarEmailActualizacion,
+  ProveedorEmailController.actualizar,
+);
+
+// DELETE   /api/:id_proveedor/correos/:id_email
+router.delete(
+  '/:id_proveedor/correos/:id_email',
+  verificarToken,
+  verificarRol('dueno', 'administrador'),
+  ProveedorEmailController.eliminar,
+);
+
+module.exports = router;
