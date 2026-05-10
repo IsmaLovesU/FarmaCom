@@ -70,88 +70,6 @@ CREATE TABLE IF NOT EXISTS usuario (
 );
 
 -- =========================
--- TABLA: producto
--- =========================
-CREATE TABLE IF NOT EXISTS producto (
-    id_producto              SERIAL PRIMARY KEY,
-    codigo                   VARCHAR(50)   NOT NULL UNIQUE,
-    nombre_comercial         VARCHAR(150)  NOT NULL,
-    nombre_generico          VARCHAR(150),
-    descripcion              TEXT,
-    id_categoria             INTEGER       NOT NULL,
-    id_casa                  INTEGER       NOT NULL,
-    id_proveedor             INTEGER,
-    precio_compra            NUMERIC(10,2) NOT NULL CHECK (precio_compra >= 0),
-    stock_minimo             INTEGER       NOT NULL DEFAULT 5,
-    meses_alerta_vencimiento INTEGER       NOT NULL,
-    aplica_mayoreo           BOOLEAN       NOT NULL DEFAULT FALSE,
-    activo                   BOOLEAN       NOT NULL DEFAULT TRUE,
-    fecha_creacion           TIMESTAMP     NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT fk_producto_categoria
-        FOREIGN KEY (id_categoria)
-        REFERENCES categoria(id_categoria)
-        ON DELETE RESTRICT,
-
-    CONSTRAINT fk_producto_casa
-        FOREIGN KEY (id_casa)
-        REFERENCES casa_farmaceutica(id_casa)
-        ON DELETE RESTRICT,
-
-    CONSTRAINT fk_producto_proveedor
-        FOREIGN KEY (id_proveedor)
-        REFERENCES proveedor(id_proveedor)
-        ON DELETE SET NULL
-);
-
--- =========================
--- TABLA: presentacion
--- =========================
-CREATE TABLE IF NOT EXISTS presentacion (
-    id_presentacion   SERIAL PRIMARY KEY,
-    id_producto       INTEGER      NOT NULL,
-    nombre            VARCHAR(100) NOT NULL,
-    factor_conversion NUMERIC(10,4) NOT NULL CHECK (factor_conversion >= 1),
-    es_base           BOOLEAN      NOT NULL DEFAULT FALSE,
-    activo            BOOLEAN      NOT NULL DEFAULT TRUE,
-
-    CONSTRAINT fk_presentacion_producto
-        FOREIGN KEY (id_producto)
-        REFERENCES producto(id_producto)
-        ON DELETE CASCADE
-);
-
--- =========================
--- TABLA: promocion
--- =========================
-CREATE TABLE IF NOT EXISTS promocion (
-    id_promocion     SERIAL PRIMARY KEY,
-    id_producto      INTEGER       NOT NULL,
-    id_sucursal      INTEGER       NOT NULL,
-    id_presentacion  INTEGER       NOT NULL,
-    cantidad_minima  INTEGER       NOT NULL,
-    precio_promocion NUMERIC(10,2) NOT NULL,
-    fecha_inicio     DATE          NOT NULL,
-    fecha_fin        DATE          NOT NULL,
-    activo           BOOLEAN       NOT NULL DEFAULT TRUE,
-
-    CONSTRAINT fk_promocion_producto
-        FOREIGN KEY (id_producto)
-        REFERENCES producto(id_producto)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_promocion_sucursal
-        FOREIGN KEY (id_sucursal)
-        REFERENCES sucursal(id_sucursal)
-        ON DELETE CASCADE,
-
-    CONSTRAINT fk_promocion_presentacion
-        FOREIGN KEY (id_presentacion)
-        REFERENCES presentacion(id_presentacion)
-        ON DELETE RESTRICT
-);
-
--- =========================
 -- TABLA: categoria
 -- =========================
 CREATE TABLE IF NOT EXISTS categoria (
@@ -231,6 +149,88 @@ CREATE TABLE IF NOT EXISTS proveedor_email (
         FOREIGN KEY (id_proveedor)
         REFERENCES proveedor(id_proveedor)
         ON DELETE CASCADE
+);
+
+-- =========================
+-- TABLA: producto
+-- =========================
+CREATE TABLE IF NOT EXISTS producto (
+    id_producto              SERIAL PRIMARY KEY,
+    codigo                   VARCHAR(50)   NOT NULL UNIQUE,
+    nombre_comercial         VARCHAR(150)  NOT NULL,
+    nombre_generico          VARCHAR(150),
+    descripcion              TEXT,
+    id_categoria             INTEGER       NOT NULL,
+    id_casa                  INTEGER       NOT NULL,
+    id_proveedor             INTEGER,
+    precio_compra            NUMERIC(10,2) NOT NULL CHECK (precio_compra >= 0),
+    stock_minimo             INTEGER       NOT NULL DEFAULT 5,
+    meses_alerta_vencimiento INTEGER       NOT NULL,
+    aplica_mayoreo           BOOLEAN       NOT NULL DEFAULT FALSE,
+    activo                   BOOLEAN       NOT NULL DEFAULT TRUE,
+    fecha_creacion           TIMESTAMP     NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_producto_categoria
+        FOREIGN KEY (id_categoria)
+        REFERENCES categoria(id_categoria)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_producto_casa
+        FOREIGN KEY (id_casa)
+        REFERENCES casa_farmaceutica(id_casa)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_producto_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE SET NULL
+);
+
+-- =========================
+-- TABLA: presentacion
+-- =========================
+CREATE TABLE IF NOT EXISTS presentacion (
+    id_presentacion   SERIAL PRIMARY KEY,
+    id_producto       INTEGER      NOT NULL,
+    nombre            VARCHAR(100) NOT NULL,
+    factor_conversion NUMERIC(10,4) NOT NULL CHECK (factor_conversion >= 1),
+    es_base           BOOLEAN      NOT NULL DEFAULT FALSE,
+    activo            BOOLEAN      NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT fk_presentacion_producto
+        FOREIGN KEY (id_producto)
+        REFERENCES producto(id_producto)
+        ON DELETE CASCADE
+);
+
+-- =========================
+-- TABLA: promocion
+-- =========================
+CREATE TABLE IF NOT EXISTS promocion (
+    id_promocion     SERIAL PRIMARY KEY,
+    id_producto      INTEGER       NOT NULL,
+    id_sucursal      INTEGER       NOT NULL,
+    id_presentacion  INTEGER       NOT NULL,
+    cantidad_minima  INTEGER       NOT NULL,
+    precio_promocion NUMERIC(10,2) NOT NULL,
+    fecha_inicio     DATE          NOT NULL,
+    fecha_fin        DATE          NOT NULL,
+    activo           BOOLEAN       NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT fk_promocion_producto
+        FOREIGN KEY (id_producto)
+        REFERENCES producto(id_producto)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_promocion_sucursal
+        FOREIGN KEY (id_sucursal)
+        REFERENCES sucursal(id_sucursal)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_promocion_presentacion
+        FOREIGN KEY (id_presentacion)
+        REFERENCES presentacion(id_presentacion)
+        ON DELETE RESTRICT
 );
 
 -- =========================
@@ -331,3 +331,66 @@ VALUES
   ('Vitaminas')
 ON CONFLICT (nombre) DO NOTHING;
  
+INSERT INTO casa_farmaceutica (nombre)
+VALUES
+  ('Farmacéutica ABC'),
+  ('Laboratorios XYZ'),
+  ('Medicamentos Globales')
+ON CONFLICT (nombre) DO NOTHING;
+
+INSERT INTO proveedor (nombre)
+VALUES
+  ('Proveedor Uno'),
+  ('Proveedor Dos'),
+  ('Proveedor Tres')
+ON CONFLICT (nombre) DO NOTHING;
+
+INSERT INTO casa_proveedor (id_casa, id_proveedor)
+SELECT c.id_casa, p.id_proveedor
+FROM casa_farmaceutica c
+JOIN proveedor p ON p.nombre IN ('Proveedor Uno', 'Proveedor Dos')
+WHERE c.nombre = 'Farmacéutica ABC'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM casa_proveedor cp
+      WHERE cp.id_casa = c.id_casa AND cp.id_proveedor = p.id_proveedor
+  );
+
+INSERT INTO casa_proveedor (id_casa, id_proveedor)
+SELECT c.id_casa, p.id_proveedor
+FROM casa_farmaceutica c
+JOIN proveedor p ON p.nombre IN ('Proveedor Dos', 'Proveedor Tres')
+WHERE c.nombre = 'Laboratorios XYZ'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM casa_proveedor cp
+      WHERE cp.id_casa = c.id_casa AND cp.id_proveedor = p.id_proveedor
+  );
+
+INSERT INTO casa_proveedor (id_casa, id_proveedor)
+SELECT c.id_casa, p.id_proveedor
+FROM casa_farmaceutica c
+JOIN proveedor p ON p.nombre IN ('Proveedor Uno', 'Proveedor Tres')
+WHERE c.nombre = 'Medicamentos Globales'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM casa_proveedor cp
+      WHERE cp.id_casa = c.id_casa AND cp.id_proveedor = p.id_proveedor
+  );
+
+INSERT INTO producto (codigo, nombre_comercial, nombre_generico, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo)
+SELECT
+    'MED001',
+    'Tylenol',
+    'Paracetamol',
+    'Analgésico y antipirético para aliviar el dolor y reducir la fiebre.',
+    (SELECT id_categoria FROM categoria WHERE nombre = 'Analgésico'),
+    (SELECT id_casa FROM casa_farmaceutica WHERE nombre = 'Farmacéutica ABC'),
+    (SELECT id_proveedor FROM proveedor WHERE nombre = 'Proveedor Uno'),
+    0.50,
+    10,
+    6,
+    TRUE
+WHERE NOT EXISTS (
+    SELECT 1 FROM producto WHERE codigo = 'MED001'
+);

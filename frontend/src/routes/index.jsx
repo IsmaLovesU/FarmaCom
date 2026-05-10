@@ -7,6 +7,9 @@ import MainLayout from '../layouts/MainLayout.jsx';
 import Login from '../pages/Login.jsx';
 import Sucursales from '../pages/Sucursales.jsx';
 import Usuarios from '../pages/Usuarios.jsx';
+import Productos from '../pages/inventario/Productos.jsx';
+import Lotes from '../pages/inventario/Lotes.jsx';
+import InventarioSucursal from '../pages/inventario/InventarioSucursal.jsx';
 
 export default function AppRoutes() {
   return (
@@ -19,33 +22,40 @@ export default function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route
             path="/dashboard"
-            element={<div className="p-8 font-headline text-2xl font-bold">Dashboard (Proximamente)</div>}
+            element={<div className="p-8 font-headline text-2xl font-bold">Dashboard (Próximamente)</div>}
           />
+
+          {/* Inventario*/}
+          <Route path="/inventario">
+            {/* Redirect /inventario → /inventario/productos */}
+            <Route index element={<Navigate to="productos" replace />} />
+            <Route path="productos" element={<Productos />} />
+            <Route path="lotes" element={<Lotes />} />
+            <Route path="stock" element={<InventarioSucursal />} />
+          </Route>
+
+          {/* Admin */}
           <Route element={<RoleRoute allowedRoles={['dueno', 'administrador']} />}>
             <Route path="/sucursales" element={<Sucursales />} />
             <Route path="/usuarios" element={<Usuarios />} />
           </Route>
-          <Route
-            path="/inventario"
-            element={<div className="p-8 font-headline text-2xl font-bold">Inventario (Proximamente)</div>}
-          />
+
           <Route
             path="/patients"
-            element={<div className="p-8 font-headline text-2xl font-bold">Clientes (Proximamente)</div>}
+            element={<div className="p-8 font-headline text-2xl font-bold">Clientes (Próximamente)</div>}
           />
           <Route
             path="/reports"
-            element={<div className="p-8 font-headline text-2xl font-bold">Reportes (Proximamente)</div>}
+            element={<div className="p-8 font-headline text-2xl font-bold">Reportes (Próximamente)</div>}
           />
           <Route
             path="/support"
-            element={<div className="p-8 font-headline text-2xl font-bold">Ayuda (Proximamente)</div>}
+            element={<div className="p-8 font-headline text-2xl font-bold">Ayuda (Próximamente)</div>}
           />
         </Route>
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
-
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
