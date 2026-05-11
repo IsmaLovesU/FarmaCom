@@ -19,11 +19,26 @@ const useCategorias = () => {
     }
   }, []);
 
-  useEffect(() => {
-    obtenerTodas();
-  }, [obtenerTodas]);
+  useEffect(() => { obtenerTodas(); }, [obtenerTodas]);
 
-  return { categorias, cargando, error, refrescar: obtenerTodas };
+  const crear = async (payload) => {
+    const { data } = await api.post('/categorias', payload);
+    setCategorias((prev) => [...prev, data]);
+    return data;
+  };
+
+  const actualizar = async (id, payload) => {
+    const { data } = await api.put(`/categorias/${id}`, payload);
+    setCategorias((prev) => prev.map((c) => (c.id_categoria === id ? data : c)));
+    return data;
+  };
+
+  const eliminar = async (id) => {
+    await api.delete(`/categorias/${id}`);
+    setCategorias((prev) => prev.filter((c) => c.id_categoria !== id));
+  };
+
+  return { categorias, cargando, error, refrescar: obtenerTodas, crear, actualizar, eliminar };
 };
 
 export default useCategorias;
