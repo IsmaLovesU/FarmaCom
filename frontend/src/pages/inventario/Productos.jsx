@@ -5,6 +5,7 @@ import ProductoStatsBanner from '../../components/inventario/productos/ProductoS
 import ProductoActionBar from '../../components/inventario/productos/ProductoActionBar.jsx';
 import ProductoFilterPanel from '../../components/inventario/productos/ProductoFilterPanel.jsx';
 import ProductoTable from '../../components/inventario/productos/ProductoTable.jsx';
+import ProductoFormModal from '../../components/inventario/productos/ProductoFormModal.jsx';
 import useProductos from '../../hooks/useProductos.js';
 import useCategorias from '../../hooks/useCategorias.js';
 import useCasas from '../../hooks/useCasas.js';
@@ -18,27 +19,78 @@ const filtrosIniciales = {
 };
 
 export default function Productos() {
-  const { productos, cargando, error, cambiarEstado } = useProductos();
-  const { categorias } = useCategorias();
-  const { casas } = useCasas();
-  const { proveedores } = useProveedores();
+  const { productos, cargando, error, crear, actualizar, cambiarEstado } = useProductos();
+  const { categorias, cargando: cargandoCategorias } = useCategorias();
+  const { casas, cargando: cargandoCasas } = useCasas();
+  const { proveedores, cargando: cargandoProveedores } = useProveedores();
 
   const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState(filtrosIniciales);
   const [cambiandoEstadoId, setCambiandoEstadoId] = useState(null);
   const [errorAccion, setErrorAccion] = useState(null);
 
-  // TODO: el modal de crear/editar lo implementará otra persona.
-  // Por ahora el botón "Nuevo producto" solo registra en consola.
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [productoEditando, setProductoEditando] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const [errorFormulario, setErrorFormulario] = useState(null);
+
+  const cargandoDatos = cargandoCategorias || cargandoCasas || cargandoProveedores;
+
   const handleCrear = useCallback(() => {
-    // Modal pendiente de implementación
-    console.info('[Productos] Abrir modal de nuevo producto');
+    setModoEdicion(false);
+    setProductoEditando(null);
+    setErrorFormulario(null);
+    setMostrarModal(true);
   }, []);
 
   const handleEditar = useCallback((producto) => {
-    // Modal pendiente de implementación
-    console.info('[Productos] Abrir modal de edición para:', producto.id_producto);
+    setModoEdicion(true);
+    setProductoEditando(producto);
+    setErrorFormulario(null);
+    setMostrarModal(true);
   }, []);
+
+  const handleCerrarModal = useCallback(() => {
+    if (guardando) return;
+    setMostrarModal(false);
+    setProductoEditando(null);
+    setErrorFormulario(null);
+  }, [guardando]);
+
+  const handleGuardar = useCallback(async (formulario) => {
+    setErrorFormulario(null);
+
+    const payload = {
+      codigo: modoEdicion && productoEditando
+        ? productoEditando.codigo
+        : `PRD-${Date.now()}`,
+      nombre_comercial: formulario.nombre_comercial.trim(),
+      nombre_generico: formulario.nombre_generico.trim() || undefined,
+      id_categoria: Number(formulario.id_categoria),
+      id_casa: Number(formulario.id_casa),
+      id_proveedor: formulario.id_proveedor ? Number(formulario.id_proveedor) : undefined,
+      precio_compra: Number(formulario.precio_compra),
+      stock_minimo: formulario.stock_minimo ? Number(formulario.stock_minimo) : undefined,
+      meses_alerta_vencimiento: Number(formulario.meses_alerta_vencimiento),
+      aplica_mayoreo: formulario.aplica_mayoreo,
+    };
+
+    try {
+      setGuardando(true);
+      if (modoEdicion && productoEditando) {
+        await actualizar(productoEditando.id_producto, payload);
+      } else {
+        await crear(payload);
+      }
+      setMostrarModal(false);
+      setProductoEditando(null);
+    } catch (err) {
+      setErrorFormulario(err.message || 'No se pudo guardar el producto.');
+    } finally {
+      setGuardando(false);
+    }
+  }, [modoEdicion, productoEditando, crear, actualizar]);
 
   const handleCambiarEstado = useCallback(async (producto) => {
     setErrorAccion(null);
@@ -89,20 +141,14 @@ export default function Productos() {
 
   return (
     <div className="space-y-6">
-      {/* Sub-navegación entre Productos / Lotes / Inventario */}
       <InventarioSubNav />
 
-      {/* Título de sección */}
       <div>
         <h2 className="font-headline text-3xl font-extrabold tracking-tight text-primary">
           Catálogo de Productos
         </h2>
-        {/* <p className="text-sm text-slate-500 mt-1">
-          Gestión centralizada de medicamentos y suministros (datos maestros).
-        </p> */}
       </div>
 
-      {/* Tarjetas de resumen */}
       <ProductoStatsGrid
         totalProductos={productos.length}
         totalActivos={totalActivos}
@@ -110,14 +156,12 @@ export default function Productos() {
         totalConAlertaMayoreo={totalConMayoreo}
       />
 
-      {/* Barra de búsqueda + botón */}
       <ProductoActionBar
         busqueda={busqueda}
         onBusquedaChange={(e) => setBusqueda(e.target.value)}
         onCrear={handleCrear}
       />
 
-      {/* Filtros avanzados */}
       <ProductoFilterPanel
         filtros={filtros}
         onFiltroChange={onFiltroChange}
@@ -126,26 +170,37 @@ export default function Productos() {
         proveedores={proveedores}
       />
 
-      {/* Banner de conteo */}
       <ProductoStatsBanner
         totalFiltrados={productosFiltrados.length}
         totalProductos={productos.length}
       />
 
-      {/* Alertas */}
       {(error || errorAccion) && (
         <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
           {error || errorAccion}
         </div>
       )}
 
-      {/* Tabla */}
       <ProductoTable
         cargando={cargando}
         productos={productosFiltrados}
         onEditar={handleEditar}
         onCambiarEstado={handleCambiarEstado}
         cambiandoEstadoId={cambiandoEstadoId}
+      />
+
+      <ProductoFormModal
+        isOpen={mostrarModal}
+        modoEdicion={modoEdicion}
+        producto={productoEditando}
+        categorias={categorias}
+        casas={casas}
+        proveedores={proveedores}
+        cargandoDatos={cargandoDatos}
+        guardando={guardando}
+        errorFormulario={errorFormulario}
+        onClose={handleCerrarModal}
+        onSubmit={handleGuardar}
       />
     </div>
   );
