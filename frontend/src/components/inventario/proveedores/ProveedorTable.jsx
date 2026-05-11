@@ -2,7 +2,14 @@ import React from 'react';
 import ProveedorTableHeader from './ProveedorTableHeader.jsx';
 import ProveedorTableRow from './ProveedorTableRow.jsx';
 
-export default function ProveedorTable({ cargando, proveedores, onEditar, onCambiarEstado, onEliminar, procesandoId }) {
+export default function ProveedorTable({
+  cargando,
+  proveedores,
+  onEditar,
+  onCambiarEstado,
+  onContactos,
+  procesandoId,
+}) {
   return (
     <section className="bg-surface-container-low/60 border border-slate-200 rounded-2xl overflow-hidden">
       <ProveedorTableHeader />
@@ -18,7 +25,7 @@ export default function ProveedorTable({ cargando, proveedores, onEditar, onCamb
               proveedor={p}
               onEditar={onEditar}
               onCambiarEstado={onCambiarEstado}
-              onEliminar={onEliminar}
+              onContactos={onContactos}
               procesando={procesandoId === p.id_proveedor}
             />
           ))}

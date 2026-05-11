@@ -242,7 +242,7 @@ export default function ProductoFormModal({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700">
-                  Precio compra ($) <span className="text-error">*</span>
+                  Precio compra (Q) <span className="text-error">*</span>
                 </label>
                 <input
                   type="number"
