@@ -20,7 +20,8 @@ const crearProducto = async (datos) => {
   const existente = await ProductoDAO.obtenerPorCodigo(codigo);
   if (existente) lanzarError(`Ya existe un producto con el código "${codigo}"`, 409);
 
-  return await ProductoDAO.crear(datos);
+  const creado = await ProductoDAO.crear(datos);
+  return await ProductoDAO.obtenerPorId(creado.id_producto);
 };
 
 const obtenerTodos = async () => {
@@ -52,7 +53,7 @@ const actualizarProducto = async (id_producto, campos) => {
 
   const actualizado = await ProductoDAO.actualizar(id_producto, campos);
   if (!actualizado) lanzarError('No se pudo actualizar el producto', 500);
-  return actualizado;
+  return await ProductoDAO.obtenerPorId(id_producto);
 };
 
 // Solo el dependiente puede usar este método 
@@ -62,7 +63,10 @@ const cambiarAplicaMayoreo = async (id_producto, aplica_mayoreo) => {
 
   const actualizado = await ProductoDAO.cambiarAplicaMayoreo(id_producto, aplica_mayoreo);
   if (!actualizado) lanzarError('No se pudo actualizar el campo aplica_mayoreo', 500);
-  return { mensaje: `Mayoreo ${aplica_mayoreo ? 'activado' : 'desactivado'} correctamente`, producto: actualizado };
+  return {
+    mensaje: `Mayoreo ${aplica_mayoreo ? 'activado' : 'desactivado'} correctamente`,
+    producto: await ProductoDAO.obtenerPorId(id_producto),
+  };
 };
 
 const desactivarProducto = async (id_producto) => {
@@ -71,7 +75,11 @@ const desactivarProducto = async (id_producto) => {
   if (!existente.activo) lanzarError('El producto ya está desactivado', 409);
 
   const resultado = await ProductoDAO.cambiarActivo(id_producto, false);
-  return { mensaje: 'Producto desactivado correctamente', producto: resultado };
+  if (!resultado) lanzarError('No se pudo desactivar el producto', 500);
+  return {
+    mensaje: 'Producto desactivado correctamente',
+    producto: await ProductoDAO.obtenerPorId(id_producto),
+  };
 };
 
 const reactivarProducto = async (id_producto) => {
@@ -80,7 +88,11 @@ const reactivarProducto = async (id_producto) => {
   if (existente.activo) lanzarError('El producto ya está activo', 409);
 
   const resultado = await ProductoDAO.cambiarActivo(id_producto, true);
-  return { mensaje: 'Producto reactivado correctamente', producto: resultado };
+  if (!resultado) lanzarError('No se pudo reactivar el producto', 500);
+  return {
+    mensaje: 'Producto reactivado correctamente',
+    producto: await ProductoDAO.obtenerPorId(id_producto),
+  };
 };
 
 module.exports = {

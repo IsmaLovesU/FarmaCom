@@ -75,7 +75,7 @@ class ProductoDAO {
     const {
       codigo, nombre_comercial, nombre_generico, descripcion,
       id_categoria, id_casa, id_proveedor,
-      precio_compra, stock_minimo, meses_alerta_vencimiento,
+      precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo,
     } = campos;
 
     const query = `
@@ -89,8 +89,9 @@ class ProductoDAO {
         id_proveedor             = COALESCE($7,  id_proveedor),
         precio_compra            = COALESCE($8,  precio_compra),
         stock_minimo             = COALESCE($9,  stock_minimo),
-        meses_alerta_vencimiento = COALESCE($10, meses_alerta_vencimiento)
-      WHERE id_producto = $11
+        meses_alerta_vencimiento = COALESCE($10, meses_alerta_vencimiento),
+        aplica_mayoreo           = COALESCE($11, aplica_mayoreo)
+      WHERE id_producto = $12
       RETURNING *
     `;
     const valores = [
@@ -104,6 +105,7 @@ class ProductoDAO {
       precio_compra            ?? null,
       stock_minimo             ?? null,
       meses_alerta_vencimiento ?? null,
+      aplica_mayoreo           ?? null,
       id_producto,
     ];
     const { rows } = await pool.query(query, valores);
