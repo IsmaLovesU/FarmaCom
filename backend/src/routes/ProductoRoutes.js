@@ -125,6 +125,11 @@ const validarActualizacionProducto = [
     .optional()
     .isInt({ min: 1 }).withMessage('Los meses de alerta deben ser mayor a 0')
     .toInt(),
+
+  body('aplica_mayoreo')
+    .optional()
+    .isBoolean().withMessage('aplica_mayoreo debe ser un booleano')
+    .toBoolean(),
 ];
 
 const validarCambioEstado = [
