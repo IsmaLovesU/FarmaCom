@@ -1,7 +1,13 @@
 import React from 'react';
-import { Pencil, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { Pencil, ToggleLeft, ToggleRight, Phone } from 'lucide-react';
 
-export default function ProveedorTableRow({ proveedor, onEditar, onCambiarEstado, onEliminar, procesando }) {
+export default function ProveedorTableRow({
+  proveedor,
+  onEditar,
+  onCambiarEstado,
+  onContactos,
+  procesando,
+}) {
   return (
     <div className="grid grid-cols-12 gap-4 px-5 py-4 items-center bg-white/60">
       <span className="col-span-1 text-sm text-slate-400 font-mono">{proveedor.id_proveedor}</span>
@@ -16,6 +22,13 @@ export default function ProveedorTableRow({ proveedor, onEditar, onCambiarEstado
         </span>
       </div>
       <div className="col-span-4 flex justify-center gap-2">
+        <button
+          onClick={() => onContactos(proveedor)}
+          className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-teal-700 border border-teal-200 hover:bg-teal-50"
+        >
+          <Phone className="w-3.5 h-3.5" />
+          Contactos
+        </button>
         <button
           onClick={() => onEditar(proveedor)}
           className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-primary border border-primary/20 hover:bg-primary/5"
@@ -35,14 +48,6 @@ export default function ProveedorTableRow({ proveedor, onEditar, onCambiarEstado
           {proveedor.activo
             ? <><ToggleLeft className="w-3.5 h-3.5" /> Desactivar</>
             : <><ToggleRight className="w-3.5 h-3.5" /> Activar</>}
-        </button>
-        <button
-          onClick={() => onEliminar(proveedor)}
-          disabled={procesando}
-          className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-red-600 border border-red-200 hover:bg-red-50 disabled:opacity-60"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          Eliminar
         </button>
       </div>
     </div>

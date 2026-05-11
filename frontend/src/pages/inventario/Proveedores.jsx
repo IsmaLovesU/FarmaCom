@@ -3,13 +3,13 @@ import InventarioSubNav from '../../components/inventario/InventarioSubNav.jsx';
 import ProveedorActionBar from '../../components/inventario/proveedores/ProveedorActionBar.jsx';
 import ProveedorTable from '../../components/inventario/proveedores/ProveedorTable.jsx';
 import ProveedorFormModal from '../../components/inventario/proveedores/ProveedorFormModal.jsx';
-import ProveedorDeleteModal from '../../components/inventario/proveedores/ProveedorDeleteModal.jsx';
+import ProveedorContactosModal from '../../components/inventario/proveedores/ProveedorContactosModal.jsx';
 import useProveedores from '../../hooks/useProveedores';
 
 const formularioInicial = { nombre: '' };
 
 export default function Proveedores() {
-  const { proveedores, cargando, error, crear, actualizar, cambiarEstado, eliminar } = useProveedores();
+  const { proveedores, cargando, error, crear, actualizar, cambiarEstado } = useProveedores();
 
   const [busqueda, setBusqueda] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -18,7 +18,7 @@ export default function Proveedores() {
   const [formulario, setFormulario] = useState(formularioInicial);
   const [guardando, setGuardando] = useState(false);
   const [errorFormulario, setErrorFormulario] = useState(null);
-  const [proveedorAEliminar, setProveedorAEliminar] = useState(null);
+  const [proveedorContactos, setProveedorContactos] = useState(null);
   const [procesandoId, setProcesandoId] = useState(null);
   const [errorAccion, setErrorAccion] = useState(null);
 
@@ -87,20 +87,6 @@ export default function Proveedores() {
     }
   };
 
-  const confirmarEliminar = async () => {
-    if (!proveedorAEliminar) return;
-    try {
-      setErrorAccion(null);
-      setProcesandoId(proveedorAEliminar.id_proveedor);
-      await eliminar(proveedorAEliminar.id_proveedor);
-      setProveedorAEliminar(null);
-    } catch (err) {
-      setErrorAccion(err.response?.data?.mensaje || 'No se pudo eliminar el proveedor.');
-    } finally {
-      setProcesandoId(null);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <InventarioSubNav />
@@ -122,7 +108,7 @@ export default function Proveedores() {
         proveedores={proveedoresFiltrados}
         onEditar={abrirModalEditar}
         onCambiarEstado={manejarCambiarEstado}
-        onEliminar={setProveedorAEliminar}
+        onContactos={setProveedorContactos}
         procesandoId={procesandoId}
       />
 
@@ -137,12 +123,10 @@ export default function Proveedores() {
         onChange={manejarCambio}
       />
 
-      <ProveedorDeleteModal
-        isOpen={Boolean(proveedorAEliminar)}
-        proveedor={proveedorAEliminar}
-        eliminando={Boolean(procesandoId)}
-        onClose={() => { if (!procesandoId) setProveedorAEliminar(null); }}
-        onConfirm={confirmarEliminar}
+      <ProveedorContactosModal
+        isOpen={Boolean(proveedorContactos)}
+        proveedor={proveedorContactos}
+        onClose={() => setProveedorContactos(null)}
       />
     </div>
   );

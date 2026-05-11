@@ -5,6 +5,8 @@ import {
   Package,
   ChevronDown,
   Layers,
+  Tag,
+  Truck,
   Warehouse,
   Store,
   Users,
@@ -21,6 +23,8 @@ const inventarioSubItems = [
   { icon: Package, label: 'Productos', path: '/inventario/productos' },
   { icon: Layers, label: 'Lotes', path: '/inventario/lotes' },
   { icon: Warehouse, label: 'Inventario', path: '/inventario/stock' },
+  { icon: Tag, label: 'Categorias', path: '/inventario/categorias' },
+  { icon: Truck, label: 'Proveedores', path: '/inventario/proveedores' },
 ];
 
 const navItems = [
