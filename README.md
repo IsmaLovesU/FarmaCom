@@ -48,6 +48,11 @@ Contiene los entregables del Sprint 2, que incluyen:
 - Proyecto del Sprint 2
 - Formulario LOGT del Sprint 2
 
+### Sprint 3
+Contiene los entregables del Sprint 3, que incluyen:
+- Proyecto del Sprint 3
+- Formulario LOGT del Sprint 3
+
 ### Scrum
 Carpeta destinada para materiales relacionados con la metodología Scrum, utilizada en etapas posteriores del proyecto.
 
