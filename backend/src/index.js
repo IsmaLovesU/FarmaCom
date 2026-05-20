@@ -34,6 +34,7 @@ const telefonoSucursalRoutes = require('./routes/TelefonoSucursalRoutes');
 const correoSucursalRoutes = require('./routes/CorreoSucursalRoutes');
 const CasaFarmaceuticaRoutes = require('./routes/CasaFarmaceuticaRoutes');
 const proveedorRoutes = require('./routes/ProveedorRoutes');
+const LoteRoutes = require('./routes/LoteRoutes');
 
 app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'pong' });
@@ -48,6 +49,7 @@ app.use('/api/promociones', promocionRoutes);
 app.use('/api/sucursales', sucursalRoutes);
 app.use('/api/casas', CasaFarmaceuticaRoutes);
 app.use('/api/proveedores', proveedorRoutes);
+app.use('/api/lotes', LoteRoutes);
 
 // Rutas anidadas: GET y POST bajo /api/sucursales/:id_sucursal/telefonos|correos
 app.use('/api/sucursales/:id_sucursal/telefonos', telefonoSucursalRoutes);
