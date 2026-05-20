@@ -254,20 +254,104 @@ CREATE TABLE IF NOT EXISTS casa_proveedor (
 );
  
 -- =========================
--- TABLA: inventario_sucursal
+-- TABLA: lote
 -- =========================
-CREATE TABLE IF NOT EXISTS inventario_sucursal (
-    id_inventario SERIAL PRIMARY KEY,
-    id_sucursal INTEGER NOT NULL,
-    id_producto INTEGER NOT NULL,
-    stock INTEGER NOT NULL DEFAULT 0,
-    stock_minimo INTEGER NOT NULL DEFAULT 5,
+CREATE TABLE IF NOT EXISTS lote (
+    id_lote               SERIAL        PRIMARY KEY,
+    id_producto           INTEGER       NOT NULL,
+    id_proveedor          INTEGER       NOT NULL,
+    id_sucursal           INTEGER       NOT NULL,
+    numero_lote           VARCHAR(100)  NOT NULL,
+    fecha_vencimiento     DATE          NOT NULL,
+    cantidad_ingresada    NUMERIC(10,4) NOT NULL CHECK (cantidad_ingresada > 0),
+    presentacion_ingreso  INTEGER       NOT NULL,
+    stock_inicial         NUMERIC(10,4) NOT NULL CHECK (stock_inicial >= 0),
+    stock_actual          NUMERIC(10,4) NOT NULL CHECK (stock_actual >= 0),
+    fecha_ingreso         TIMESTAMP     NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT fk_inv_sucursal
-        FOREIGN KEY (id_sucursal) REFERENCES sucursal(id_sucursal) ON DELETE CASCADE,
-    CONSTRAINT fk_inv_producto
-        FOREIGN KEY (id_producto) REFERENCES producto(id_producto) ON DELETE CASCADE,
-    CONSTRAINT uq_inv_sucursal_producto UNIQUE (id_sucursal, id_producto)
+    CONSTRAINT fk_lote_producto
+        FOREIGN KEY (id_producto)
+        REFERENCES producto(id_producto)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_lote_proveedor
+        FOREIGN KEY (id_proveedor)
+        REFERENCES proveedor(id_proveedor)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_lote_sucursal
+        FOREIGN KEY (id_sucursal)
+        REFERENCES sucursal(id_sucursal)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_lote_presentacion_ingreso
+        FOREIGN KEY (presentacion_ingreso)
+        REFERENCES presentacion(id_presentacion)
+        ON DELETE RESTRICT,
+
+    -- Un número de lote debe ser único por producto y sucursal
+    CONSTRAINT uq_lote_numero_producto_sucursal
+        UNIQUE (numero_lote, id_producto, id_sucursal)
+);
+
+-- =========================
+-- VISTA: v_lote_estado
+-- Implementa las columnas generadas que requieren JOIN a Producto.
+-- Usar esta vista en lugar de la tabla directa cuando se necesiten
+-- estado_vencimiento y estado_stock.
+-- =========================
+CREATE OR REPLACE VIEW v_lote_estado AS
+SELECT
+    l.*,
+    CASE
+        WHEN l.fecha_vencimiento < CURRENT_DATE
+            THEN 'vencido'
+        WHEN l.fecha_vencimiento <= (CURRENT_DATE + (p.meses_alerta_vencimiento || ' months')::INTERVAL)
+            THEN 'proximo_a_vencer'
+        ELSE 'normal'
+    END AS estado_vencimiento,
+    CASE
+        WHEN l.stock_actual = 0
+            THEN 'agotado'
+        WHEN l.stock_actual <= p.stock_minimo
+            THEN 'poco_stock'
+        ELSE 'normal'
+    END AS estado_stock
+FROM lote l
+JOIN producto p ON p.id_producto = l.id_producto;
+
+
+-- =========================
+-- TABLA: lote_presentacion
+-- Precios de venta por lote y presentación.
+-- =========================
+CREATE TABLE IF NOT EXISTS lote_presentacion (
+    id_lote          INTEGER       NOT NULL,
+    id_presentacion  INTEGER       NOT NULL,
+    precio_venta     NUMERIC(10,2) NOT NULL CHECK (precio_venta >= 0),
+    margen_ganancia  NUMERIC(6,4)  NOT NULL CHECK (margen_ganancia >= 0),
+    precio_mayoreo   NUMERIC(10,2)             CHECK (precio_mayoreo >= 0),
+    cantidad_mayoreo INTEGER                   CHECK (cantidad_mayoreo > 0),
+
+    PRIMARY KEY (id_lote, id_presentacion),
+
+    CONSTRAINT fk_lote_pres_lote
+        FOREIGN KEY (id_lote)
+        REFERENCES lote(id_lote)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_lote_pres_presentacion
+        FOREIGN KEY (id_presentacion)
+        REFERENCES presentacion(id_presentacion)
+        ON DELETE RESTRICT,
+
+    -- precio_mayoreo y cantidad_mayoreo deben definirse juntos o ninguno
+    CONSTRAINT chk_mayoreo_completo
+        CHECK (
+            (precio_mayoreo IS NULL AND cantidad_mayoreo IS NULL)
+            OR
+            (precio_mayoreo IS NOT NULL AND cantidad_mayoreo IS NOT NULL)
+        )
 );
 
 -- =========================
