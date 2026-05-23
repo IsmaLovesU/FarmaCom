@@ -5,6 +5,7 @@ import PublicRoute from '../components/auth/PublicRoute.jsx';
 import RoleRoute from '../components/auth/RoleRoute.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import Login from '../pages/Login.jsx';
+import Ciudades from '../pages/Ciudades.jsx';
 import Sucursales from '../pages/Sucursales.jsx';
 import Usuarios from '../pages/Usuarios.jsx';
 import Productos from '../pages/inventario/Productos.jsx';
@@ -41,6 +42,7 @@ export default function AppRoutes() {
           {/* Admin */}
           <Route element={<RoleRoute allowedRoles={['dueno', 'administrador']} />}>
             <Route path="/sucursales" element={<Sucursales />} />
+            <Route path="/ciudades" element={<Ciudades />} />
             <Route path="/usuarios" element={<Usuarios />} />
           </Route>
 

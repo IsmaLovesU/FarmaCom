@@ -1,19 +1,61 @@
-const CIUDADES_HARDCODEADAS = [
-  { id_ciudad: 1, nombre_ciudad: 'Baja Verapaz' },
-  { id_ciudad: 2, nombre_ciudad: 'Chiquimula' },
-  { id_ciudad: 3, nombre_ciudad: 'Quetzaltenango' },
-  { id_ciudad: 4, nombre_ciudad: 'Quiché' },
-  { id_ciudad: 5, nombre_ciudad: 'Retalhuleu' },
-];
+import { useCallback, useEffect, useState } from 'react';
+import api from '../api/axios';
+
+const ordenarCiudades = (ciudades) => [...ciudades].sort((a, b) => (
+  a.nombre_ciudad.localeCompare(b.nombre_ciudad)
+));
 
 const useCiudades = () => {
-  const obtenerCiudades = async () => CIUDADES_HARDCODEADAS;
+  const [ciudades, setCiudades] = useState([]);
+  const [cargandoCiudades, setCargandoCiudades] = useState(false);
+  const [errorCiudades, setErrorCiudades] = useState(null);
+
+  const obtenerCiudades = useCallback(async () => {
+    setCargandoCiudades(true);
+    setErrorCiudades(null);
+    try {
+      const { data } = await api.get('/ciudades');
+      setCiudades(data);
+      return data;
+    } catch (err) {
+      setErrorCiudades(err.response?.data?.mensaje || 'Error al cargar ciudades');
+      return [];
+    } finally {
+      setCargandoCiudades(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    obtenerCiudades();
+  }, [obtenerCiudades]);
+
+  const crear = async (payload) => {
+    const { data } = await api.post('/ciudades', payload);
+    setCiudades((prev) => ordenarCiudades([...prev, data]));
+    return data;
+  };
+
+  const actualizar = async (id, payload) => {
+    const { data } = await api.put(`/ciudades/${id}`, payload);
+    setCiudades((prev) => ordenarCiudades(prev.map((ciudad) => (
+      ciudad.id_ciudad === id ? data : ciudad
+    ))));
+    return data;
+  };
+
+  const eliminar = async (id) => {
+    await api.delete(`/ciudades/${id}`);
+    setCiudades((prev) => prev.filter((ciudad) => ciudad.id_ciudad !== id));
+  };
 
   return {
-    ciudades: CIUDADES_HARDCODEADAS,
-    cargandoCiudades: false,
-    errorCiudades: null,
+    ciudades,
+    cargandoCiudades,
+    errorCiudades,
     refrescarCiudades: obtenerCiudades,
+    crear,
+    actualizar,
+    eliminar,
   };
 };
 

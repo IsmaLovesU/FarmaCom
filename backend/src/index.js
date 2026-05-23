@@ -26,6 +26,7 @@ app.use(cookieParser());
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/UsuarioRoutes');
 const categoriaRoutes = require('./routes/CategoriaRoutes');
+const ciudadRoutes = require('./routes/CiudadRoutes');
 const productoRoutes = require('./routes/ProductoRoutes');
 const presentacionRoutes = require('./routes/PresentacionRoutes');
 const promocionRoutes = require('./routes/PromocionRoutes');
@@ -43,6 +44,7 @@ app.get('/api/ping', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/categorias', categoriaRoutes);
+app.use('/api/ciudades', ciudadRoutes);
 app.use('/api/productos', productoRoutes);
 app.use('/api/presentaciones', presentacionRoutes);
 app.use('/api/promociones', promocionRoutes);
