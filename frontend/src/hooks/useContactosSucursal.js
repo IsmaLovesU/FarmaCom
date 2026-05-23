@@ -32,6 +32,11 @@ export default function useContactosSucursal(idSucursal) {
     setTelefonos((prev) => [...prev, data]);
   };
 
+  const actualizarTelefono = async (id, numero) => {
+    const { data } = await api.put(`/telefonos/${id}`, { numero });
+    setTelefonos((prev) => prev.map((t) => (t.id_telefono_sucursal === id ? data : t)));
+  };
+
   const eliminarTelefono = async (id) => {
     await api.delete(`/telefonos/${id}`);
     setTelefonos((prev) => prev.filter((t) => t.id_telefono_sucursal !== id));
@@ -42,10 +47,26 @@ export default function useContactosSucursal(idSucursal) {
     setCorreos((prev) => [...prev, data]);
   };
 
+  const actualizarCorreo = async (id, correo) => {
+    const { data } = await api.put(`/correos/${id}`, { correo });
+    setCorreos((prev) => prev.map((c) => (c.id_correo_sucursal === id ? data : c)));
+  };
+
   const eliminarCorreo = async (id) => {
     await api.delete(`/correos/${id}`);
     setCorreos((prev) => prev.filter((c) => c.id_correo_sucursal !== id));
   };
 
-  return { telefonos, correos, cargando, error, agregarTelefono, eliminarTelefono, agregarCorreo, eliminarCorreo };
+  return {
+    telefonos,
+    correos,
+    cargando,
+    error,
+    agregarTelefono,
+    actualizarTelefono,
+    eliminarTelefono,
+    agregarCorreo,
+    actualizarCorreo,
+    eliminarCorreo,
+  };
 }

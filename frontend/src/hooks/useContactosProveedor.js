@@ -41,6 +41,13 @@ export default function useContactosProveedor(idProveedor) {
     setTelefonos((prev) => [...prev, data]);
   };
 
+  const actualizarTelefono = async (idTelefono, numero) => {
+    const { data } = await api.put(`/proveedores/${idProveedor}/telefonos/${idTelefono}`, { numero });
+    setTelefonos((prev) => prev.map((telefono) => (
+      telefono.id_telefono === idTelefono ? data : telefono
+    )));
+  };
+
   const eliminarTelefono = async (idTelefono) => {
     await api.delete(`/proveedores/${idProveedor}/telefonos/${idTelefono}`);
     setTelefonos((prev) => prev.filter((telefono) => telefono.id_telefono !== idTelefono));
@@ -49,6 +56,11 @@ export default function useContactosProveedor(idProveedor) {
   const agregarCorreo = async (correo) => {
     const { data } = await api.post(`/proveedores/${idProveedor}/correos`, { correo });
     setCorreos((prev) => [...prev, data]);
+  };
+
+  const actualizarCorreo = async (idCorreo, correo) => {
+    const { data } = await api.put(`/proveedores/${idProveedor}/correos/${idCorreo}`, { correo });
+    setCorreos((prev) => prev.map((item) => (item.id_email === idCorreo ? data : item)));
   };
 
   const eliminarCorreo = async (idCorreo) => {
@@ -62,8 +74,10 @@ export default function useContactosProveedor(idProveedor) {
     cargando,
     error,
     agregarTelefono,
+    actualizarTelefono,
     eliminarTelefono,
     agregarCorreo,
+    actualizarCorreo,
     eliminarCorreo,
   };
 }
