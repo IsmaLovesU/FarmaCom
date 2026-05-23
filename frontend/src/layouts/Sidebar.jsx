@@ -9,6 +9,7 @@ import {
   Truck,
   Warehouse,
   Store,
+  MapPin,
   Users,
   UserCog,
   BarChart3,
@@ -31,6 +32,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   // Inventario se maneja aparte (expansible)
   { icon: Store, label: 'Sucursales', path: '/sucursales', roles: ['dueno', 'administrador'] },
+  { icon: MapPin, label: 'Ciudades', path: '/ciudades', roles: ['dueno', 'administrador'] },
   { icon: UserCog, label: 'Usuarios', path: '/usuarios', roles: ['dueno', 'administrador'] },
   { icon: Users, label: 'Clientes', path: '/patients' },
   { icon: BarChart3, label: 'Reportes', path: '/reports' },
