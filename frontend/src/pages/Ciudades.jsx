@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { AlertTriangle, MapPin, Pencil, PlusCircle, Search, Trash2, X } from 'lucide-react';
 import SucursalAlert from '../components/sucursales/SucursalAlert.jsx';
+import SucursalesSubNav from '../components/sucursales/SucursalesSubNav.jsx';
 import useCiudades from '../hooks/useCiudades';
 
 const formularioInicial = { nombre_ciudad: '' };
@@ -223,6 +224,8 @@ export default function Ciudades() {
 
   return (
     <div className="space-y-6">
+      <SucursalesSubNav />
+
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
