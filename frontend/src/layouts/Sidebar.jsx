@@ -28,11 +28,13 @@ const inventarioSubItems = [
   { icon: Truck, label: 'Proveedores', path: '/inventario/proveedores' },
 ];
 
+const sucursalSubItems = [
+  { icon: Store, label: 'Sucursales', path: '/sucursales' },
+  { icon: MapPin, label: 'Ciudades', path: '/ciudades' },
+];
+
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  // Inventario se maneja aparte (expansible)
-  { icon: Store, label: 'Sucursales', path: '/sucursales', roles: ['dueno', 'administrador'] },
-  { icon: MapPin, label: 'Ciudades', path: '/ciudades', roles: ['dueno', 'administrador'] },
   { icon: UserCog, label: 'Usuarios', path: '/usuarios', roles: ['dueno', 'administrador'] },
   { icon: Users, label: 'Clientes', path: '/patients' },
   { icon: BarChart3, label: 'Reportes', path: '/reports' },
@@ -49,6 +51,9 @@ export default function Sidebar() {
 
   const inventarioActivo = location.pathname.startsWith('/inventario');
   const [inventarioAbierto, setInventarioAbierto] = useState(inventarioActivo);
+  const sucursalesActivo = location.pathname.startsWith('/sucursales') || location.pathname.startsWith('/ciudades');
+  const [sucursalesAbierto, setSucursalesAbierto] = useState(sucursalesActivo);
+  const puedeVerSucursales = ['dueno', 'administrador'].includes(usuario?.rol);
 
   const visibleNavItems = navItems.filter((item) => {
     if (item.path === '/dashboard') return false;
@@ -136,6 +141,49 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+
+        {puedeVerSucursales && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setSucursalesAbierto((prev) => !prev)}
+              className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 group ${
+                sucursalesActivo
+                  ? 'border border-primary/5 bg-white font-bold text-primary shadow-sm'
+                  : 'font-medium text-slate-600 hover:bg-primary/5 hover:text-primary'
+              }`}
+            >
+              <Store className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 flex-shrink-0" />
+              <span className="text-sm font-headline flex-1 text-left">Sucursales</span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-300 flex-shrink-0 ${
+                  sucursalesAbierto ? 'rotate-180' : ''
+                } ${sucursalesActivo ? 'text-primary' : 'text-slate-400'}`}
+              />
+            </button>
+
+            {sucursalesAbierto && (
+              <div className="mt-1 ml-4 pl-3 border-l-2 border-primary/10 space-y-0.5">
+                {sucursalSubItems.map(({ icon: Icon, label, path }) => (
+                  <NavLink
+                    key={path}
+                    to={path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-all duration-200 ${
+                        isActive
+                          ? 'bg-primary/8 text-primary font-bold'
+                          : 'text-slate-500 hover:bg-primary/5 hover:text-primary font-medium'
+                      }`
+                    }
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-xs font-headline">{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Resto de ítems */}
         {visibleNavItems.map((item) => (
