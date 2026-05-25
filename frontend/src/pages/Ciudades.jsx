@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import { AlertTriangle, MapPin, Pencil, PlusCircle, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Building2, Pencil, PlusCircle, Search, Trash2, X } from 'lucide-react';
 import SucursalAlert from '../components/sucursales/SucursalAlert.jsx';
 import SucursalesSubNav from '../components/sucursales/SucursalesSubNav.jsx';
 import useCiudades from '../hooks/useCiudades';
@@ -234,7 +234,7 @@ export default function Ciudades() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <MapPin className="h-5 w-5" />
+              <Building2 className="h-5 w-5" />
             </span>
             <div>
               <p className="font-headline text-xl font-extrabold text-primary">Ciudades</p>

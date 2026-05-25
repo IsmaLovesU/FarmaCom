@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
   ChevronDown,
-  Layers,
   Tag,
   Truck,
   Warehouse,
+  Building2,
   Store,
   MapPin,
   Users,
@@ -22,15 +22,14 @@ import { useAuth, AUTH_ACTIONS } from '../context/AuthContext';
 
 const inventarioSubItems = [
   { icon: Package, label: 'Productos', path: '/inventario/productos' },
-  { icon: Layers, label: 'Lotes', path: '/inventario/lotes' },
   { icon: Warehouse, label: 'Inventario', path: '/inventario/stock' },
-  { icon: Tag, label: 'Categorias', path: '/inventario/categorias' },
+  { icon: Tag, label: 'Categorías', path: '/inventario/categorias' },
   { icon: Truck, label: 'Proveedores', path: '/inventario/proveedores' },
 ];
 
 const sucursalSubItems = [
   { icon: Store, label: 'Sucursales', path: '/sucursales' },
-  { icon: MapPin, label: 'Ciudades', path: '/ciudades' },
+  { icon: Building2, label: 'Ciudades', path: '/ciudades' },
 ];
 
 const navItems = [
@@ -44,6 +43,20 @@ const bottomNavItems = [
   { icon: HelpCircle, label: 'Ayuda', path: '/support' },
 ];
 
+const topLevelItemClass = (isActive) =>
+  `group flex items-center gap-3 rounded-xl px-4 py-3 outline-none select-none transition-colors duration-150 ${
+    isActive
+      ? 'border border-primary/5 bg-white font-bold text-primary shadow-sm'
+      : 'font-medium text-slate-600 hover:bg-primary/5 hover:text-primary'
+  } focus-visible:ring-2 focus-visible:ring-primary/20`;
+
+const nestedItemClass = (isActive) =>
+  `flex items-center gap-2.5 rounded-lg px-3 py-2.5 outline-none select-none transition-colors duration-150 ${
+    isActive
+      ? 'bg-primary/8 font-bold text-primary'
+      : 'font-medium text-slate-500 hover:bg-primary/5 hover:text-primary'
+  } focus-visible:ring-2 focus-visible:ring-primary/20`;
+
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,9 +68,25 @@ export default function Sidebar() {
   const [sucursalesAbierto, setSucursalesAbierto] = useState(sucursalesActivo);
   const puedeVerSucursales = ['dueno', 'administrador'].includes(usuario?.rol);
 
+  useEffect(() => {
+    if (inventarioActivo) {
+      setInventarioAbierto(true);
+    }
+  }, [inventarioActivo]);
+
+  useEffect(() => {
+    if (sucursalesActivo) {
+      setSucursalesAbierto(true);
+    }
+  }, [sucursalesActivo]);
+
   const visibleNavItems = navItems.filter((item) => {
-    if (item.path === '/dashboard') return false;
-    if (!item.roles) return true;
+    if (item.path === '/dashboard') {
+      return false;
+    }
+    if (!item.roles) {
+      return true;
+    }
     return item.roles.includes(usuario?.rol);
   });
 
@@ -84,55 +113,36 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto">
-        {/* Dashboard */}
         <NavLink
           to="/dashboard"
-          className={({ isActive }) =>
-            `flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 group ${
-              isActive
-                ? 'border border-primary/5 bg-white font-bold text-primary shadow-sm'
-                : 'font-medium text-slate-600 hover:bg-primary/5 hover:text-primary'
-            }`
-          }
+          className={({ isActive }) => topLevelItemClass(isActive)}
         >
-          <LayoutDashboard className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+          <LayoutDashboard className="h-5 w-5 transition-transform duration-150 group-hover:scale-110" />
           <span className="text-sm font-headline">Dashboard</span>
         </NavLink>
 
-        {/* Inventario — ítem expandible */}
         <div>
           <button
             type="button"
             onClick={() => setInventarioAbierto((prev) => !prev)}
-            className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 group ${
-              inventarioActivo
-                ? 'border border-primary/5 bg-white font-bold text-primary shadow-sm'
-                : 'font-medium text-slate-600 hover:bg-primary/5 hover:text-primary'
-            }`}
+            className={`w-full ${topLevelItemClass(inventarioActivo)}`}
           >
-            <Package className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 flex-shrink-0" />
-            <span className="text-sm font-headline flex-1 text-left">Inventario</span>
+            <Package className="h-5 w-5 flex-shrink-0 transition-transform duration-150 group-hover:scale-110" />
+            <span className="flex-1 text-left text-sm font-headline">Inventario</span>
             <ChevronDown
-              className={`h-4 w-4 transition-transform duration-300 flex-shrink-0 ${
+              className={`h-4 w-4 flex-shrink-0 transition-transform duration-150 ${
                 inventarioAbierto ? 'rotate-180' : ''
               } ${inventarioActivo ? 'text-primary' : 'text-slate-400'}`}
             />
           </button>
 
-          {/* Sub-items */}
           {inventarioAbierto && (
-            <div className="mt-1 ml-4 pl-3 border-l-2 border-primary/10 space-y-0.5">
+            <div className="mt-1 ml-4 space-y-0.5 border-l-2 border-primary/10 pl-3">
               {inventarioSubItems.map(({ icon: Icon, label, path }) => (
                 <NavLink
                   key={path}
                   to={path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-all duration-200 ${
-                      isActive
-                        ? 'bg-primary/8 text-primary font-bold'
-                        : 'text-slate-500 hover:bg-primary/5 hover:text-primary font-medium'
-                    }`
-                  }
+                  className={({ isActive }) => nestedItemClass(isActive)}
                 >
                   <Icon className="h-4 w-4 flex-shrink-0" />
                   <span className="text-xs font-headline">{label}</span>
@@ -147,34 +157,24 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={() => setSucursalesAbierto((prev) => !prev)}
-              className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 group ${
-                sucursalesActivo
-                  ? 'border border-primary/5 bg-white font-bold text-primary shadow-sm'
-                  : 'font-medium text-slate-600 hover:bg-primary/5 hover:text-primary'
-              }`}
+              className={`w-full ${topLevelItemClass(sucursalesActivo)}`}
             >
-              <Store className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 flex-shrink-0" />
-              <span className="text-sm font-headline flex-1 text-left">Sucursales</span>
+              <MapPin className="h-5 w-5 flex-shrink-0 transition-transform duration-150 group-hover:scale-110" />
+              <span className="flex-1 text-left text-sm font-headline">Ubicaciones</span>
               <ChevronDown
-                className={`h-4 w-4 transition-transform duration-300 flex-shrink-0 ${
+                className={`h-4 w-4 flex-shrink-0 transition-transform duration-150 ${
                   sucursalesAbierto ? 'rotate-180' : ''
                 } ${sucursalesActivo ? 'text-primary' : 'text-slate-400'}`}
               />
             </button>
 
             {sucursalesAbierto && (
-              <div className="mt-1 ml-4 pl-3 border-l-2 border-primary/10 space-y-0.5">
+              <div className="mt-1 ml-4 space-y-0.5 border-l-2 border-primary/10 pl-3">
                 {sucursalSubItems.map(({ icon: Icon, label, path }) => (
                   <NavLink
                     key={path}
                     to={path}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-all duration-200 ${
-                        isActive
-                          ? 'bg-primary/8 text-primary font-bold'
-                          : 'text-slate-500 hover:bg-primary/5 hover:text-primary font-medium'
-                      }`
-                    }
+                    className={({ isActive }) => nestedItemClass(isActive)}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
                     <span className="text-xs font-headline">{label}</span>
@@ -185,20 +185,13 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* Resto de ítems */}
         {visibleNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 group ${
-                isActive
-                  ? 'border border-primary/5 bg-white font-bold text-primary shadow-sm'
-                  : 'font-medium text-slate-600 hover:bg-primary/5 hover:text-primary'
-              }`
-            }
+            className={({ isActive }) => topLevelItemClass(isActive)}
           >
-            <item.icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+            <item.icon className="h-5 w-5 transition-transform duration-150 group-hover:scale-110" />
             <span className="text-sm font-headline">{item.label}</span>
           </NavLink>
         ))}
@@ -209,9 +202,9 @@ export default function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
-            className="group flex items-center gap-3 rounded-xl px-4 py-3 font-medium text-slate-600 transition-all hover:bg-primary/5 hover:text-primary"
+            className="group flex items-center gap-3 rounded-xl px-4 py-3 font-medium text-slate-600 outline-none select-none transition-colors duration-150 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           >
-            <item.icon className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+            <item.icon className="h-5 w-5 transition-transform duration-150 group-hover:translate-x-1" />
             <span className="text-sm font-headline">{item.label}</span>
           </NavLink>
         ))}
@@ -219,9 +212,9 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={handleLogout}
-          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium text-slate-600 transition-all hover:bg-primary/5 hover:text-primary"
+          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium text-slate-600 outline-none select-none transition-colors duration-150 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
         >
-          <LogOut className="h-5 w-5 text-error transition-transform duration-300 group-hover:translate-x-1" />
+          <LogOut className="h-5 w-5 text-error transition-transform duration-150 group-hover:translate-x-1" />
           <span className="text-sm font-headline">Cerrar sesión</span>
         </button>
       </div>

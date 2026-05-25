@@ -478,3 +478,87 @@ SELECT
 WHERE NOT EXISTS (
     SELECT 1 FROM producto WHERE codigo = 'MED001'
 );
+
+INSERT INTO presentacion (id_producto, nombre, factor_conversion, es_base, activo)
+SELECT
+    p.id_producto,
+    'Tableta',
+    1,
+    TRUE,
+    TRUE
+FROM producto p
+WHERE p.codigo = 'MED001'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM presentacion pres
+      WHERE pres.id_producto = p.id_producto
+        AND pres.nombre = 'Tableta'
+  );
+
+INSERT INTO lote (
+    id_producto,
+    id_proveedor,
+    id_sucursal,
+    numero_lote,
+    fecha_vencimiento,
+    cantidad_ingresada,
+    presentacion_ingreso,
+    stock_inicial,
+    stock_actual
+)
+SELECT
+    p.id_producto,
+    pr.id_proveedor,
+    s.id_sucursal,
+    'LOTE-MED001-001',
+    CURRENT_DATE + INTERVAL '12 months',
+    30,
+    pres.id_presentacion,
+    30,
+    30
+FROM producto p
+JOIN proveedor pr
+  ON pr.nombre = 'Proveedor Uno'
+JOIN sucursal s
+  ON s.nombre_sucursal = 'Sucursal Central'
+JOIN presentacion pres
+  ON pres.id_producto = p.id_producto
+ AND pres.nombre = 'Tableta'
+WHERE p.codigo = 'MED001'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM lote l
+      WHERE l.numero_lote = 'LOTE-MED001-001'
+        AND l.id_producto = p.id_producto
+        AND l.id_sucursal = s.id_sucursal
+  );
+
+INSERT INTO lote_presentacion (
+    id_lote,
+    id_presentacion,
+    precio_venta,
+    margen_ganancia,
+    precio_mayoreo,
+    cantidad_mayoreo
+)
+SELECT
+    l.id_lote,
+    pres.id_presentacion,
+    1.00,
+    0.30,
+    NULL,
+    NULL
+FROM lote l
+JOIN producto p
+  ON p.id_producto = l.id_producto
+JOIN presentacion pres
+  ON pres.id_producto = p.id_producto
+ AND pres.nombre = 'Tableta'
+WHERE l.numero_lote = 'LOTE-MED001-001'
+  AND p.codigo = 'MED001'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM lote_presentacion lp
+      WHERE lp.id_lote = l.id_lote
+        AND lp.id_presentacion = pres.id_presentacion
+  );

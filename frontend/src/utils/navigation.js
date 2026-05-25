@@ -1,6 +1,6 @@
 export function getDefaultRouteForRole(rol) {
   if (rol === 'dueno' || rol === 'administrador') {
-    return '/sucursales';
+    return '/usuarios';
   }
 
   return '/dashboard';
