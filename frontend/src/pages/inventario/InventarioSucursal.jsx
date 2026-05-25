@@ -218,6 +218,7 @@ export default function InventarioSucursal() {
       <InventarioTable
         cargando={cargando}
         productos={productosFiltrados}
+        sucursalId={sucursalId}
       />
 
       <LoteFormModal

@@ -17,7 +17,7 @@ function InventarioTableHeader() {
   );
 }
 
-export default function InventarioTable({ cargando, productos }) {
+export default function InventarioTable({ cargando, productos, sucursalId }) {
   if (cargando) {
     return (
       <motion.section
@@ -68,7 +68,7 @@ export default function InventarioTable({ cargando, productos }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.03, duration: 0.2 }}
           >
-            <InventarioProductoFila producto={producto} />
+            <InventarioProductoFila producto={producto} sucursalId={sucursalId} />
           </motion.div>
         ))}
       </div>

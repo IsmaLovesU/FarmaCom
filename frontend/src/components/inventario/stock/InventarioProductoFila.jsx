@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { ChevronDown, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import EstadoBadge from './EstadoBadge.jsx';
+import LotesDeProductoTable from './LotesDeProductoTable.jsx';
 
-export default function InventarioProductoFila({ producto }) {
+export default function InventarioProductoFila({ producto, sucursalId }) {
   const [expandido, setExpandido] = useState(false);
 
   const stockTotal = Number(producto.stock_total ?? 0);
@@ -110,23 +111,11 @@ export default function InventarioProductoFila({ producto }) {
                 </span>
               </h4>
 
-              {/*
-               * Sprint 4 — tarea "modal de lotes por producto"
-               *
-               * Aquí se conectará el componente <LotesDeProductoTable>
-               * que consumirá GET /api/lotes/producto/:id_producto.
-               * La estructura de columnas ya está definida abajo como
-               * referencia para quien implemente esa tarea.
-               */}
-              <div className="rounded-xl border border-dashed border-primary/20 p-6 text-center">
-                <Layers className="w-8 h-8 text-primary/20 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-400">
-                  Desglose de lotes disponible próximamente
-                </p>
-                <p className="text-xs text-slate-300 mt-1">
-                  Columnas: N° Lote · Fecha Ingreso · Fecha Vencimiento · Stock Actual · Estado · Precio Venta
-                </p>
-              </div>
+              <LotesDeProductoTable
+                producto={producto}
+                sucursalId={sucursalId}
+                activo={expandido}
+              />
 
               <div className="mt-4 grid grid-cols-4 gap-3">
                 {[
