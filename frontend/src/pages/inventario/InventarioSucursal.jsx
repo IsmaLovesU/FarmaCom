@@ -4,16 +4,20 @@ import InventarioSubNav from '../../components/inventario/InventarioSubNav.jsx';
 import InventarioStatsCards from '../../components/inventario/stock/InventarioStatsCards.jsx';
 import InventarioActionBar from '../../components/inventario/stock/InventarioActionBar.jsx';
 import InventarioTable from '../../components/inventario/stock/InventarioTable.jsx';
+import LoteFormModal from '../../components/inventario/stock/LoteFormModal.jsx';
 import useInventarioSucursal from '../../hooks/useInventarioSucursal.js';
 import useCategorias from '../../hooks/useCategorias.js';
 import useSucursales from '../../hooks/useSucursales.js';
+import useProductos from '../../hooks/useProductos.js';
+import useProveedores from '../../hooks/useProveedores.js';
+import useLotes from '../../hooks/useLotes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const FILTRO_TARJETA_A_ESTADO = {
   criticos: ['vencido', 'agotado'],
   proximos: ['proximo_a_vencer'],
-  optimos:  ['normal'],
-  total:    null,
+  optimos: ['normal'],
+  total: null,
 };
 
 const DETALLES_VISIBLES_POR_TARJETA = {
@@ -34,25 +38,32 @@ const detalleEsCompatible = (tarjeta, detalle) => {
 export default function InventarioSucursal() {
   const { sucursalActivaId } = useAuth();
 
-  // Sucursal seleccionada - Empieza con la del usuario autenticado
   const [sucursalId, setSucursalId] = useState(sucursalActivaId);
-
-  const { sucursales, cargando: cargandoSucursales } = useSucursales();
-  const { categorias } = useCategorias();
-  const {
-    productos,
-    resumen,
-    cargando,
-    error,
-  } = useInventarioSucursal(sucursalId);
-
-  // Filtros locales
   const [busqueda, setBusqueda] = useState('');
   const [filtroDetalle, setFiltroDetalle] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroTarjeta, setFiltroTarjeta] = useState(null);
+  const [mostrarModalLote, setMostrarModalLote] = useState(false);
+  const [lotePreparado, setLotePreparado] = useState(null);
 
-  // Al cambiar de sucursal, limpiar todos los filtros
+  const { sucursales, cargando: cargandoSucursales } = useSucursales();
+  const { categorias } = useCategorias();
+  const { productos: productosCatalogo, cargando: cargandoProductosCatalogo } = useProductos();
+  const { proveedores, cargando: cargandoProveedores } = useProveedores();
+  const {
+    guardando: guardandoLote,
+    error: errorLote,
+    crear: crearLote,
+    limpiarError: limpiarErrorLote,
+  } = useLotes();
+  const {
+    productos: productosInventario,
+    resumen,
+    cargando,
+    error,
+    refrescar: refrescarInventario,
+  } = useInventarioSucursal(sucursalId);
+
   const handleSucursalChange = useCallback((id) => {
     setSucursalId(id);
     setBusqueda('');
@@ -61,7 +72,6 @@ export default function InventarioSucursal() {
     setFiltroTarjeta(null);
   }, []);
 
-  // La tarjeta manda el grupo principal; el detalle solo refina cuando aplica.
   const handleFiltroTarjeta = useCallback((key) => {
     const siguienteTarjeta = filtroTarjeta === key ? null : key;
     setFiltroTarjeta(siguienteTarjeta);
@@ -74,10 +84,30 @@ export default function InventarioSucursal() {
     setFiltroDetalle(valor);
   }, []);
 
-  //  Filtrado en memoria
+  const handleAbrirModalLote = useCallback(() => {
+    setLotePreparado(null);
+    limpiarErrorLote();
+    setMostrarModalLote(true);
+  }, [limpiarErrorLote]);
+
+  const handleCerrarModalLote = useCallback(() => {
+    setMostrarModalLote(false);
+    limpiarErrorLote();
+  }, [limpiarErrorLote]);
+
+  const handleGuardarFormularioLote = useCallback(async (payload) => {
+    try {
+      const resultado = await crearLote(payload);
+      setLotePreparado({ ...payload, id_lote: resultado.lote?.id_lote });
+      setMostrarModalLote(false);
+      await refrescarInventario();
+    } catch {
+      // El hook expone el mensaje para mantenerlo dentro del modal.
+    }
+  }, [crearLote, refrescarInventario]);
+
   const productosFiltrados = useMemo(() => {
-    return productos.filter((p) => {
-      // Búsqueda de texto
+    return productosInventario.filter((p) => {
       const termino = busqueda.trim().toLowerCase();
       const coincideTexto =
         !termino ||
@@ -85,7 +115,6 @@ export default function InventarioSucursal() {
         p.nombre_generico?.toLowerCase().includes(termino) ||
         p.codigo?.toLowerCase().includes(termino);
 
-      // Filtro de tarjeta
       let coincideEstado = true;
       if (filtroTarjeta && filtroTarjeta !== 'total') {
         const estadosPermitidos = FILTRO_TARJETA_A_ESTADO[filtroTarjeta];
@@ -98,27 +127,25 @@ export default function InventarioSucursal() {
         coincideEstado = p.estado_consolidado === filtroDetalle;
       }
 
-      // Filtro de categoría
       const coincideCategoria =
         !filtroCategoria ||
         String(p.id_categoria) === String(filtroCategoria);
 
       return coincideTexto && coincideEstado && coincideCategoria;
     });
-  }, [productos, busqueda, filtroDetalle, filtroTarjeta, filtroCategoria]);
+  }, [productosInventario, busqueda, filtroDetalle, filtroTarjeta, filtroCategoria]);
 
-  //  Nombre de sucursal activa
   const nombreSucursal = useMemo(() => {
     if (!sucursales.length || !sucursalId) return '';
     return sucursales.find((s) => s.id_sucursal === sucursalId)?.nombre_sucursal ?? '';
   }, [sucursales, sucursalId]);
 
-  // Render 
+  const cargandoDatosLote = cargandoSucursales || cargandoProductosCatalogo || cargandoProveedores;
+
   return (
     <div className="space-y-6">
       <InventarioSubNav />
 
-      {/* Encabezado */}
       <motion.div
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
@@ -135,7 +162,6 @@ export default function InventarioSucursal() {
           )}
         </div>
 
-        {/* Contador de resultados */}
         {!cargando && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -146,13 +172,12 @@ export default function InventarioSucursal() {
             Mostrando
             <span className="mx-1.5 font-bold text-primary">{productosFiltrados.length}</span>
             de
-            <span className="mx-1.5 font-bold text-primary">{productos.length}</span>
+            <span className="mx-1.5 font-bold text-primary">{productosInventario.length}</span>
             productos
           </motion.div>
         )}
       </motion.div>
 
-      {/* Tarjetas resumen */}
       <InventarioStatsCards
         resumen={resumen}
         filtroActivo={filtroTarjeta}
@@ -160,7 +185,6 @@ export default function InventarioSucursal() {
         cargando={cargando}
       />
 
-      {/* Barra de acción */}
       <InventarioActionBar
         busqueda={busqueda}
         onBusquedaChange={(e) => setBusqueda(e.target.value)}
@@ -173,24 +197,41 @@ export default function InventarioSucursal() {
         sucursalId={sucursalId}
         sucursales={sucursales}
         onSucursalChange={handleSucursalChange}
-        onNuevoLote={() => {
-          // Próxima tarea Sprint 4: abrir modal de ingreso de lote
-          // TODO: setMostrarModalLote(true)
-          window.alert('Modal de ingreso de lote — próxima tarea del sprint');
-        }}
+        onNuevoLote={handleAbrirModalLote}
       />
 
-      {/* Error */}
+      {lotePreparado && (
+        <div className="bg-surface-container-lowest border border-primary/10 rounded-2xl px-5 py-4 shadow-[0_4px_20px_rgba(0,81,71,0.02)]">
+          <p className="font-headline font-extrabold text-primary">Lote guardado correctamente</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Lote {lotePreparado.numero_lote} creado con precio de venta definido.
+          </p>
+        </div>
+      )}
+
       {error && (
         <div className="bg-error-container/40 border border-error/20 rounded-xl px-4 py-3 text-sm text-on-error-container font-medium">
           {error}
         </div>
       )}
 
-      {/* Tabla */}
       <InventarioTable
         cargando={cargando}
         productos={productosFiltrados}
+        sucursalId={sucursalId}
+      />
+
+      <LoteFormModal
+        isOpen={mostrarModalLote}
+        productos={productosCatalogo}
+        proveedores={proveedores}
+        sucursales={sucursales}
+        sucursalInicialId={sucursalId}
+        cargandoDatos={cargandoDatosLote}
+        guardando={guardandoLote}
+        errorFormulario={errorLote}
+        onClose={handleCerrarModalLote}
+        onSubmit={handleGuardarFormularioLote}
       />
     </div>
   );
