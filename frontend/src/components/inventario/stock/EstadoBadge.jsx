@@ -22,7 +22,7 @@ const ESTADOS = {
     punto: 'bg-amber-500',
   },
   normal: {
-    label: 'Óptimo',
+    label: 'En buen estado',
     clase: 'bg-secondary-container text-on-secondary-container border-secondary/10',
     punto: 'bg-primary animate-pulse',
   },

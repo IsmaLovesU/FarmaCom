@@ -33,11 +33,11 @@ const TARJETAS = [
     label: 'Próximos a Vencer',
     sublabel: 'Dentro del rango de alerta',
     icono: Clock,
-    colorBorde: 'border-tertiary',
-    colorIcono: 'text-tertiary',
-    colorFondoIcono: 'bg-tertiary/10 group-hover:bg-tertiary group-hover:text-white',
+    colorBorde: 'border-amber-500',
+    colorIcono: 'text-amber-600',
+    colorFondoIcono: 'bg-amber-50 group-hover:bg-amber-500 group-hover:text-white',
     badgeLabel: 'Alerta',
-    badgeClase: 'text-tertiary',
+    badgeClase: 'text-amber-600',
   },
   {
     key: 'optimos',
@@ -48,7 +48,7 @@ const TARJETAS = [
     colorBorde: 'border-secondary',
     colorIcono: 'text-secondary',
     colorFondoIcono: 'bg-secondary/10 group-hover:bg-secondary group-hover:text-white',
-    badgeLabel: 'Saludable',
+    badgeLabel: 'En buen estado',
     badgeClase: 'text-secondary',
   },
 ];
@@ -63,6 +63,7 @@ export default function InventarioStatsCards({ resumen, filtroActivo, onFiltroCh
       {TARJETAS.map(({ key, campo, label, sublabel, icono: Icono, colorBorde, colorIcono, colorFondoIcono, badgeLabel, badgeClase }, idx) => {
         const valor = cargando ? '—' : (resumen?.[campo] ?? 0);
         const isActive = filtroActivo === key;
+        const muestraEstadoFiltro = isActive && key !== 'total';
 
         return (
           <motion.div
@@ -76,7 +77,7 @@ export default function InventarioStatsCards({ resumen, filtroActivo, onFiltroCh
               border-b-4 ${colorBorde}
               transition-all duration-200 cursor-pointer group
               hover:-translate-y-1
-              ${isActive
+              ${muestraEstadoFiltro
                 ? 'ring-2 ring-offset-1 ring-primary/30 bg-primary-fixed/20'
                 : 'hover:shadow-md'
               }
@@ -97,7 +98,7 @@ export default function InventarioStatsCards({ resumen, filtroActivo, onFiltroCh
             <p className="text-sm font-semibold text-on-surface">{label}</p>
             <p className="text-xs text-on-surface-variant mt-0.5">{sublabel}</p>
 
-            {isActive && (
+            {muestraEstadoFiltro && (
               <div className="mt-3 pt-3 border-t border-primary/10">
                 <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
                   Filtro activo — click para limpiar

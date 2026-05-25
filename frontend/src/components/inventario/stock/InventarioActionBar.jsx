@@ -12,7 +12,7 @@ const OPCIONES_DETALLE = {
     { value: 'poco_stock', label: 'Poco stock' },
   ],
   criticos: [
-    { value: '', label: 'Todos los criticos' },
+    { value: '', label: 'Todos los críticos' },
     { value: 'vencido', label: 'Solo vencidos' },
     { value: 'agotado', label: 'Solo agotados' },
   ],
@@ -111,7 +111,7 @@ export default function InventarioActionBar({
 
         <div className="min-w-[180px] flex-1">
           <label className="mb-1.5 ml-1 block text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            Categoria
+            Categoría
           </label>
           <div className="relative">
             <select
@@ -119,7 +119,7 @@ export default function InventarioActionBar({
               onChange={(e) => onFiltroCategoriaChange(e.target.value)}
               className="w-full cursor-pointer appearance-none rounded-xl border border-slate-200 bg-surface-container-lowest py-2.5 pr-9 px-3 text-sm font-medium text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
             >
-              <option value="">Todas las categorias</option>
+              <option value="">Todas las categorías</option>
               {categorias.map((c) => (
                 <option key={c.id_categoria} value={c.id_categoria}>
                   {c.nombre}
