@@ -329,7 +329,7 @@ CREATE TABLE IF NOT EXISTS lote_presentacion (
     id_lote          INTEGER       NOT NULL,
     id_presentacion  INTEGER       NOT NULL,
     precio_venta     NUMERIC(10,2) NOT NULL CHECK (precio_venta >= 0),
-    margen_ganancia  NUMERIC(6,4)  NOT NULL CHECK (margen_ganancia >= 0),
+    margen_ganancia  NUMERIC(8,4)  NOT NULL CHECK (margen_ganancia >= 0),
     precio_mayoreo   NUMERIC(10,2)             CHECK (precio_mayoreo >= 0),
     cantidad_mayoreo INTEGER                   CHECK (cantidad_mayoreo > 0),
 

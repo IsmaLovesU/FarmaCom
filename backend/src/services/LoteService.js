@@ -49,8 +49,8 @@ const crearLote = async (datos) => {
     lanzarError('La fecha de vencimiento debe ser posterior a hoy', 400);
 
   // Verificar cantidad
-  if (!cantidad_ingresada || cantidad_ingresada <= 0)
-    lanzarError('La cantidad ingresada debe ser mayor a 0', 400);
+  if (!Number.isInteger(Number(cantidad_ingresada)) || Number(cantidad_ingresada) <= 0)
+    lanzarError('La cantidad ingresada debe ser un entero mayor a 0', 400);
 
   // Número de lote único por producto y sucursal
   const duplicado = await LoteDAO.obtenerPorNumeroLote(numero_lote, id_producto, id_sucursal);
@@ -80,7 +80,7 @@ const crearLote = async (datos) => {
       lanzarError(`La presentación ${p.id_presentacion} está inactiva`, 409);
     if (p.precio_venta === undefined || p.precio_venta < 0)
       lanzarError(`precio_venta inválido para presentación ${p.id_presentacion}`, 400);
-    if (p.margen_ganancia === undefined || p.margen_ganancia < 0)
+    if (p.margen_ganancia === undefined || p.margen_ganancia < 0 || p.margen_ganancia > 9999.9999)
       lanzarError(`margen_ganancia inválido para presentación ${p.id_presentacion}`, 400);
 
     // Verificar consistencia mayoreo
@@ -195,8 +195,11 @@ const actualizarPrecio = async (id_lote, id_presentacion, campos) => {
   if (campos.precio_venta !== undefined && campos.precio_venta < 0)
     lanzarError('El precio de venta no puede ser negativo', 400);
 
-  if (campos.margen_ganancia !== undefined && campos.margen_ganancia < 0)
-    lanzarError('El margen de ganancia no puede ser negativo', 400);
+  if (
+    campos.margen_ganancia !== undefined
+    && (campos.margen_ganancia < 0 || campos.margen_ganancia > 9999.9999)
+  )
+    lanzarError('El margen de ganancia debe estar entre 0 y 9999.9999', 400);
 
   // Limpiar mayoreo explícitamente
   if (campos.limpiar_mayoreo === true) {

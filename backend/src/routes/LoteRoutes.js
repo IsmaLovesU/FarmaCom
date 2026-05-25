@@ -63,8 +63,8 @@ const validarCreacion = [
     .toDate(),
 
   body('cantidad_ingresada')
-    .isFloat({ min: 0.0001 }).withMessage('cantidad_ingresada debe ser mayor a 0')
-    .toFloat(),
+    .isInt({ min: 1 }).withMessage('cantidad_ingresada debe ser un entero mayor a 0')
+    .toInt(),
 
   body('presentacion_ingreso')
     .isInt({ min: 1 }).withMessage('presentacion_ingreso debe ser un entero positivo')
@@ -83,7 +83,7 @@ const validarCreacion = [
     .toFloat(),
 
   body('precios.*.margen_ganancia')
-    .isFloat({ min: 0 }).withMessage('margen_ganancia debe ser mayor o igual a 0')
+    .isFloat({ min: 0, max: 9999.9999 }).withMessage('margen_ganancia debe estar entre 0 y 9999.9999')
     .toFloat(),
 
   body('precios.*.precio_mayoreo')
@@ -117,7 +117,7 @@ const validarActualizacionPrecio = [
 
   body('margen_ganancia')
     .optional()
-    .isFloat({ min: 0 }).withMessage('margen_ganancia debe ser mayor o igual a 0')
+    .isFloat({ min: 0, max: 9999.9999 }).withMessage('margen_ganancia debe estar entre 0 y 9999.9999')
     .toFloat(),
 
   body('precio_mayoreo')

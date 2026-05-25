@@ -10,6 +10,7 @@ import useCategorias from '../../hooks/useCategorias.js';
 import useSucursales from '../../hooks/useSucursales.js';
 import useProductos from '../../hooks/useProductos.js';
 import useProveedores from '../../hooks/useProveedores.js';
+import useLotes from '../../hooks/useLotes.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const FILTRO_TARJETA_A_ESTADO = {
@@ -50,10 +51,17 @@ export default function InventarioSucursal() {
   const { productos: productosCatalogo, cargando: cargandoProductosCatalogo } = useProductos();
   const { proveedores, cargando: cargandoProveedores } = useProveedores();
   const {
+    guardando: guardandoLote,
+    error: errorLote,
+    crear: crearLote,
+    limpiarError: limpiarErrorLote,
+  } = useLotes();
+  const {
     productos: productosInventario,
     resumen,
     cargando,
     error,
+    refrescar: refrescarInventario,
   } = useInventarioSucursal(sucursalId);
 
   const handleSucursalChange = useCallback((id) => {
@@ -78,17 +86,25 @@ export default function InventarioSucursal() {
 
   const handleAbrirModalLote = useCallback(() => {
     setLotePreparado(null);
+    limpiarErrorLote();
     setMostrarModalLote(true);
-  }, []);
+  }, [limpiarErrorLote]);
 
   const handleCerrarModalLote = useCallback(() => {
     setMostrarModalLote(false);
-  }, []);
+    limpiarErrorLote();
+  }, [limpiarErrorLote]);
 
-  const handleGuardarFormularioLote = useCallback((payload) => {
-    setLotePreparado(payload);
-    setMostrarModalLote(false);
-  }, []);
+  const handleGuardarFormularioLote = useCallback(async (payload) => {
+    try {
+      const resultado = await crearLote(payload);
+      setLotePreparado({ ...payload, id_lote: resultado.lote?.id_lote });
+      setMostrarModalLote(false);
+      await refrescarInventario();
+    } catch {
+      // El hook expone el mensaje para mantenerlo dentro del modal.
+    }
+  }, [crearLote, refrescarInventario]);
 
   const productosFiltrados = useMemo(() => {
     return productosInventario.filter((p) => {
@@ -186,9 +202,9 @@ export default function InventarioSucursal() {
 
       {lotePreparado && (
         <div className="bg-surface-container-lowest border border-primary/10 rounded-2xl px-5 py-4 shadow-[0_4px_20px_rgba(0,81,71,0.02)]">
-          <p className="font-headline font-extrabold text-primary">Formulario de lote listo</p>
+          <p className="font-headline font-extrabold text-primary">Lote guardado correctamente</p>
           <p className="text-sm text-slate-500 mt-1">
-            Lote {lotePreparado.numero_lote} preparado para {lotePreparado.presentacion_ingreso} con precio de venta definido.
+            Lote {lotePreparado.numero_lote} creado con precio de venta definido.
           </p>
         </div>
       )}
@@ -211,6 +227,8 @@ export default function InventarioSucursal() {
         sucursales={sucursales}
         sucursalInicialId={sucursalId}
         cargandoDatos={cargandoDatosLote}
+        guardando={guardandoLote}
+        errorFormulario={errorLote}
         onClose={handleCerrarModalLote}
         onSubmit={handleGuardarFormularioLote}
       />

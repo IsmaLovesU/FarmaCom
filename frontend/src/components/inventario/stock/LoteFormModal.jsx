@@ -30,6 +30,11 @@ const formatoDecimal = (valor, decimales = 2) => {
   return valor.toFixed(decimales);
 };
 
+const formatoCantidad = (valor, decimales = 4) => {
+  if (!Number.isFinite(valor)) return '';
+  return Number.isInteger(valor) ? String(valor) : valor.toFixed(decimales);
+};
+
 const esEnteroPositivo = (valor) => {
   const numero = Number(valor);
   return Number.isInteger(numero) && numero >= 1;
@@ -42,6 +47,8 @@ export default function LoteFormModal({
   sucursales,
   sucursalInicialId,
   cargandoDatos,
+  guardando = false,
+  errorFormulario = null,
   onClose,
   onSubmit,
 }) {
@@ -107,7 +114,9 @@ export default function LoteFormModal({
     if (!formulario.id_sucursal) return 'Selecciona una sucursal.';
     if (!formulario.numero_lote.trim()) return 'Ingresa el número de lote.';
     if (!formulario.fecha_vencimiento) return 'Selecciona la fecha de vencimiento.';
-    if (Number(formulario.cantidad_ingresada) <= 0) return 'La cantidad ingresada debe ser mayor a 0.';
+    if (!esEnteroPositivo(formulario.cantidad_ingresada)) {
+      return 'La cantidad ingresada debe ser un entero mayor a 0.';
+    }
     if (!formulario.presentacion_ingreso.trim()) return 'Escribe la presentación de ingreso.';
     if (!esEnteroPositivo(formulario.factor_conversion_ingreso)) {
       return 'El factor de conversión debe ser un entero mayor o igual a 1.';
@@ -340,8 +349,8 @@ export default function LoteFormModal({
                   value={formulario.cantidad_ingresada}
                   onChange={manejarCambio}
                   placeholder="0"
-                  min="0.0001"
-                  step="0.0001"
+                  min="1"
+                  step="1"
                   required
                   className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                 />
@@ -387,7 +396,7 @@ export default function LoteFormModal({
               <div className="flex h-[42px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600">
                 <Calculator className="h-4 w-4 text-primary" />
                 <span className="font-semibold">
-                  {Number.isFinite(stockInicial) && stockInicial > 0 ? formatoDecimal(stockInicial, 4) : '0.0000'}
+                  {Number.isFinite(stockInicial) && stockInicial > 0 ? formatoCantidad(stockInicial) : '0'}
                 </span>
                 <span className="text-xs text-slate-400">unidades base</span>
               </div>
@@ -462,24 +471,25 @@ export default function LoteFormModal({
             </div>
           </section>
 
-          {errorLocal && (
-            <p className="text-sm font-semibold text-error">{errorLocal}</p>
+          {(errorLocal || errorFormulario) && (
+            <p className="text-sm font-semibold text-error">{errorLocal || errorFormulario}</p>
           )}
 
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              disabled={guardando}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={cargandoDatos}
+              disabled={cargandoDatos || guardando}
               className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
-              Guardar lote
+              {guardando ? 'Guardando...' : 'Guardar lote'}
             </button>
           </div>
         </form>
