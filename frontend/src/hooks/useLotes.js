@@ -14,6 +14,12 @@ const obtenerMensajeError = (err, fallback) => {
 
 const normalizarTexto = (valor) => valor.trim().toLowerCase();
 
+const formatearFactor = (valor) => {
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return valor;
+  return Number.isInteger(numero) ? String(numero) : numero.toString();
+};
+
 const resolverPresentacionIngreso = async (payload) => {
   const nombre = payload.presentacion_ingreso.trim();
   const factorConversion = Number(payload.factor_conversion_ingreso);
@@ -26,7 +32,7 @@ const resolverPresentacionIngreso = async (payload) => {
   if (existente) {
     if (Number(existente.factor_conversion) !== factorConversion) {
       throw new Error(
-        `Ya existe la presentación "${existente.nombre}" con factor ${existente.factor_conversion}. ` +
+        `Ya existe la presentación "${existente.nombre}" con factor ${formatearFactor(existente.factor_conversion)}. ` +
         'Usa ese factor o escribe otro nombre de presentación.',
       );
     }
