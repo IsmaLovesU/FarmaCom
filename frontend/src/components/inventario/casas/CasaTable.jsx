@@ -2,7 +2,7 @@ import React from 'react';
 import CasaTableHeader from './CasaTableHeader.jsx';
 import CasaTableRow from './CasaTableRow.jsx';
 
-export default function CasaTable({ cargando, casas, onEditar, onCambiarEstado, onEliminar, procesandoId }) {
+export default function CasaTable({ cargando, casas, onEditar, onCambiarEstado, onContactos, onEliminar, procesandoId }) {
   if (cargando) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white/80 overflow-hidden">
@@ -31,6 +31,7 @@ export default function CasaTable({ cargando, casas, onEditar, onCambiarEstado, 
             casa={casa}
             onEditar={onEditar}
             onCambiarEstado={onCambiarEstado}
+            onContactos={onContactos}
             onEliminar={onEliminar}
             procesando={procesandoId}
           />

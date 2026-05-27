@@ -1,7 +1,7 @@
 import React from 'react';
-import { Pencil, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
+import { Pencil, ToggleLeft, ToggleRight, Trash2, Phone } from 'lucide-react';
 
-export default function CasaTableRow({ casa, onEditar, onCambiarEstado, onEliminar, procesando }) {
+export default function CasaTableRow({ casa, onEditar, onCambiarEstado, onContactos, onEliminar, procesando }) {
   const esActivo = casa.activo;
 
   return (
@@ -20,32 +20,43 @@ export default function CasaTableRow({ casa, onEditar, onCambiarEstado, onElimin
         </span>
       </div>
 
-      <div className="col-span-4 flex justify-center gap-1.5">
+      <div className="col-span-5 flex justify-center gap-1.5 flex-wrap">
+        <button
+          onClick={() => onContactos(casa)}
+          title="Contactos y proveedores"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-teal-700 border border-teal-200 hover:bg-teal-50 transition-colors"
+        >
+          <Phone className="w-3.5 h-3.5" />
+          Contactos
+        </button>
         <button
           onClick={() => onEditar(casa)}
-          title="Editar"
-          className="p-1.5 rounded-lg text-slate-500 hover:bg-surface-container-high hover:text-primary transition-colors"
+          title="Editar nombre"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-primary border border-primary/20 hover:bg-primary/5 transition-colors"
         >
-          <Pencil className="w-4 h-4" />
+          <Pencil className="w-3.5 h-3.5" />
+          Editar
         </button>
         <button
           onClick={() => onCambiarEstado(casa)}
           disabled={procesando === casa.id_casa}
           title={esActivo ? 'Desactivar' : 'Activar'}
-          className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors disabled:opacity-50 ${
             esActivo
-              ? 'text-slate-500 hover:bg-red-50 hover:text-red-600'
-              : 'text-slate-500 hover:bg-green-50 hover:text-green-700'
+              ? 'text-red-600 border-red-200 hover:bg-red-50'
+              : 'text-green-700 border-green-200 hover:bg-green-50'
           }`}
         >
-          {esActivo ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+          {esActivo
+            ? <><ToggleRight className="w-3.5 h-3.5" /> Desactivar</>
+            : <><ToggleLeft className="w-3.5 h-3.5" /> Activar</>}
         </button>
         <button
           onClick={() => onEliminar(casa)}
           title="Eliminar"
-          className="p-1.5 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 border border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

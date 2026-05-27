@@ -4,6 +4,7 @@ import CasaActionBar from '../../components/inventario/casas/CasaActionBar.jsx';
 import CasaTable from '../../components/inventario/casas/CasaTable.jsx';
 import CasaFormModal from '../../components/inventario/casas/CasaFormModal.jsx';
 import CasaDeleteModal from '../../components/inventario/casas/CasaDeleteModal.jsx';
+import CasaContactosModal from '../../components/inventario/casas/CasaContactosModal.jsx';
 import useCasas from '../../hooks/useCasas';
 
 const formularioInicial = { nombre: '' };
@@ -21,6 +22,7 @@ export default function Casas() {
   const [casaAEliminar, setCasaAEliminar] = useState(null);
   const [procesandoId, setProcesandoId] = useState(null);
   const [errorAccion, setErrorAccion] = useState(null);
+  const [casaContactos, setCasaContactos] = useState(null);
 
   const casasFiltradas = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -117,11 +119,18 @@ export default function Casas() {
         </div>
       )}
 
+      <CasaContactosModal
+        isOpen={Boolean(casaContactos)}
+        casa={casaContactos}
+        onClose={() => setCasaContactos(null)}
+      />
+      
       <CasaTable
         cargando={cargando}
         casas={casasFiltradas}
         onEditar={abrirModalEditar}
         onCambiarEstado={manejarCambiarEstado}
+        onContactos={setCasaContactos}
         onEliminar={setCasaAEliminar}
         procesandoId={procesandoId}
       />
