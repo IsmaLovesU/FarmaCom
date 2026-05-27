@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Package, WarehouseIcon, Tag, Truck } from 'lucide-react';
+import { Package, WarehouseIcon, Tag, Truck, Building2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const tabs = [
@@ -8,6 +8,7 @@ const tabs = [
   { label: 'Inventario',  path: '/inventario/stock',     icon: WarehouseIcon },
   { label: 'Categorías',  path: '/inventario/categorias', icon: Tag },
   { label: 'Proveedores', path: '/inventario/proveedores', icon: Truck },
+  { label: 'Casas',       path: '/inventario/casas',      icon: Building2 },
 ];
 
 export default function InventarioSubNav() {
