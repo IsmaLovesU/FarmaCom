@@ -25,6 +25,7 @@ const inventarioSubItems = [
   { icon: Warehouse, label: 'Inventario', path: '/inventario/stock' },
   { icon: Tag, label: 'Categorías', path: '/inventario/categorias' },
   { icon: Truck, label: 'Proveedores', path: '/inventario/proveedores' },
+  { icon: Building2, label: 'Casas', path: '/inventario/casas' },
 ];
 
 const sucursalSubItems = [
