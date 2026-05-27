@@ -12,6 +12,7 @@ import Productos from '../pages/inventario/Productos.jsx';
 import InventarioSucursal from '../pages/inventario/InventarioSucursal.jsx';
 import Categorias from '../pages/inventario/Categorias.jsx';
 import Proveedores from '../pages/inventario/Proveedores.jsx';
+import Casas from '../pages/inventario/Casas.jsx';
 
 export default function AppRoutes() {
   return (
@@ -33,6 +34,7 @@ export default function AppRoutes() {
             <Route path="stock" element={<InventarioSucursal />} />
             <Route path="categorias" element={<Categorias />} />
             <Route path="proveedores" element={<Proveedores />} />
+            <Route path="casas" element={<Casas />} />
           </Route>
 
           {/* Admin */}

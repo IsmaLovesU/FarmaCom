@@ -203,7 +203,7 @@ export default function ProductoFormModal({
                   className="w-full appearance-none rounded-xl border border-slate-300 px-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   <option value="">Seleccionar...</option>
-                  {(casas || []).map((cf) => (
+                  {(casas || []).filter((cf) => cf.activo).map((cf) => (
                     <option key={cf.id_casa} value={cf.id_casa}>
                       {cf.nombre}
                     </option>
