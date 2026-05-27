@@ -3,40 +3,28 @@ import CasaTableHeader from './CasaTableHeader.jsx';
 import CasaTableRow from './CasaTableRow.jsx';
 
 export default function CasaTable({ cargando, casas, onEditar, onCambiarEstado, onContactos, onEliminar, procesandoId }) {
-  if (cargando) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white/80 overflow-hidden">
-        <CasaTableHeader />
-        <div className="px-6 py-12 text-center text-sm text-slate-400">Cargando casas farmacéuticas...</div>
-      </div>
-    );
-  }
-
-  if (!casas.length) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white/80 overflow-hidden">
-        <CasaTableHeader />
-        <div className="px-6 py-12 text-center text-sm text-slate-400">No se encontraron casas farmacéuticas.</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 overflow-hidden">
+    <section className="bg-surface-container-low/60 border border-slate-200 rounded-2xl overflow-hidden">
       <CasaTableHeader />
-      <div className="divide-y divide-slate-100">
-        {casas.map((casa) => (
-          <CasaTableRow
-            key={casa.id_casa}
-            casa={casa}
-            onEditar={onEditar}
-            onCambiarEstado={onCambiarEstado}
-            onContactos={onContactos}
-            onEliminar={onEliminar}
-            procesando={procesandoId}
-          />
-        ))}
-      </div>
-    </div>
+      {cargando ? (
+        <div className="px-5 py-10 text-center text-slate-500 font-medium">Cargando casas farmacéuticas...</div>
+      ) : casas.length === 0 ? (
+        <div className="px-5 py-10 text-center text-slate-500 font-medium">No hay casas farmacéuticas para mostrar.</div>
+      ) : (
+        <div className="divide-y divide-slate-200">
+          {casas.map((casa) => (
+            <CasaTableRow
+              key={casa.id_casa}
+              casa={casa}
+              onEditar={onEditar}
+              onCambiarEstado={onCambiarEstado}
+              onContactos={onContactos}
+              onEliminar={onEliminar}
+              procesando={procesandoId === casa.id_casa}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
