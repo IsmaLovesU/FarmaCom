@@ -6,7 +6,7 @@ export default function CasaTableHeader() {
       <span className="col-span-1 text-xs font-extrabold uppercase tracking-widest text-slate-400">#</span>
       <span className="col-span-5 text-xs font-extrabold uppercase tracking-widest text-slate-400">Nombre</span>
       <span className="col-span-2 text-xs font-extrabold uppercase tracking-widest text-slate-400 text-center">Estado</span>
-      <span className="col-span-4 text-xs font-extrabold uppercase tracking-widest text-slate-400 text-center">Acciones</span>
+      <span className="col-span-5 text-xs font-extrabold uppercase tracking-widest text-slate-400 text-center">Acciones</span>
     </div>
   );
 }
