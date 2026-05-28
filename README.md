@@ -53,6 +53,17 @@ Contiene los entregables del Sprint 3, que incluyen:
 - Proyecto del Sprint 3
 - Formulario LOGT del Sprint 3
 
+### Sprint 4
+Contiene los entregables del Sprint 4, que incluyen:
+- Proyecto del Sprint 4
+- Formulario LOGT del Sprint 4
+
+### Integrador
+Contiene los archivos relacionados al primer documento integrador:
+- Documento Integrador
+- Enlaces importantes
+- Imágenes de diagramas y Lean UX
+
 ### Scrum
 Carpeta destinada para materiales relacionados con la metodología Scrum, utilizada en etapas posteriores del proyecto.
 
@@ -136,7 +147,7 @@ docker compose logs -f db
 ```
 # Cómo acceder al sistema desplegado en el servidor
 
-Ingresar a la siguiente dirección: http://209.126.125.149:5173/login
+Ingresar a la siguiente dirección: https://farmacom.website/login
 
 El usuario de acceso para desarrollo se compartirá por otro medio para mayor seguridad.
 
