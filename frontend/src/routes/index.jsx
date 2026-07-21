@@ -13,6 +13,7 @@ import InventarioSucursal from '../pages/inventario/InventarioSucursal.jsx';
 import Categorias from '../pages/inventario/Categorias.jsx';
 import Proveedores from '../pages/inventario/Proveedores.jsx';
 import Casas from '../pages/inventario/Casas.jsx';
+import Clientes from '../pages/Clientes.jsx';
 
 export default function AppRoutes() {
   return (
@@ -44,10 +45,7 @@ export default function AppRoutes() {
             <Route path="/usuarios" element={<Usuarios />} />
           </Route>
 
-          <Route
-            path="/patients"
-            element={<div className="p-8 font-headline text-2xl font-bold">Clientes (Próximamente)</div>}
-          />
+          <Route path="/patients" element={<Clientes />} />
           <Route
             path="/reports"
             element={<div className="p-8 font-headline text-2xl font-bold">Reportes (Próximamente)</div>}
