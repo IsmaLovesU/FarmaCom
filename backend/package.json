@@ -2,6 +2,11 @@
     "name": "farmacias-backend",
     "version": "1.0.0",
     "main": "src/index.js",
+    "scripts": {
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage"
+    },
     "dependencies": {
         "bcrypt": "^5.1.1",
         "cookie-parser": "^1.4.7",
@@ -17,5 +22,9 @@
         "tar": "6.2.1",
         "path-to-regexp": "0.1.13",
         "qs": "6.14.1"
+    },
+    "devDependencies": {
+        "jest": "^30.4.2",
+        "supertest": "^7.2.2"
     }
 }
