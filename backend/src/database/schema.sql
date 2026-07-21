@@ -70,6 +70,15 @@ CREATE TABLE IF NOT EXISTS usuario (
 );
 
 -- =========================
+-- TABLA: cliente
+-- =========================
+CREATE TABLE IF NOT EXISTS cliente (
+    id_cliente SERIAL PRIMARY KEY,
+    nombre_cliente VARCHAR(150) NOT NULL,
+    observaciones TEXT
+);
+
+-- =========================
 -- TABLA: categoria
 -- =========================
 CREATE TABLE IF NOT EXISTS categoria (
