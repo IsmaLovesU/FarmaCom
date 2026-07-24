@@ -364,6 +364,62 @@ CREATE TABLE IF NOT EXISTS lote_presentacion (
 );
 
 -- =========================
+-- TABLA: venta
+-- CRUD inicial de borradores. La confirmación, los pagos y el descuento
+-- de inventario se incorporarán cuando se defina el manejo de presentaciones.
+-- =========================
+CREATE TABLE IF NOT EXISTS venta (
+    id_venta            SERIAL        PRIMARY KEY,
+    id_sucursal         INTEGER       NOT NULL,
+    id_usuario          INTEGER       NOT NULL,
+    estado              VARCHAR(20)   NOT NULL DEFAULT 'borrador',
+    observaciones       TEXT,
+    total               NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (total >= 0),
+    fecha_creacion      TIMESTAMP     NOT NULL DEFAULT NOW(),
+    fecha_actualizacion TIMESTAMP     NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_venta_estado
+        CHECK (estado IN ('borrador', 'confirmada', 'cancelada')),
+
+    CONSTRAINT fk_venta_sucursal
+        FOREIGN KEY (id_sucursal)
+        REFERENCES sucursal(id_sucursal)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_venta_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuario(id_usuario)
+        ON DELETE RESTRICT
+);
+
+-- =========================
+-- TABLA: detalle_venta
+-- Guarda una fotografía del nombre y precio; por ahora no depende de
+-- producto, presentación o lote.
+-- =========================
+CREATE TABLE IF NOT EXISTS detalle_venta (
+    id_detalle      SERIAL        PRIMARY KEY,
+    id_venta        INTEGER       NOT NULL,
+    descripcion     VARCHAR(200)  NOT NULL,
+    cantidad        NUMERIC(10,4) NOT NULL CHECK (cantidad > 0),
+    precio_unitario NUMERIC(10,2) NOT NULL CHECK (precio_unitario >= 0),
+    subtotal        NUMERIC(12,2) GENERATED ALWAYS AS (
+        ROUND(cantidad * precio_unitario, 2)
+    ) STORED,
+
+    CONSTRAINT fk_detalle_venta
+        FOREIGN KEY (id_venta)
+        REFERENCES venta(id_venta)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_venta_sucursal_fecha
+    ON venta (id_sucursal, fecha_creacion DESC);
+
+CREATE INDEX IF NOT EXISTS idx_detalle_venta_id_venta
+    ON detalle_venta (id_venta);
+
+-- =========================
 -- EXTENSIONES
 -- =========================
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
