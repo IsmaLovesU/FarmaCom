@@ -12,6 +12,7 @@ import {
   MapPin,
   Users,
   UserCog,
+  ShoppingCart,
   BarChart3,
   HelpCircle,
   LogOut,
@@ -35,6 +36,7 @@ const sucursalSubItems = [
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: ShoppingCart, label: 'Punto de venta', path: '/pos' },
   { icon: UserCog, label: 'Usuarios', path: '/usuarios', roles: ['dueno', 'administrador'] },
   { icon: Users, label: 'Clientes', path: '/patients' },
   { icon: BarChart3, label: 'Reportes', path: '/reports' },
