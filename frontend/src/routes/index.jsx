@@ -14,6 +14,7 @@ import Categorias from '../pages/inventario/Categorias.jsx';
 import Proveedores from '../pages/inventario/Proveedores.jsx';
 import Casas from '../pages/inventario/Casas.jsx';
 import Clientes from '../pages/Clientes.jsx';
+import PuntoVenta from '../pages/ventas/PuntoVenta.jsx';
 
 export default function AppRoutes() {
   return (
@@ -46,6 +47,7 @@ export default function AppRoutes() {
           </Route>
 
           <Route path="/patients" element={<Clientes />} />
+          <Route path="/pos" element={<PuntoVenta />} />
           <Route
             path="/reports"
             element={<div className="p-8 font-headline text-2xl font-bold">Reportes (Próximamente)</div>}
