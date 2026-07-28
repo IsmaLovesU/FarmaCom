@@ -10,10 +10,12 @@ import useProductos from '../../hooks/useProductos.js';
 import useCategorias from '../../hooks/useCategorias.js';
 import useCasas from '../../hooks/useCasas.js';
 import useProveedores from '../../hooks/useProveedores.js';
+import { SUFIJOS_CODIGO } from '../../constants/presentaciones.js';
 
 const filtrosIniciales = {
   id_categoria: '',
   id_casa: '',
+  presentacion: '',
   id_proveedor: '',
   activo: '',
 };
@@ -61,12 +63,16 @@ export default function Productos() {
   const handleGuardar = useCallback(async (formulario) => {
     setErrorFormulario(null);
 
+    const sufijo = SUFIJOS_CODIGO[formulario.presentacion] || '';
+
     const payload = {
       codigo: modoEdicion && productoEditando
         ? productoEditando.codigo
-        : `PRD-${Date.now()}`,
+        : `PRD-${Date.now()}-${sufijo}`,
       nombre_comercial: formulario.nombre_comercial.trim(),
-      nombre_generico: formulario.nombre_generico.trim() || undefined,
+      nombre_generico: formulario.nombre_generico.trim(),
+      concentracion: formulario.concentracion.trim(),
+      presentacion: formulario.presentacion,
       id_categoria: Number(formulario.id_categoria),
       id_casa: Number(formulario.id_casa),
       id_proveedor: formulario.id_proveedor ? Number(formulario.id_proveedor) : undefined,
@@ -124,6 +130,9 @@ export default function Productos() {
       const coincideCasa =
         !filtros.id_casa || String(p.id_casa) === filtros.id_casa;
 
+      const coincidePresentacion =
+        !filtros.presentacion || p.presentacion === filtros.presentacion;
+
       const coincideProveedor =
         !filtros.id_proveedor || String(p.id_proveedor) === filtros.id_proveedor;
 
@@ -131,7 +140,8 @@ export default function Productos() {
         filtros.activo === '' ||
         String(p.activo) === filtros.activo;
 
-      return coincideBusqueda && coincideCategoria && coincideCasa && coincideProveedor && coincideActivo;
+      return coincideBusqueda && coincideCategoria && coincideCasa
+        && coincidePresentacion && coincideProveedor && coincideActivo;
     });
   }, [productos, busqueda, filtros]);
 

@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, X } from 'lucide-react';
 import { motion } from 'motion/react';
+import { PRESENTACIONES, SUFIJOS_CODIGO } from '../../../constants/presentaciones.js';
 
 const ESTADO_INICIAL = {
   nombre_comercial: '',
   nombre_generico: '',
+  concentracion: '',
+  presentacion: '',
   id_categoria: '',
   id_casa: '',
   id_proveedor: '',
@@ -38,6 +41,8 @@ export default function ProductoFormModal({
       setFormulario({
         nombre_comercial: producto.nombre_comercial || '',
         nombre_generico: producto.nombre_generico || '',
+        concentracion: producto.concentracion || '',
+        presentacion: producto.presentacion || '',
         id_categoria: String(producto.id_categoria || ''),
         id_casa: String(producto.id_casa || ''),
         id_proveedor: String(producto.id_proveedor || ''),
@@ -74,7 +79,10 @@ export default function ProductoFormModal({
     onSubmit(formulario);
   };
 
-  const codigoMostrado = modoEdicion && producto?.codigo ? producto.codigo : 'PRD-AUTO';
+  const sufijo = SUFIJOS_CODIGO[formulario.presentacion] || '';
+  const codigoMostrado = modoEdicion && producto?.codigo
+    ? producto.codigo
+    : `PRD-AUTO${sufijo ? `-${sufijo}` : ''}`;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm overflow-y-auto">
@@ -151,17 +159,64 @@ export default function ProductoFormModal({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-700">
+                Nombre genérico <span className="text-error">*</span>
+              </label>
+              <input
+                type="text"
+                name="nombre_generico"
+                value={formulario.nombre_generico}
+                onChange={manejarCambio}
+                placeholder="Ej. Ácido Acetilsalicílico"
+                maxLength={150}
+                required
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-slate-700">
+                Concentración <span className="text-error">*</span>
+              </label>
+              <input
+                type="text"
+                name="concentracion"
+                value={formulario.concentracion}
+                onChange={manejarCambio}
+                placeholder="Ej. 500 mg"
+                maxLength={50}
+                required
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-slate-700">Nombre genérico</label>
-            <input
-              type="text"
-              name="nombre_generico"
-              value={formulario.nombre_generico}
-              onChange={manejarCambio}
-              placeholder="Ej. Ácido Acetilsalicílico"
-              maxLength={150}
-              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-            />
+            <label className="text-sm font-semibold text-slate-700">
+              Presentación <span className="text-error">*</span>
+            </label>
+            <div className="relative">
+              <select
+                name="presentacion"
+                value={formulario.presentacion}
+                onChange={manejarCambio}
+                required
+                className="w-full appearance-none rounded-xl border border-slate-300 px-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+              >
+                <option value="">Seleccionar...</option>
+                {PRESENTACIONES.map((p) => (
+                  <option key={p.valor} value={p.valor}>
+                    {p.etiqueta}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            </div>
+            <p className="text-xs text-slate-500">
+              Cada presentación se registra como un producto independiente, con su propio stock.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
