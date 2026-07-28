@@ -1,3 +1,5 @@
+import { obtenerEtiquetaPresentacion } from '../constants/presentaciones.js';
+
 export const formatearQuetzales = (valor) =>
   new Intl.NumberFormat('es-GT', {
     style: 'currency',
@@ -14,13 +16,11 @@ export const construirCatalogoPOS = (inventario = [], lotes = []) => {
   const productosPorId = new Map(
     inventario.map((producto) => [Number(producto.id_producto), producto]),
   );
-  const ofertasPorPresentacion = new Map();
+  const ofertasPorProducto = new Map();
 
   for (const lote of lotes) {
     const producto = productosPorId.get(Number(lote.id_producto));
-    const factor = Math.max(1, numeroSeguro(lote.factor_conversion, 1));
-    const stockBase = Math.max(0, numeroSeguro(lote.stock_actual));
-    const stockDisponible = Math.floor(stockBase / factor);
+    const stockDisponible = Math.max(0, numeroSeguro(lote.stock_actual));
     const precioVenta = Number(lote.precio_venta);
     const tienePrecio = lote.precio_venta !== null
       && lote.precio_venta !== undefined
@@ -34,35 +34,31 @@ export const construirCatalogoPOS = (inventario = [], lotes = []) => {
       continue;
     }
 
-    const idPresentacion = Number(lote.presentacion_ingreso);
-    const claveAgrupacion = `${lote.id_producto}-${idPresentacion}`;
     const oferta = {
       id_producto: Number(lote.id_producto),
       id_lote: Number(lote.id_lote),
-      id_presentacion: idPresentacion,
-      carritoKey: `lote-${lote.id_lote}-presentacion-${idPresentacion}`,
+      carritoKey: `lote-${lote.id_lote}`,
       codigo: producto.codigo,
       nombre_comercial: lote.nombre_comercial || producto.nombre_comercial,
       nombre_generico: lote.nombre_generico || producto.nombre_generico,
-      presentacion_nombre: lote.presentacion_nombre || 'Unidad',
-      factor_conversion: factor,
+      concentracion: lote.concentracion || producto.concentracion,
+      presentacion: lote.presentacion || producto.presentacion,
       numero_lote: lote.numero_lote,
       fecha_vencimiento: lote.fecha_vencimiento,
       estado_vencimiento: lote.estado_vencimiento,
       estado_stock: lote.estado_stock,
-      stock_base: stockBase,
       stock_disponible: stockDisponible,
       precio_venta: tienePrecio ? precioVenta : null,
       tiene_precio: tienePrecio,
     };
 
-    const existente = ofertasPorPresentacion.get(claveAgrupacion);
+    const existente = ofertasPorProducto.get(oferta.id_producto);
     if (!existente || (!existente.tiene_precio && tienePrecio)) {
-      ofertasPorPresentacion.set(claveAgrupacion, oferta);
+      ofertasPorProducto.set(oferta.id_producto, oferta);
     }
   }
 
-  return [...ofertasPorPresentacion.values()].sort((a, b) =>
+  return [...ofertasPorProducto.values()].sort((a, b) =>
     a.nombre_comercial.localeCompare(b.nombre_comercial, 'es'));
 };
 
@@ -73,7 +69,8 @@ export const filtrarCatalogoPOS = (productos, busqueda) => {
   return productos.filter((producto) => [
     producto.nombre_comercial,
     producto.nombre_generico,
+    producto.concentracion,
     producto.codigo,
-    producto.presentacion_nombre,
+    obtenerEtiquetaPresentacion(producto.presentacion),
   ].some((valor) => String(valor || '').toLocaleLowerCase('es').includes(termino)));
 };

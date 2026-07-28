@@ -2,20 +2,19 @@ const pool = require('../database/db');
 
 class PromocionDAO {
 
-  async crear({ id_producto, id_sucursal, id_presentacion, cantidad_minima, precio_promocion, fecha_inicio, fecha_fin }) {
+  async crear({ id_producto, id_sucursal, cantidad_minima, precio_promocion, fecha_inicio, fecha_fin }) {
     const query = `
       INSERT INTO promocion (
-        id_producto, id_sucursal, id_presentacion,
+        id_producto, id_sucursal,
         cantidad_minima, precio_promocion,
         fecha_inicio, fecha_fin
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
     const valores = [
       id_producto,
       id_sucursal,
-      id_presentacion,
       cantidad_minima,
       precio_promocion,
       fecha_inicio,
@@ -29,11 +28,9 @@ class PromocionDAO {
     const query = `
       SELECT
         pr.*,
-        s.nombre_sucursal,
-        p.nombre AS presentacion_nombre
+        s.nombre_sucursal
       FROM promocion pr
-      JOIN sucursal     s ON s.id_sucursal      = pr.id_sucursal
-      JOIN presentacion p ON p.id_presentacion  = pr.id_presentacion
+      JOIN sucursal s ON s.id_sucursal = pr.id_sucursal
       WHERE pr.id_producto = $1
       ORDER BY pr.fecha_inicio DESC
     `;
@@ -45,34 +42,30 @@ class PromocionDAO {
     const query = `
       SELECT
         pr.*,
-        s.nombre_sucursal,
-        p.nombre AS presentacion_nombre
+        s.nombre_sucursal
       FROM promocion pr
-      JOIN sucursal     s ON s.id_sucursal      = pr.id_sucursal
-      JOIN presentacion p ON p.id_presentacion  = pr.id_presentacion
+      JOIN sucursal s ON s.id_sucursal = pr.id_sucursal
       WHERE pr.id_promocion = $1
     `;
     const { rows } = await pool.query(query, [id_promocion]);
     return rows[0] || null;
   }
 
-  // Verifica si ya existe una promoción activa para el mismo producto + sucursal + presentación
-  async existeActivaSolapada({ id_producto, id_sucursal, id_presentacion, fecha_inicio, fecha_fin, excluir_id = null }) {
+  // Verifica si ya existe una promoción activa para el mismo producto + sucursal
+  async existeActivaSolapada({ id_producto, id_sucursal, fecha_inicio, fecha_fin, excluir_id = null }) {
     const query = `
       SELECT 1 FROM promocion
-      WHERE id_producto     = $1
-        AND id_sucursal     = $2
-        AND id_presentacion = $3
-        AND activo          = true
-        AND fecha_inicio    <= $5
-        AND fecha_fin       >= $4
-        ${excluir_id ? 'AND id_promocion <> $6' : ''}
+      WHERE id_producto  = $1
+        AND id_sucursal  = $2
+        AND activo       = true
+        AND fecha_inicio <= $4
+        AND fecha_fin    >= $3
+        ${excluir_id ? 'AND id_promocion <> $5' : ''}
       LIMIT 1
     `;
     const valores = excluir_id
-      ? [id_producto, id_sucursal, id_presentacion, fecha_inicio, fecha_fin, excluir_id]
-      : [id_producto, id_sucursal, id_presentacion, fecha_inicio, fecha_fin];
-
+      ? [id_producto, id_sucursal, fecha_inicio, fecha_fin, excluir_id]
+      : [id_producto, id_sucursal, fecha_inicio, fecha_fin];
     const { rows } = await pool.query(query, valores);
     return rows.length > 0;
   }

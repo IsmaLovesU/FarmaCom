@@ -11,17 +11,19 @@ class LoteDAO {
     numero_lote,
     fecha_vencimiento,
     cantidad_ingresada,
-    presentacion_ingreso,
-    stock_inicial,
+    precio_venta,
+    margen_ganancia,
+    precio_mayoreo,
+    cantidad_mayoreo,
   }) {
     const query = `
       INSERT INTO lote (
         id_producto, id_proveedor, id_sucursal,
         numero_lote, fecha_vencimiento,
-        cantidad_ingresada, presentacion_ingreso,
-        stock_inicial, stock_actual
+        cantidad_ingresada, stock_actual,
+        precio_venta, margen_ganancia, precio_mayoreo, cantidad_mayoreo
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, $10)
       RETURNING *
     `;
     const { rows } = await pool.query(query, [
@@ -31,8 +33,10 @@ class LoteDAO {
       numero_lote,
       fecha_vencimiento,
       cantidad_ingresada,
-      presentacion_ingreso,
-      stock_inicial,
+      precio_venta,
+      margen_ganancia,
+      precio_mayoreo   ?? null,
+      cantidad_mayoreo ?? null,
     ]);
     return rows[0];
   }
@@ -46,19 +50,12 @@ class LoteDAO {
         v.*,
         p.nombre_comercial,
         p.nombre_generico,
-        pr.nombre            AS proveedor_nombre,
-        pres.nombre          AS presentacion_nombre,
-        pres.factor_conversion,
-        lp.precio_venta,
-        lp.margen_ganancia,
-        lp.precio_mayoreo,
-        lp.cantidad_mayoreo
+        p.concentracion,
+        p.presentacion,
+        pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
-      JOIN producto     p    ON p.id_producto        = v.id_producto
-      JOIN proveedor    pr   ON pr.id_proveedor       = v.id_proveedor
-      JOIN presentacion pres ON pres.id_presentacion  = v.presentacion_ingreso
-      LEFT JOIN lote_presentacion lp ON lp.id_lote = v.id_lote
-                                    AND lp.id_presentacion = v.presentacion_ingreso
+      JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE v.id_sucursal = $1
       ORDER BY v.fecha_vencimiento ASC, v.id_lote
     `;
@@ -71,20 +68,14 @@ class LoteDAO {
     const query = `
       SELECT
         v.*,
+        p.concentracion,
+        p.presentacion,
         s.nombre_sucursal,
-        pr.nombre  AS proveedor_nombre,
-        pres.nombre AS presentacion_nombre,
-        pres.factor_conversion,
-        lp.precio_venta,
-        lp.margen_ganancia,
-        lp.precio_mayoreo,
-        lp.cantidad_mayoreo
+        pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
-      JOIN sucursal     s    ON s.id_sucursal          = v.id_sucursal
-      JOIN proveedor    pr   ON pr.id_proveedor         = v.id_proveedor
-      JOIN presentacion pres ON pres.id_presentacion    = v.presentacion_ingreso
-      LEFT JOIN lote_presentacion lp ON lp.id_lote = v.id_lote
-                                    AND lp.id_presentacion = v.presentacion_ingreso
+      JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN sucursal  s  ON s.id_sucursal   = v.id_sucursal
+      JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE v.id_producto = $1
       ORDER BY v.fecha_vencimiento ASC, v.id_lote
     `;
@@ -98,21 +89,14 @@ class LoteDAO {
         v.*,
         p.nombre_comercial,
         p.nombre_generico,
+        p.concentracion,
+        p.presentacion,
         s.nombre_sucursal,
-        pr.nombre  AS proveedor_nombre,
-        pres.nombre AS presentacion_nombre,
-        pres.factor_conversion,
-        lp.precio_venta,
-        lp.margen_ganancia,
-        lp.precio_mayoreo,
-        lp.cantidad_mayoreo
+        pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
-      JOIN producto     p    ON p.id_producto         = v.id_producto
-      JOIN sucursal     s    ON s.id_sucursal          = v.id_sucursal
-      JOIN proveedor    pr   ON pr.id_proveedor        = v.id_proveedor
-      JOIN presentacion pres ON pres.id_presentacion   = v.presentacion_ingreso
-      LEFT JOIN lote_presentacion lp ON lp.id_lote = v.id_lote
-                                    AND lp.id_presentacion = v.presentacion_ingreso
+      JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN sucursal  s  ON s.id_sucursal   = v.id_sucursal
+      JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE v.id_lote = $1
     `;
     const { rows } = await pool.query(query, [id_lote]);
@@ -133,21 +117,50 @@ class LoteDAO {
 
   // UPDATE
 
-  // Solo permite ajustar el stock y la fecha de vencimiento.
+  // Permite ajustar el stock, la fecha de vencimiento y los precios del lote.
   async actualizar(id_lote, campos) {
-    const { fecha_vencimiento, stock_actual } = campos;
+    const {
+      fecha_vencimiento,
+      stock_actual,
+      precio_venta,
+      margen_ganancia,
+      precio_mayoreo,
+      cantidad_mayoreo,
+    } = campos;
+
     const query = `
       UPDATE lote SET
         fecha_vencimiento = COALESCE($1, fecha_vencimiento),
-        stock_actual      = COALESCE($2, stock_actual)
-      WHERE id_lote = $3
+        stock_actual      = COALESCE($2, stock_actual),
+        precio_venta      = COALESCE($3, precio_venta),
+        margen_ganancia   = COALESCE($4, margen_ganancia),
+        precio_mayoreo    = COALESCE($5, precio_mayoreo),
+        cantidad_mayoreo  = COALESCE($6, cantidad_mayoreo)
+      WHERE id_lote = $7
       RETURNING *
     `;
     const { rows } = await pool.query(query, [
       fecha_vencimiento ?? null,
       stock_actual      ?? null,
+      precio_venta      ?? null,
+      margen_ganancia   ?? null,
+      precio_mayoreo    ?? null,
+      cantidad_mayoreo  ?? null,
       id_lote,
     ]);
+    return rows[0] || null;
+  }
+
+  // Borra el precio de mayoreo. Se necesita un método aparte porque con
+  // COALESCE es imposible distinguir "no mandes nada" de "ponlo en nulo".
+  async limpiarMayoreo(id_lote) {
+    const query = `
+      UPDATE lote
+      SET precio_mayoreo = NULL, cantidad_mayoreo = NULL
+      WHERE id_lote = $1
+      RETURNING *
+    `;
+    const { rows } = await pool.query(query, [id_lote]);
     return rows[0] || null;
   }
 
@@ -176,14 +189,14 @@ class LoteDAO {
         v.*,
         p.nombre_comercial,
         p.nombre_generico,
+        p.concentracion,
+        p.presentacion,
         s.nombre_sucursal,
-        pr.nombre  AS proveedor_nombre,
-        pres.nombre AS presentacion_nombre
+        pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
-      JOIN producto     p    ON p.id_producto         = v.id_producto
-      JOIN sucursal     s    ON s.id_sucursal          = v.id_sucursal
-      JOIN proveedor    pr   ON pr.id_proveedor        = v.id_proveedor
-      JOIN presentacion pres ON pres.id_presentacion   = v.presentacion_ingreso
+      JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN sucursal  s  ON s.id_sucursal   = v.id_sucursal
+      JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE (v.estado_vencimiento != 'normal' OR v.estado_stock != 'normal')
       ${condicionSucursal}
       ORDER BY

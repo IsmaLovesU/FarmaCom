@@ -2,20 +2,22 @@ const pool = require('../database/db');
 
 class ProductoDAO {
 
-  async crear({ codigo, nombre_comercial, nombre_generico, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo }) {
+  async crear({ codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo }) {
     const query = `
       INSERT INTO producto (
-        codigo, nombre_comercial, nombre_generico, descripcion,
+        codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion,
         id_categoria, id_casa, id_proveedor,
         precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
     const valores = [
       codigo,
       nombre_comercial,
-      nombre_generico              ?? null,
+      nombre_generico,
+      concentracion,
+      presentacion,
       descripcion                  ?? null,
       id_categoria,
       id_casa,
@@ -25,6 +27,7 @@ class ProductoDAO {
       meses_alerta_vencimiento,
       aplica_mayoreo               ?? false,
     ];
+    
     const { rows } = await pool.query(query, valores);
     return rows[0];
   }
@@ -71,9 +74,22 @@ class ProductoDAO {
     return rows[0] || null;
   }
 
+   async obtenerPorIdentidad({ nombre_generico, concentracion, id_casa, presentacion }) {
+    const query = `
+      SELECT *
+      FROM producto
+      WHERE LOWER(TRIM(nombre_generico)) = LOWER(TRIM($1))
+        AND LOWER(TRIM(concentracion))   = LOWER(TRIM($2))
+        AND id_casa                      = $3
+        AND presentacion                 = $4
+    `;
+    const { rows } = await pool.query(query, [nombre_generico, concentracion, id_casa, presentacion]);
+    return rows[0] || null;
+  }
+
   async actualizar(id_producto, campos) {
     const {
-      codigo, nombre_comercial, nombre_generico, descripcion,
+      codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion,
       id_categoria, id_casa, id_proveedor,
       precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo,
     } = campos;
@@ -83,21 +99,25 @@ class ProductoDAO {
         codigo                   = COALESCE($1,  codigo),
         nombre_comercial         = COALESCE($2,  nombre_comercial),
         nombre_generico          = COALESCE($3,  nombre_generico),
-        descripcion              = COALESCE($4,  descripcion),
-        id_categoria             = COALESCE($5,  id_categoria),
-        id_casa                  = COALESCE($6,  id_casa),
-        id_proveedor             = COALESCE($7,  id_proveedor),
-        precio_compra            = COALESCE($8,  precio_compra),
-        stock_minimo             = COALESCE($9,  stock_minimo),
-        meses_alerta_vencimiento = COALESCE($10, meses_alerta_vencimiento),
-        aplica_mayoreo           = COALESCE($11, aplica_mayoreo)
-      WHERE id_producto = $12
+        concentracion            = COALESCE($4,  concentracion),
+        presentacion             = COALESCE($5,  presentacion),
+        descripcion              = COALESCE($6,  descripcion),
+        id_categoria             = COALESCE($7,  id_categoria),
+        id_casa                  = COALESCE($8,  id_casa),
+        id_proveedor             = COALESCE($9,  id_proveedor),
+        precio_compra            = COALESCE($10, precio_compra),
+        stock_minimo             = COALESCE($11, stock_minimo),
+        meses_alerta_vencimiento = COALESCE($12, meses_alerta_vencimiento),
+        aplica_mayoreo           = COALESCE($13, aplica_mayoreo)
+      WHERE id_producto = $14
       RETURNING *
     `;
     const valores = [
       codigo                   ?? null,
       nombre_comercial         ?? null,
       nombre_generico          ?? null,
+      concentracion            ?? null,
+      presentacion             ?? null,
       descripcion              ?? null,
       id_categoria             ?? null,
       id_casa                  ?? null,
@@ -108,6 +128,7 @@ class ProductoDAO {
       aplica_mayoreo           ?? null,
       id_producto,
     ];
+
     const { rows } = await pool.query(query, valores);
     return rows[0] || null;
   }

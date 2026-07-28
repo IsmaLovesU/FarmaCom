@@ -1,10 +1,10 @@
 const { Router } = require('express');
 const { body, param } = require('express-validator');
 const ProductoController      = require('../controllers/ProductoController');
-const PresentacionController  = require('../controllers/PresentacionController');
 const PromocionController     = require('../controllers/PromocionController');
 const verificarToken          = require('../middlewares/verificarToken');
 const verificarRol            = require('../middlewares/verificarRol');
+const { PRESENTACIONES, normalizarPresentacion } = require('../constants/presentaciones');
 
 const router = Router();
 
@@ -34,9 +34,18 @@ const validarCreacionProducto = [
     .isLength({ max: 150 }).withMessage('El nombre comercial no puede superar los 150 caracteres'),
 
   body('nombre_generico')
-    .optional({ nullable: true })
     .trim()
+    .notEmpty().withMessage('El nombre genérico es requerido')
     .isLength({ max: 150 }).withMessage('El nombre genérico no puede superar los 150 caracteres'),
+
+  body('concentracion')
+    .trim()
+    .notEmpty().withMessage('La concentración es requerida')
+    .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
+
+  body('presentacion')
+    .customSanitizer(normalizarPresentacion)
+    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
 
   body('descripcion')
     .optional({ nullable: true })
@@ -88,10 +97,21 @@ const validarActualizacionProducto = [
     .isLength({ max: 150 }).withMessage('El nombre comercial no puede superar los 150 caracteres'),
 
   body('nombre_generico')
-    .optional({ nullable: true })
+    .optional()
     .trim()
+    .notEmpty().withMessage('El nombre genérico no puede estar vacío')
     .isLength({ max: 150 }).withMessage('El nombre genérico no puede superar los 150 caracteres'),
 
+  body('concentracion')
+    .optional()
+    .trim()
+    .notEmpty().withMessage('La concentración no puede estar vacía')
+    .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
+
+  body('presentacion')
+    .optional()
+    .customSanitizer(normalizarPresentacion)
+    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
   body('descripcion')
     .optional({ nullable: true })
     .trim(),
@@ -144,38 +164,11 @@ const validarCambioMayoreo = [
     .toBoolean(),
 ];
 
-// ── validadores — Presentacion (anidados) ─────────────────────────────────────
-
-const validarCreacionPresentacion = [
-  body('nombre')
-    .trim()
-    .notEmpty().withMessage('El nombre es requerido')
-    .isLength({ max: 100 }).withMessage('El nombre no puede superar los 100 caracteres'),
-
-  body('factor_conversion')
-    .isFloat({ min: 1 }).withMessage('El factor de conversión debe ser mayor o igual a 1')
-    .toFloat(),
-
-  body('es_base')
-    .optional()
-    .isBoolean().withMessage('es_base debe ser un booleano')
-    .toBoolean(),
-
-  body('forzar_cambio_base')
-    .optional()
-    .isBoolean().withMessage('forzar_cambio_base debe ser un booleano')
-    .toBoolean(),
-];
-
 // ── validadores — Promocion (anidados) ────────────────────────────────────────
 
 const validarCreacionPromocion = [
   body('id_sucursal')
     .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
-    .toInt(),
-
-  body('id_presentacion')
-    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
     .toInt(),
 
   body('cantidad_minima')
@@ -245,25 +238,6 @@ router.patch('/:id/estado',
   validarParamId,
   validarCambioEstado,
   ProductoController.cambiarEstado,
-);
-
-// ── rutas — Presentacion (anidadas bajo producto) ─────────────────────────────
-
-// POST   /api/productos/:id_producto/presentaciones
-router.post('/:id_producto/presentaciones',
-  verificarToken,
-  verificarRol('dueno', 'administrador', 'dependiente'),
-  validarParamIdProducto,
-  validarCreacionPresentacion,
-  PresentacionController.crear,
-);
-
-// GET    /api/productos/:id_producto/presentaciones
-router.get('/:id_producto/presentaciones',
-  verificarToken,
-  verificarRol('dueno', 'administrador', 'dependiente'),
-  validarParamIdProducto,
-  PresentacionController.obtenerPorProducto,
 );
 
 // ── rutas — Promocion (anidadas bajo producto) ────────────────────────────────

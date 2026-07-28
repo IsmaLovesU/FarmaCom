@@ -1,5 +1,11 @@
 const ProductoDAO = require('../daos/ProductoDAO');
 
+const {
+  PRESENTACIONES,
+  esPresentacionValida,
+  normalizarPresentacion,
+} = require('../constants/presentaciones');
+
 // Helpers
 
 const lanzarError = (mensaje, status) => {
@@ -11,16 +17,37 @@ const lanzarError = (mensaje, status) => {
 // Operaciones
 
 const crearProducto = async (datos) => {
-  const { codigo, precio_compra, meses_alerta_vencimiento } = datos;
+  const {
+    codigo, nombre_generico, concentracion, presentacion,
+    precio_compra, meses_alerta_vencimiento,
+  } = datos;
 
-  if (!codigo || codigo.trim() === '')   lanzarError('El código es requerido', 400);
-  if (precio_compra < 0)                 lanzarError('El precio de compra no puede ser negativo', 400);
-  if (meses_alerta_vencimiento <= 0)     lanzarError('Los meses de alerta deben ser mayores a 0', 400);
+  if (!codigo || codigo.trim() === '')                   lanzarError('El código es requerido', 400);
+  if (!nombre_generico || nombre_generico.trim() === '')  lanzarError('El nombre genérico es requerido', 400);
+  if (!concentracion || concentracion.trim() === '')      lanzarError('La concentración es requerida', 400);
+  if (precio_compra < 0)                                  lanzarError('El precio de compra no puede ser negativo', 400);
+  if (meses_alerta_vencimiento <= 0)                      lanzarError('Los meses de alerta deben ser mayores a 0', 400);
+
+  if (!esPresentacionValida(presentacion)) {
+    lanzarError(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`, 400);
+  }
 
   const existente = await ProductoDAO.obtenerPorCodigo(codigo);
   if (existente) lanzarError(`Ya existe un producto con el código "${codigo}"`, 409);
 
-  const creado = await ProductoDAO.crear(datos);
+  // Se guarda siempre normalizada para que coincida con el CHECK del esquema
+  // y con el índice de identidad.
+  const producto = { ...datos, presentacion: normalizarPresentacion(presentacion) };
+
+  const duplicado = await ProductoDAO.obtenerPorIdentidad(producto);
+  if (duplicado) {
+    lanzarError(
+      `Ya existe "${duplicado.nombre_comercial}" de esa casa farmacéutica en presentación de ${producto.presentacion}`,
+      409,
+    );
+  }
+
+  const creado = await ProductoDAO.crear(producto);
   return await ProductoDAO.obtenerPorId(creado.id_producto);
 };
 
@@ -43,6 +70,10 @@ const actualizarProducto = async (id_producto, campos) => {
     if (duplicado) lanzarError(`Ya existe un producto con el código "${campos.codigo}"`, 409);
   }
 
+  if (campos.presentacion !== undefined && !esPresentacionValida(campos.presentacion)) {
+    lanzarError(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`, 400);
+  }
+
   if (campos.precio_compra !== undefined && campos.precio_compra < 0) {
     lanzarError('El precio de compra no puede ser negativo', 400);
   }
@@ -51,7 +82,26 @@ const actualizarProducto = async (id_producto, campos) => {
     lanzarError('Los meses de alerta deben ser mayores a 0', 400);
   }
 
-  const actualizado = await ProductoDAO.actualizar(id_producto, campos);
+  const datos = { ...campos };
+  if (campos.presentacion !== undefined) {
+    datos.presentacion = normalizarPresentacion(campos.presentacion);
+  }
+
+  // La identidad se arma mezclando lo que llega con lo que ya está guardado,
+  // porque el usuario puede estar cambiando solo uno de los cuatro campos.
+  const identidad = {
+    nombre_generico: datos.nombre_generico ?? existente.nombre_generico,
+    concentracion:   datos.concentracion   ?? existente.concentracion,
+    id_casa:         datos.id_casa         ?? existente.id_casa,
+    presentacion:    datos.presentacion    ?? existente.presentacion,
+  };
+
+  const mismaIdentidad = await ProductoDAO.obtenerPorIdentidad(identidad);
+  if (mismaIdentidad && mismaIdentidad.id_producto !== id_producto) {
+    lanzarError('Ya existe otro producto con ese medicamento en esa misma presentación', 409);
+  }
+
+  const actualizado = await ProductoDAO.actualizar(id_producto, datos);
   if (!actualizado) lanzarError('No se pudo actualizar el producto', 500);
   return await ProductoDAO.obtenerPorId(id_producto);
 };

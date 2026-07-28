@@ -3,6 +3,7 @@ import { ChevronDown, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import EstadoBadge from './EstadoBadge.jsx';
 import LotesDeProductoTable from './LotesDeProductoTable.jsx';
+import { obtenerEtiquetaPresentacion, obtenerPluralPresentacion } from '../../../constants/presentaciones.js';
 
 export default function InventarioProductoFila({ producto, sucursalId }) {
   const [expandido, setExpandido] = useState(false);
@@ -41,10 +42,18 @@ export default function InventarioProductoFila({ producto, sucursalId }) {
         </div>
 
         <div className="col-span-3 min-w-0">
-          <p className="font-bold text-on-surface truncate">{producto.nombre_comercial}</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="font-bold text-on-surface truncate">{producto.nombre_comercial}</p>
+            {producto.presentacion && (
+              <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary">
+                {obtenerEtiquetaPresentacion(producto.presentacion)}
+              </span>
+            )}
+          </div>
           {producto.nombre_generico && (
             <p className="text-xs text-on-surface-variant italic truncate">
               {producto.nombre_generico}
+              {producto.concentracion ? ` · ${producto.concentracion}` : ''}
             </p>
           )}
         </div>
@@ -66,7 +75,9 @@ export default function InventarioProductoFila({ producto, sucursalId }) {
           }`}>
             {stockTotal.toLocaleString('es-GT')}
           </span>
-          <p className="text-[10px] text-slate-400 font-medium">unidades</p>
+          <p className="text-[10px] text-slate-400 font-medium">
+            {obtenerPluralPresentacion(producto.presentacion)}
+          </p>
         </div>
 
         <div className="col-span-1 flex justify-center">

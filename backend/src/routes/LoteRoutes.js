@@ -14,18 +14,6 @@ const validarParamId = [
     .toInt(),
 ];
 
-const validarParamIdLote = [
-  param('id_lote')
-    .isInt({ min: 1 }).withMessage('id_lote debe ser un entero positivo')
-    .toInt(),
-];
-
-const validarParamIdPresentacion = [
-  param('id_presentacion')
-    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
-    .toInt(),
-];
-
 const validarParamIdSucursal = [
   param('id_sucursal')
     .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
@@ -66,32 +54,20 @@ const validarCreacion = [
     .isInt({ min: 1 }).withMessage('cantidad_ingresada debe ser un entero mayor a 0')
     .toInt(),
 
-  body('presentacion_ingreso')
-    .isInt({ min: 1 }).withMessage('presentacion_ingreso debe ser un entero positivo')
-    .toInt(),
-
-  // precios: array obligatorio con al menos 1 elemento
-  body('precios')
-    .isArray({ min: 1 }).withMessage('precios debe ser un array con al menos un elemento'),
-
-  body('precios.*.id_presentacion')
-    .isInt({ min: 1 }).withMessage('Cada precio debe tener un id_presentacion válido')
-    .toInt(),
-
-  body('precios.*.precio_venta')
+  body('precio_venta')
     .isFloat({ min: 0 }).withMessage('precio_venta debe ser mayor o igual a 0')
     .toFloat(),
 
-  body('precios.*.margen_ganancia')
+  body('margen_ganancia')
     .isFloat({ min: 0, max: 9999.9999 }).withMessage('margen_ganancia debe estar entre 0 y 9999.9999')
     .toFloat(),
 
-  body('precios.*.precio_mayoreo')
+  body('precio_mayoreo')
     .optional({ nullable: true })
     .isFloat({ min: 0 }).withMessage('precio_mayoreo debe ser mayor o igual a 0')
     .toFloat(),
 
-  body('precios.*.cantidad_mayoreo')
+  body('cantidad_mayoreo')
     .optional({ nullable: true })
     .isInt({ min: 1 }).withMessage('cantidad_mayoreo debe ser un entero mayor a 0')
     .toInt(),
@@ -105,11 +81,9 @@ const validarActualizacion = [
 
   body('stock_actual')
     .optional()
-    .isFloat({ min: 0 }).withMessage('stock_actual debe ser mayor o igual a 0')
-    .toFloat(),
-];
+    .isInt({ min: 0 }).withMessage('stock_actual debe ser un entero mayor o igual a 0')
+    .toInt(),
 
-const validarActualizacionPrecio = [
   body('precio_venta')
     .optional()
     .isFloat({ min: 0 }).withMessage('precio_venta debe ser mayor o igual a 0')
@@ -168,35 +142,6 @@ router.get('/alertas',
   verificarToken,
   verificarRol('dueno', 'administrador'),
   LoteController.obtenerAlertas,
-);
-
-//  Rutas — LotePresentacion
-
-// GET    /api/lotes/:id_lote/precios
-router.get('/:id_lote/precios',
-  verificarToken,
-  verificarRol('dueno', 'administrador', 'dependiente'),
-  validarParamIdLote,
-  LoteController.obtenerPrecios,
-);
-
-// PATCH  /api/lotes/:id_lote/precios/:id_presentacion
-router.patch('/:id_lote/precios/:id_presentacion',
-  verificarToken,
-  verificarRol('dueno', 'administrador'),
-  validarParamIdLote,
-  validarParamIdPresentacion,
-  validarActualizacionPrecio,
-  LoteController.actualizarPrecio,
-);
-
-// DELETE /api/lotes/:id_lote/precios/:id_presentacion
-router.delete('/:id_lote/precios/:id_presentacion',
-  verificarToken,
-  verificarRol('dueno', 'administrador'),
-  validarParamIdLote,
-  validarParamIdPresentacion,
-  LoteController.eliminarPrecio,
 );
 
 //  Rutas anidadas

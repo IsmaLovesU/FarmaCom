@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
+import { PRESENTACIONES } from '../../../constants/presentaciones.js';
 
 function SelectFiltro({ label, value, onChange, children }) {
   return (
@@ -52,6 +53,19 @@ export default function ProductoFilterPanel({ filtros, onFiltroChange, categoria
         {casas.map((c) => (
           <option key={c.id_casa} value={c.id_casa}>
             {c.nombre}
+          </option>
+        ))}
+      </SelectFiltro>
+
+      <SelectFiltro
+        label="Presentación"
+        value={filtros.presentacion}
+        onChange={(e) => onFiltroChange('presentacion', e.target.value)}
+      >
+        <option value="">Todas las presentaciones</option>
+        {PRESENTACIONES.map((p) => (
+          <option key={p.valor} value={p.valor}>
+            {p.etiqueta}
           </option>
         ))}
       </SelectFiltro>

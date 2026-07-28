@@ -12,64 +12,6 @@ const obtenerMensajeError = (err, fallback) => {
   return fallback;
 };
 
-const normalizarTexto = (valor) => valor.trim().toLowerCase();
-
-const formatearFactor = (valor) => {
-  const numero = Number(valor);
-  if (!Number.isFinite(numero)) return valor;
-  return Number.isInteger(numero) ? String(numero) : numero.toString();
-};
-
-const resolverPresentacionIngreso = async (payload) => {
-  const nombre = payload.presentacion_ingreso.trim();
-  const factorConversion = Number(payload.factor_conversion_ingreso);
-
-  const { data: presentaciones } = await api.get(`/productos/${payload.id_producto}/presentaciones`);
-  const existente = (presentaciones || []).find(
-    (presentacion) => presentacion.activo && normalizarTexto(presentacion.nombre) === normalizarTexto(nombre),
-  );
-
-  if (existente) {
-    if (Number(existente.factor_conversion) !== factorConversion) {
-      throw new Error(
-        `Ya existe la presentación "${existente.nombre}" con factor ${formatearFactor(existente.factor_conversion)}. ` +
-        'Usa ese factor o escribe otro nombre de presentación.',
-      );
-    }
-
-    return existente;
-  }
-
-  const { data } = await api.post(`/productos/${payload.id_producto}/presentaciones`, {
-    nombre,
-    factor_conversion: factorConversion,
-    es_base: false,
-  });
-
-  return data;
-};
-
-const prepararPayloadLote = async (payload) => {
-  const presentacion = await resolverPresentacionIngreso(payload);
-
-  return {
-    id_producto: payload.id_producto,
-    id_proveedor: payload.id_proveedor,
-    id_sucursal: payload.id_sucursal,
-    numero_lote: payload.numero_lote,
-    fecha_vencimiento: payload.fecha_vencimiento,
-    cantidad_ingresada: payload.cantidad_ingresada,
-    presentacion_ingreso: presentacion.id_presentacion,
-    precios: payload.precios.map((precio) => ({
-      id_presentacion: presentacion.id_presentacion,
-      precio_venta: precio.precio_venta,
-      margen_ganancia: precio.margen_ganancia,
-      precio_mayoreo: precio.precio_mayoreo,
-      cantidad_mayoreo: precio.cantidad_mayoreo,
-    })),
-  };
-};
-
 const useLotes = () => {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
@@ -79,8 +21,7 @@ const useLotes = () => {
     setError(null);
 
     try {
-      const payloadLote = await prepararPayloadLote(payload);
-      const { data } = await api.post('/lotes', payloadLote);
+      const { data } = await api.post('/lotes', payload);
       return data;
     } catch (err) {
       const mensaje = err.response

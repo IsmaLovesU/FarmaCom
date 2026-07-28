@@ -10,10 +10,22 @@ import useProductos from '../../hooks/useProductos.js';
 import useCategorias from '../../hooks/useCategorias.js';
 import useCasas from '../../hooks/useCasas.js';
 import useProveedores from '../../hooks/useProveedores.js';
+import { SUFIJOS_CODIGO } from '../../constants/presentaciones.js';
+
+const siguienteCodigoMed = (productos) => {
+  const numeros = (productos || [])
+    .map((p) => /^MED(\d+)/.exec(p.codigo || ''))
+    .filter(Boolean)
+    .map((coincidencia) => Number(coincidencia[1]));
+
+  const siguiente = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
+  return `MED${String(siguiente).padStart(3, '0')}`;
+};
 
 const filtrosIniciales = {
   id_categoria: '',
   id_casa: '',
+  presentacion: '',
   id_proveedor: '',
   activo: '',
 };
@@ -36,7 +48,8 @@ export default function Productos() {
   const [errorFormulario, setErrorFormulario] = useState(null);
 
   const cargandoDatos = cargandoCategorias || cargandoCasas || cargandoProveedores;
-
+  const codigoSugerido = useMemo(() => siguienteCodigoMed(productos), [productos]);
+  
   const handleCrear = useCallback(() => {
     setModoEdicion(false);
     setProductoEditando(null);
@@ -61,12 +74,16 @@ export default function Productos() {
   const handleGuardar = useCallback(async (formulario) => {
     setErrorFormulario(null);
 
+    const sufijo = SUFIJOS_CODIGO[formulario.presentacion] || '';
+
     const payload = {
       codigo: modoEdicion && productoEditando
         ? productoEditando.codigo
-        : `PRD-${Date.now()}`,
+        : `${codigoSugerido}-${sufijo}`,
       nombre_comercial: formulario.nombre_comercial.trim(),
-      nombre_generico: formulario.nombre_generico.trim() || undefined,
+      nombre_generico: formulario.nombre_generico.trim(),
+      concentracion: formulario.concentracion.trim(),
+      presentacion: formulario.presentacion,
       id_categoria: Number(formulario.id_categoria),
       id_casa: Number(formulario.id_casa),
       id_proveedor: formulario.id_proveedor ? Number(formulario.id_proveedor) : undefined,
@@ -90,7 +107,7 @@ export default function Productos() {
     } finally {
       setGuardando(false);
     }
-  }, [modoEdicion, productoEditando, crear, actualizar]);
+  }, [modoEdicion, productoEditando, crear, actualizar, codigoSugerido]);
 
   const handleCambiarEstado = useCallback(async (producto) => {
     setErrorAccion(null);
@@ -124,6 +141,9 @@ export default function Productos() {
       const coincideCasa =
         !filtros.id_casa || String(p.id_casa) === filtros.id_casa;
 
+      const coincidePresentacion =
+        !filtros.presentacion || p.presentacion === filtros.presentacion;
+
       const coincideProveedor =
         !filtros.id_proveedor || String(p.id_proveedor) === filtros.id_proveedor;
 
@@ -131,13 +151,15 @@ export default function Productos() {
         filtros.activo === '' ||
         String(p.activo) === filtros.activo;
 
-      return coincideBusqueda && coincideCategoria && coincideCasa && coincideProveedor && coincideActivo;
+      return coincideBusqueda && coincideCategoria && coincideCasa
+        && coincidePresentacion && coincideProveedor && coincideActivo;
     });
   }, [productos, busqueda, filtros]);
 
   const totalActivos = useMemo(() => productos.filter((p) => p.activo).length, [productos]);
   const totalInactivos = useMemo(() => productos.filter((p) => !p.activo).length, [productos]);
   const totalConMayoreo = useMemo(() => productos.filter((p) => p.aplica_mayoreo).length, [productos]);
+  
 
   return (
     <div className="space-y-6">
@@ -193,6 +215,7 @@ export default function Productos() {
         isOpen={mostrarModal}
         modoEdicion={modoEdicion}
         producto={productoEditando}
+        codigoSugerido={codigoSugerido}
         categorias={categorias}
         casas={casas}
         proveedores={proveedores}

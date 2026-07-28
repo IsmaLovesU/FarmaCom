@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Calculator, ChevronDown, PackagePlus, X } from 'lucide-react';
+import { ChevronDown, PackagePlus, X } from 'lucide-react';
 import { motion } from 'motion/react';
+import { obtenerEtiquetaPresentacion } from '../../../constants/presentaciones.js';
 
 const ESTADO_INICIAL = {
   id_producto: '',
@@ -10,8 +11,6 @@ const ESTADO_INICIAL = {
   numero_lote: '',
   fecha_vencimiento: '',
   cantidad_ingresada: '',
-  presentacion_ingreso: '',
-  factor_conversion_ingreso: '1',
   margen_ganancia: '',
   precio_venta: '',
   precio_mayoreo: '',
@@ -28,11 +27,6 @@ const fechaManana = () => {
 const formatoDecimal = (valor, decimales = 2) => {
   if (!Number.isFinite(valor)) return '';
   return valor.toFixed(decimales);
-};
-
-const formatoCantidad = (valor, decimales = 4) => {
-  if (!Number.isFinite(valor)) return '';
-  return Number.isInteger(valor) ? String(valor) : valor.toFixed(decimales);
 };
 
 const esEnteroPositivo = (valor) => {
@@ -66,7 +60,7 @@ export default function LoteFormModal({
   );
 
   const precioCompra = Number(productoSeleccionado?.precio_compra ?? 0);
-  const stockInicial = Number(formulario.cantidad_ingresada) * Number(formulario.factor_conversion_ingreso || 0);
+  const presentacionEtiqueta = obtenerEtiquetaPresentacion(productoSeleccionado?.presentacion);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -117,10 +111,7 @@ export default function LoteFormModal({
     if (!esEnteroPositivo(formulario.cantidad_ingresada)) {
       return 'La cantidad ingresada debe ser un entero mayor a 0.';
     }
-    if (!formulario.presentacion_ingreso.trim()) return 'Escribe la presentación de ingreso.';
-    if (!esEnteroPositivo(formulario.factor_conversion_ingreso)) {
-      return 'El factor de conversión debe ser un entero mayor o igual a 1.';
-    }
+    
     if (formulario.precio_venta === '' || Number(formulario.precio_venta) < 0) {
       return 'Ingresa un precio de venta válido.';
     }
@@ -154,29 +145,17 @@ export default function LoteFormModal({
       return;
     }
 
-    const presentacion = formulario.presentacion_ingreso.trim();
-    const factorConversion = Number(formulario.factor_conversion_ingreso);
-
     onSubmit({
-      ...formulario,
       id_producto: Number(formulario.id_producto),
       id_proveedor: Number(formulario.id_proveedor),
       id_sucursal: Number(formulario.id_sucursal),
       numero_lote: formulario.numero_lote.trim(),
-      presentacion_ingreso: presentacion,
+      fecha_vencimiento: formulario.fecha_vencimiento,
       cantidad_ingresada: Number(formulario.cantidad_ingresada),
-      factor_conversion_ingreso: factorConversion,
-      stock_inicial_estimado: Number.isFinite(stockInicial) ? stockInicial : 0,
-      precios: [
-        {
-          presentacion,
-          factor_conversion: factorConversion,
-          precio_venta: Number(formulario.precio_venta),
-          margen_ganancia: Number(formulario.margen_ganancia),
-          precio_mayoreo: formulario.precio_mayoreo === '' ? null : Number(formulario.precio_mayoreo),
-          cantidad_mayoreo: formulario.cantidad_mayoreo === '' ? null : Number(formulario.cantidad_mayoreo),
-        },
-      ],
+      precio_venta: Number(formulario.precio_venta),
+      margen_ganancia: Number(formulario.margen_ganancia),
+      precio_mayoreo: formulario.precio_mayoreo === '' ? null : Number(formulario.precio_mayoreo),
+      cantidad_mayoreo: formulario.cantidad_mayoreo === '' ? null : Number(formulario.cantidad_mayoreo),
     });
   };
 
@@ -237,7 +216,10 @@ export default function LoteFormModal({
                   <option value="">Seleccionar producto...</option>
                   {productosActivos.map((producto) => (
                     <option key={producto.id_producto} value={producto.id_producto}>
-                      {producto.nombre_comercial} - {producto.codigo}
+                      {producto.nombre_comercial}
+                      {producto.concentracion ? ` ${producto.concentracion}` : ''}
+                      {producto.presentacion ? ` · ${obtenerEtiquetaPresentacion(producto.presentacion)}` : ''}
+                      {' '}- {producto.codigo}
                     </option>
                   ))}
                 </select>
@@ -357,55 +339,23 @@ export default function LoteFormModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
-                  Presentación de ingreso <span className="text-error">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="presentacion_ingreso"
-                  value={formulario.presentacion_ingreso}
-                  onChange={manejarCambio}
-                  placeholder="Ej. caja, blister, unidad"
-                  maxLength={100}
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
-                  Factor de conversión <span className="text-error">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="factor_conversion_ingreso"
-                  value={formulario.factor_conversion_ingreso}
-                  onChange={manejarCambio}
-                  min="1"
-                  step="1"
-                  required
-                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-            </div>
-
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-slate-700">Stock inicial estimado</label>
-              <div className="flex h-[42px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-600">
-                <Calculator className="h-4 w-4 text-primary" />
-                <span className="font-semibold">
-                  {Number.isFinite(stockInicial) && stockInicial > 0 ? formatoCantidad(stockInicial) : '0'}
-                </span>
-                <span className="text-xs text-slate-400">unidades base</span>
-              </div>
+              <label className="text-sm font-semibold text-slate-700">Presentación</label>
+              <input
+                type="text"
+                value={presentacionEtiqueta || 'Depende del producto seleccionado'}
+                disabled
+                className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm text-slate-500"
+              />
+              <p className="text-xs text-slate-500">
+                La presentación viene del producto. Si necesitas otra, regístrala como un producto aparte.
+              </p>
             </div>
           </section>
 
           <section className="space-y-4">
             <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-              Precio de venta para esta presentación
+              Precio de venta del lote
             </p>
 
             <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-4">
