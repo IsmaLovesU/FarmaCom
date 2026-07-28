@@ -1,6 +1,5 @@
 const PromocionDAO    = require('../daos/PromocionDAO');
 const ProductoDAO     = require('../daos/ProductoDAO');
-const PresentacionDAO = require('../daos/PresentacionDAO');
 
 // Helpers
 
@@ -21,17 +20,11 @@ const validarFechas = (fecha_inicio, fecha_fin) => {
 // Operaciones
 
 const crearPromocion = async (id_producto, datos) => {
-  const { id_sucursal, id_presentacion, cantidad_minima, precio_promocion, fecha_inicio, fecha_fin } = datos;
+  const { id_sucursal, cantidad_minima, precio_promocion, fecha_inicio, fecha_fin } = datos;
 
   // Verificar que el producto exista
   const producto = await ProductoDAO.obtenerPorId(id_producto);
   if (!producto) lanzarError('Producto no encontrado', 404);
-
-  // Verificar que la presentación pertenezca al producto
-  const presentacion = await PresentacionDAO.obtenerPorId(id_presentacion);
-  if (!presentacion)                              lanzarError('Presentación no encontrada', 404);
-  if (presentacion.id_producto !== id_producto)   lanzarError('La presentación no pertenece a este producto', 400);
-  if (!presentacion.activo)                       lanzarError('La presentación está inactiva', 409);
 
   if (cantidad_minima <= 0)  lanzarError('La cantidad mínima debe ser mayor a 0', 400);
   if (precio_promocion <= 0) lanzarError('El precio de promoción debe ser mayor a 0', 400);
@@ -39,22 +32,21 @@ const crearPromocion = async (id_producto, datos) => {
   validarFechas(fecha_inicio, fecha_fin);
 
   // Validar que no exista una promoción activa solapada para el mismo
-  // producto + sucursal + presentación
+  // producto y sucursal
   const solapada = await PromocionDAO.existeActivaSolapada({
     id_producto,
     id_sucursal,
-    id_presentacion,
     fecha_inicio,
     fecha_fin,
   });
   if (solapada) {
     lanzarError(
-      'Ya existe una promoción activa para este producto, sucursal y presentación en ese rango de fechas',
+      'Ya existe una promoción activa para este producto y sucursal en ese rango de fechas',
       409,
     );
   }
 
-  return await PromocionDAO.crear({ id_producto, id_sucursal, id_presentacion, cantidad_minima, precio_promocion, fecha_inicio, fecha_fin });
+  return await PromocionDAO.crear({ id_producto, id_sucursal, cantidad_minima, precio_promocion, fecha_inicio, fecha_fin });
 };
 
 const obtenerPorProducto = async (id_producto) => {
@@ -91,14 +83,13 @@ const actualizarPromocion = async (id_promocion, campos) => {
     const solapada = await PromocionDAO.existeActivaSolapada({
       id_producto:     existente.id_producto,
       id_sucursal:     existente.id_sucursal,
-      id_presentacion: existente.id_presentacion,
       fecha_inicio,
       fecha_fin,
       excluir_id:      id_promocion,
     });
     if (solapada) {
       lanzarError(
-        'Ya existe una promoción activa para este producto, sucursal y presentación en ese rango de fechas',
+        'Ya existe una promoción activa para este producto y sucursal en ese rango de fechas',
         409,
       );
     }
