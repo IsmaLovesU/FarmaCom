@@ -1,7 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { Info, X } from 'lucide-react';
+import { crearVenta } from '../../api/ventas';
 import CatalogoProductosPOS from '../../components/ventas/CatalogoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
+import CobroModal from '../../components/ventas/CobroModal';
 import VencimientoAvisoModal from '../../components/ventas/VencimientoAvisoModal';
 import { useAuth } from '../../context/AuthContext';
 import { useCarrito } from '../../context/CarritoContext';
@@ -34,6 +36,9 @@ export default function PuntoVenta() {
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [productoPendiente, setProductoPendiente] = useState(null);
   const [confirmandoVenta, setConfirmandoVenta] = useState(false);
+  const [mostrandoCobro, setMostrandoCobro] = useState(false);
+  const [procesandoCobro, setProcesandoCobro] = useState(false);
+  const [errorCobro, setErrorCobro] = useState(null);
 
   const agregarAlCarritoValidandoStock = useCallback((producto) => {
     const existente = items.find((item) => item.clave === producto.carritoKey);
@@ -106,13 +111,11 @@ export default function PuntoVenta() {
     (item) => item.estado_vencimiento === 'proximo_a_vencer',
   );
 
-  const finalizarVenta = useCallback(() => {
-    const nombreCliente = clienteSeleccionado?.nombre_cliente || 'Consumidor final';
-    setAviso(
-      `Cobro ${metodoPago} preparado para ${nombreCliente}. Falta conectar la confirmación con el endpoint de ventas.`,
-    );
+  const abrirCobro = useCallback(() => {
+    setErrorCobro(null);
+    setMostrandoCobro(true);
     setConfirmandoVenta(false);
-  }, [clienteSeleccionado, metodoPago]);
+  }, []);
 
   const procesarVenta = () => {
     if (itemsProximosAVencer.length > 0) {
@@ -120,8 +123,60 @@ export default function PuntoVenta() {
       return;
     }
 
-    finalizarVenta();
+    abrirCobro();
   };
+
+  const cerrarCobro = useCallback(() => {
+    if (procesandoCobro) return;
+    setMostrandoCobro(false);
+    setErrorCobro(null);
+  }, [procesandoCobro]);
+
+  const confirmarCobro = useCallback(async (montoRecibido) => {
+    setErrorCobro(null);
+
+    const detalles = items.map((item) => ({
+      id_lote: Number(item.id_lote),
+      cantidad: Number(item.cantidad),
+    }));
+
+    if (!sucursalActivaId) {
+      setErrorCobro('No hay una sucursal activa para registrar la venta.');
+      return;
+    }
+
+    if (detalles.some((detalle) => !detalle.id_lote || detalle.cantidad <= 0)) {
+      setErrorCobro('El carrito contiene productos sin lote valido.');
+      return;
+    }
+
+    try {
+      setProcesandoCobro(true);
+      const venta = await crearVenta({
+        id_sucursal: Number(sucursalActivaId),
+        id_cliente: clienteSeleccionado?.id_cliente ?? null,
+        metodo_pago: metodoPago,
+        monto_recibido: montoRecibido,
+        detalles,
+      });
+
+      vaciarCarrito();
+      setMostrandoCobro(false);
+      setAviso(`Venta #${venta.id_venta} registrada. Cambio: Q${Number(venta.cambio || 0).toFixed(2)}.`);
+      refrescar();
+    } catch (err) {
+      setErrorCobro(err.message || 'No se pudo registrar la venta.');
+    } finally {
+      setProcesandoCobro(false);
+    }
+  }, [
+    clienteSeleccionado,
+    items,
+    metodoPago,
+    refrescar,
+    sucursalActivaId,
+    vaciarCarrito,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -185,7 +240,19 @@ export default function PuntoVenta() {
         titulo="Venta con productos próximos a vencer"
         mensaje="El carrito incluye productos próximos a vencer. ¿Deseas continuar con la venta?"
         onClose={() => setConfirmandoVenta(false)}
-        onConfirm={finalizarVenta}
+        onConfirm={abrirCobro}
+      />
+
+      <CobroModal
+        isOpen={mostrandoCobro}
+        items={items}
+        total={total}
+        metodoPago={metodoPago}
+        clienteSeleccionado={clienteSeleccionado}
+        procesando={procesandoCobro}
+        error={errorCobro}
+        onClose={cerrarCobro}
+        onConfirm={confirmarCobro}
       />
     </div>
   );
