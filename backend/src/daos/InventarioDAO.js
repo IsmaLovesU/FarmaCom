@@ -8,6 +8,8 @@ class InventarioDAO {
         p.codigo,
         p.nombre_comercial,
         p.nombre_generico,
+        p.concentracion,
+        p.presentacion,
         p.stock_minimo,
         p.meses_alerta_vencimiento,
         p.aplica_mayoreo,
@@ -61,6 +63,7 @@ class InventarioDAO {
 
       GROUP BY
         p.id_producto, p.codigo, p.nombre_comercial, p.nombre_generico,
+        p.concentracion, p.presentacion,
         p.stock_minimo, p.meses_alerta_vencimiento, p.aplica_mayoreo, p.activo,
         c.nombre, cf.nombre, pr.nombre
 
