@@ -1,9 +1,12 @@
 const { Router } = require('express');
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const ClienteController = require('../controllers/ClienteController');
+const HistorialCompraController = require('../controllers/HistorialCompraController');
 const verificarToken = require('../middlewares/verificarToken');
+const verificarRol = require('../middlewares/verificarRol');
 
 const router = Router();
+const rolesHistorial = verificarRol('dueno', 'administrador', 'dependiente');
 const validarId = [param('id').isInt({ min: 1 }).withMessage('El id debe ser un entero positivo').toInt()];
 const validarNombre = (requerido) => body('nombre_cliente')
   [requerido ? 'notEmpty' : 'optional']()
@@ -14,8 +17,34 @@ const validarObservaciones = body('observaciones')
   .optional({ nullable: true })
   .trim()
   .isLength({ max: 2000 }).withMessage('observaciones no puede superar los 2000 caracteres');
+const validarFiltrosHistorial = [
+  query('id_sucursal')
+    .optional()
+    .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
+    .toInt(),
+  query('estado')
+    .optional()
+    .isIn(['completada', 'anulada'])
+    .withMessage('estado debe ser completada o anulada'),
+  query('fecha_desde')
+    .optional()
+    .isISO8601({ strict: true })
+    .withMessage('fecha_desde debe tener formato YYYY-MM-DD'),
+  query('fecha_hasta')
+    .optional()
+    .isISO8601({ strict: true })
+    .withMessage('fecha_hasta debe tener formato YYYY-MM-DD'),
+];
 
 router.get('/', verificarToken, ClienteController.obtenerTodas);
+router.get(
+  '/:id/historial-compras',
+  verificarToken,
+  rolesHistorial,
+  validarId,
+  validarFiltrosHistorial,
+  HistorialCompraController.obtenerPorCliente,
+);
 router.get('/:id', verificarToken, validarId, ClienteController.obtenerPorId);
 router.post('/', verificarToken, [validarNombre(true), validarObservaciones], ClienteController.crear);
 router.put('/:id', verificarToken, validarId, [validarNombre(false), validarObservaciones], ClienteController.actualizar);
