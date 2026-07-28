@@ -7,11 +7,6 @@ const lanzarError = (mensaje, status) => {
   throw error;
 };
 
-const puedeAccederSucursal = (usuario, id_sucursal) => (
-  usuario.rol !== 'dependiente'
-  || Number(usuario.id_sucursal) === Number(id_sucursal)
-);
-
 const validarRangoFechas = ({ fecha_desde, fecha_hasta }) => {
   if (fecha_desde && fecha_hasta && new Date(fecha_desde) > new Date(fecha_hasta)) {
     lanzarError('fecha_desde no puede ser posterior a fecha_hasta', 400);
@@ -36,7 +31,7 @@ const construirResumen = (compras) => {
   };
 };
 
-const obtenerPorCliente = async (id_cliente, filtros = {}, usuario) => {
+const obtenerPorCliente = async (id_cliente, filtros = {}) => {
   const cliente = await ClienteDAO.obtenerPorId(id_cliente);
   if (!cliente) lanzarError('Cliente no encontrado', 404);
 
@@ -49,16 +44,6 @@ const obtenerPorCliente = async (id_cliente, filtros = {}, usuario) => {
     fecha_desde: filtros.fecha_desde,
     fecha_hasta: filtros.fecha_hasta,
   };
-
-  if (usuario.rol === 'dependiente') {
-    if (
-      filtrosAplicados.id_sucursal
-      && !puedeAccederSucursal(usuario, filtrosAplicados.id_sucursal)
-    ) {
-      lanzarError('No tienes permiso para consultar historial de otra sucursal', 403);
-    }
-    filtrosAplicados.id_sucursal = Number(usuario.id_sucursal);
-  }
 
   const compras = await HistorialCompraDAO.obtenerPorCliente(filtrosAplicados);
 

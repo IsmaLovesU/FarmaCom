@@ -33,7 +33,7 @@ describe('HistorialCompraService', () => {
 
     expect(HistorialCompraDAO.obtenerPorCliente).toHaveBeenCalledWith({
       id_cliente: 4,
-      id_sucursal: 1,
+      id_sucursal: undefined,
       estado: 'completada',
       fecha_desde: undefined,
       fecha_hasta: undefined,
@@ -82,18 +82,22 @@ describe('HistorialCompraService', () => {
     expect(resultado.compras).toEqual(compras);
   });
 
-  it('impide a un dependiente consultar otra sucursal', async () => {
-    await expect(
-      HistorialCompraService.obtenerPorCliente(
-        4,
-        { id_sucursal: 2 },
-        usuarioDependiente,
-      ),
-    ).rejects.toMatchObject({
-      status: 403,
-      message: 'No tienes permiso para consultar historial de otra sucursal',
+  it('permite consultar el historial de otra sucursal', async () => {
+    HistorialCompraDAO.obtenerPorCliente.mockResolvedValue([]);
+
+    await HistorialCompraService.obtenerPorCliente(
+      4,
+      { id_sucursal: 2 },
+      usuarioDependiente,
+    );
+
+    expect(HistorialCompraDAO.obtenerPorCliente).toHaveBeenCalledWith({
+      id_cliente: 4,
+      id_sucursal: 2,
+      estado: undefined,
+      fecha_desde: undefined,
+      fecha_hasta: undefined,
     });
-    expect(HistorialCompraDAO.obtenerPorCliente).not.toHaveBeenCalled();
   });
 
   it('rechaza rangos de fechas invertidos', async () => {

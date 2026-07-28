@@ -46,6 +46,7 @@ const vaciarCarrito = vi.fn(() => {
   carritoItems = [];
 });
 const refrescarCatalogo = vi.fn();
+const mockCrearCliente = vi.fn();
 
 vi.mock('../../api/ventas', () => ({
   crearVenta: vi.fn(),
@@ -83,6 +84,7 @@ vi.mock('../../hooks/useClientes', () => ({
   default: () => ({
     clientes: [{ id_cliente: 1, nombre_cliente: 'Maria Lopez' }],
     cargando: false,
+    crear: mockCrearCliente,
   }),
 }));
 
@@ -93,6 +95,12 @@ describe('PuntoVenta', () => {
     agregarAlCarrito.mockClear();
     vaciarCarrito.mockClear();
     refrescarCatalogo.mockClear();
+    mockCrearCliente.mockReset();
+    mockCrearCliente.mockResolvedValue({
+      id_cliente: 2,
+      nombre_cliente: 'Ana Pérez',
+      observaciones: null,
+    });
     crearVenta.mockReset();
     crearVenta.mockResolvedValue({ id_venta: 15, cambio: '1.50' });
   });
@@ -114,6 +122,27 @@ describe('PuntoVenta', () => {
     await user.click(screen.getByText('Maria Lopez'));
 
     expect(screen.getByText('Maria Lopez')).toBeInTheDocument();
+  });
+
+  it('permite agregar y seleccionar un cliente nuevo sin salir del punto de venta', async () => {
+    const user = userEvent.setup();
+    render(<PuntoVenta />);
+
+    await user.click(screen.getByRole('button', { name: 'Agregar cliente' }));
+    expect(screen.getByRole('dialog', { name: 'Nuevo cliente' })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Nombre completo'), '  Ana Pérez  ');
+    await user.click(screen.getByRole('button', { name: 'Agregar y seleccionar' }));
+
+    await waitFor(() => {
+      expect(mockCrearCliente).toHaveBeenCalledWith({
+        nombre_cliente: 'Ana Pérez',
+        observaciones: null,
+      });
+    });
+
+    expect(screen.queryByRole('dialog', { name: 'Nuevo cliente' })).not.toBeInTheDocument();
+    expect(screen.getByText('Ana Pérez')).toBeInTheDocument();
   });
 
   it('pide confirmacion antes de agregar un producto proximo a vencer', async () => {

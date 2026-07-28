@@ -4,6 +4,7 @@ import { crearVenta } from '../../api/ventas';
 import CatalogoProductosPOS from '../../components/ventas/CatalogoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
 import CobroModal from '../../components/ventas/CobroModal';
+import NuevoClienteModal from '../../components/ventas/NuevoClienteModal';
 import VencimientoAvisoModal from '../../components/ventas/VencimientoAvisoModal';
 import { useAuth } from '../../context/AuthContext';
 import { useCarrito } from '../../context/CarritoContext';
@@ -29,7 +30,11 @@ export default function PuntoVenta() {
     error,
     refrescar,
   } = useCatalogoPOS(sucursalActivaId);
-  const { clientes, cargando: cargandoClientes } = useClientes();
+  const {
+    clientes,
+    cargando: cargandoClientes,
+    crear: crearCliente,
+  } = useClientes();
 
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [aviso, setAviso] = useState(null);
@@ -37,6 +42,7 @@ export default function PuntoVenta() {
   const [productoPendiente, setProductoPendiente] = useState(null);
   const [confirmandoVenta, setConfirmandoVenta] = useState(false);
   const [mostrandoCobro, setMostrandoCobro] = useState(false);
+  const [mostrandoNuevoCliente, setMostrandoNuevoCliente] = useState(false);
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   const [errorCobro, setErrorCobro] = useState(null);
 
@@ -125,6 +131,13 @@ export default function PuntoVenta() {
 
     abrirCobro();
   };
+
+  const agregarCliente = useCallback(async (datosCliente) => {
+    const nuevoCliente = await crearCliente(datosCliente);
+    setClienteSeleccionado(nuevoCliente);
+    setMostrandoNuevoCliente(false);
+    setAviso(`Cliente ${nuevoCliente.nombre_cliente} agregado y seleccionado.`);
+  }, [crearCliente]);
 
   const cerrarCobro = useCallback(() => {
     if (procesandoCobro) return;
@@ -216,6 +229,7 @@ export default function PuntoVenta() {
           cargandoClientes={cargandoClientes}
           clienteSeleccionado={clienteSeleccionado}
           onClienteChange={setClienteSeleccionado}
+          onNuevoCliente={() => setMostrandoNuevoCliente(true)}
           onIncrementar={incrementarProducto}
           onDisminuir={disminuirProducto}
           onActualizarCantidad={actualizarCantidadProducto}
@@ -224,6 +238,12 @@ export default function PuntoVenta() {
           onProcesar={procesarVenta}
         />
       </div>
+
+      <NuevoClienteModal
+        isOpen={mostrandoNuevoCliente}
+        onClose={() => setMostrandoNuevoCliente(false)}
+        onCrear={agregarCliente}
+      />
 
       <VencimientoAvisoModal
         isOpen={Boolean(productoPendiente)}
