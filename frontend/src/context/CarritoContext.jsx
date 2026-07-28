@@ -16,9 +16,7 @@ function numeroPositivo(valor, predeterminado = 1) {
 
 function obtenerClave(producto) {
   if (producto.carritoKey) return String(producto.carritoKey);
-  if (producto.id_lote && producto.id_presentacion) {
-    return `lote-${producto.id_lote}-presentacion-${producto.id_presentacion}`;
-  }
+  if (producto.id_lote) return `lote-${producto.id_lote}`;
   if (producto.id_producto) return `producto-${producto.id_producto}`;
   throw new Error('El producto debe incluir id_producto o una carritoKey.');
 }

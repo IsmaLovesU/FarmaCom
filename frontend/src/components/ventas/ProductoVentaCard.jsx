@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CalendarClock, PackagePlus } from 'lucide-react';
 import { formatearQuetzales } from '../../utils/pos';
+import { obtenerEtiquetaPresentacion } from '../../constants/presentaciones.js';
 
 const formatearFecha = (fecha) => {
   if (!fecha) return '';
@@ -30,7 +31,8 @@ export default function ProductoVentaCard({ producto, onAgregar }) {
             {producto.nombre_comercial}
           </p>
           <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
-            {producto.nombre_generico || producto.presentacion_nombre}
+            {producto.nombre_generico}
+            {producto.concentracion ? ` · ${producto.concentracion}` : ''}
           </p>
         </div>
 
@@ -52,7 +54,7 @@ export default function ProductoVentaCard({ producto, onAgregar }) {
           {bajoStock ? 'Bajo stock' : 'Disponible'}: {producto.stock_disponible}
         </span>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">
-          {producto.presentacion_nombre}
+          {obtenerEtiquetaPresentacion(producto.presentacion)}
         </span>
         <span className="text-[11px] font-medium text-slate-400">
           Código: {producto.codigo}
