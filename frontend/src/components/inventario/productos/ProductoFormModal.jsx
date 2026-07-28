@@ -23,6 +23,7 @@ export default function ProductoFormModal({
   isOpen,
   modoEdicion,
   producto,
+  codigoSugerido,
   categorias,
   casas,
   proveedores,
@@ -82,7 +83,7 @@ export default function ProductoFormModal({
   const sufijo = SUFIJOS_CODIGO[formulario.presentacion] || '';
   const codigoMostrado = modoEdicion && producto?.codigo
     ? producto.codigo
-    : `PRD-AUTO${sufijo ? `-${sufijo}` : ''}`;
+    : `${codigoSugerido || 'MED-AUTO'}${sufijo ? `-${sufijo}` : ''}`;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/55 backdrop-blur-sm overflow-y-auto">

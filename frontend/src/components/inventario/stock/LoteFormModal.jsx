@@ -111,10 +111,7 @@ export default function LoteFormModal({
     if (!esEnteroPositivo(formulario.cantidad_ingresada)) {
       return 'La cantidad ingresada debe ser un entero mayor a 0.';
     }
-    if (!formulario.presentacion_ingreso.trim()) return 'Escribe la presentación de ingreso.';
-    if (!esEnteroPositivo(formulario.factor_conversion_ingreso)) {
-      return 'El factor de conversión debe ser un entero mayor o igual a 1.';
-    }
+    
     if (formulario.precio_venta === '' || Number(formulario.precio_venta) < 0) {
       return 'Ingresa un precio de venta válido.';
     }

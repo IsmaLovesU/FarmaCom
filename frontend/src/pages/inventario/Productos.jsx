@@ -12,6 +12,16 @@ import useCasas from '../../hooks/useCasas.js';
 import useProveedores from '../../hooks/useProveedores.js';
 import { SUFIJOS_CODIGO } from '../../constants/presentaciones.js';
 
+const siguienteCodigoMed = (productos) => {
+  const numeros = (productos || [])
+    .map((p) => /^MED(\d+)/.exec(p.codigo || ''))
+    .filter(Boolean)
+    .map((coincidencia) => Number(coincidencia[1]));
+
+  const siguiente = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
+  return `MED${String(siguiente).padStart(3, '0')}`;
+};
+
 const filtrosIniciales = {
   id_categoria: '',
   id_casa: '',
@@ -68,7 +78,7 @@ export default function Productos() {
     const payload = {
       codigo: modoEdicion && productoEditando
         ? productoEditando.codigo
-        : `PRD-${Date.now()}-${sufijo}`,
+        : `${codigoSugerido}-${sufijo}`,
       nombre_comercial: formulario.nombre_comercial.trim(),
       nombre_generico: formulario.nombre_generico.trim(),
       concentracion: formulario.concentracion.trim(),
@@ -96,7 +106,7 @@ export default function Productos() {
     } finally {
       setGuardando(false);
     }
-  }, [modoEdicion, productoEditando, crear, actualizar]);
+  }, [modoEdicion, productoEditando, crear, actualizar, codigoSugerido]);
 
   const handleCambiarEstado = useCallback(async (producto) => {
     setErrorAccion(null);
@@ -148,6 +158,7 @@ export default function Productos() {
   const totalActivos = useMemo(() => productos.filter((p) => p.activo).length, [productos]);
   const totalInactivos = useMemo(() => productos.filter((p) => !p.activo).length, [productos]);
   const totalConMayoreo = useMemo(() => productos.filter((p) => p.aplica_mayoreo).length, [productos]);
+  const codigoSugerido = useMemo(() => siguienteCodigoMed(productos), [productos]);
 
   return (
     <div className="space-y-6">
@@ -203,6 +214,7 @@ export default function Productos() {
         isOpen={mostrarModal}
         modoEdicion={modoEdicion}
         producto={productoEditando}
+        codigoSugerido={codigoSugerido}
         categorias={categorias}
         casas={casas}
         proveedores={proveedores}
