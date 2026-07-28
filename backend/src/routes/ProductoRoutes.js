@@ -1,7 +1,6 @@
 const { Router } = require('express');
 const { body, param } = require('express-validator');
 const ProductoController      = require('../controllers/ProductoController');
-const PresentacionController  = require('../controllers/PresentacionController');
 const PromocionController     = require('../controllers/PromocionController');
 const verificarToken          = require('../middlewares/verificarToken');
 const verificarRol            = require('../middlewares/verificarRol');
@@ -144,38 +143,11 @@ const validarCambioMayoreo = [
     .toBoolean(),
 ];
 
-// ── validadores — Presentacion (anidados) ─────────────────────────────────────
-
-const validarCreacionPresentacion = [
-  body('nombre')
-    .trim()
-    .notEmpty().withMessage('El nombre es requerido')
-    .isLength({ max: 100 }).withMessage('El nombre no puede superar los 100 caracteres'),
-
-  body('factor_conversion')
-    .isFloat({ min: 1 }).withMessage('El factor de conversión debe ser mayor o igual a 1')
-    .toFloat(),
-
-  body('es_base')
-    .optional()
-    .isBoolean().withMessage('es_base debe ser un booleano')
-    .toBoolean(),
-
-  body('forzar_cambio_base')
-    .optional()
-    .isBoolean().withMessage('forzar_cambio_base debe ser un booleano')
-    .toBoolean(),
-];
-
 // ── validadores — Promocion (anidados) ────────────────────────────────────────
 
 const validarCreacionPromocion = [
   body('id_sucursal')
     .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
-    .toInt(),
-
-  body('id_presentacion')
-    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
     .toInt(),
 
   body('cantidad_minima')
@@ -245,25 +217,6 @@ router.patch('/:id/estado',
   validarParamId,
   validarCambioEstado,
   ProductoController.cambiarEstado,
-);
-
-// ── rutas — Presentacion (anidadas bajo producto) ─────────────────────────────
-
-// POST   /api/productos/:id_producto/presentaciones
-router.post('/:id_producto/presentaciones',
-  verificarToken,
-  verificarRol('dueno', 'administrador', 'dependiente'),
-  validarParamIdProducto,
-  validarCreacionPresentacion,
-  PresentacionController.crear,
-);
-
-// GET    /api/productos/:id_producto/presentaciones
-router.get('/:id_producto/presentaciones',
-  verificarToken,
-  verificarRol('dueno', 'administrador', 'dependiente'),
-  validarParamIdProducto,
-  PresentacionController.obtenerPorProducto,
 );
 
 // ── rutas — Promocion (anidadas bajo producto) ────────────────────────────────

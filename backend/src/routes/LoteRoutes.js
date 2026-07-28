@@ -14,18 +14,6 @@ const validarParamId = [
     .toInt(),
 ];
 
-const validarParamIdLote = [
-  param('id_lote')
-    .isInt({ min: 1 }).withMessage('id_lote debe ser un entero positivo')
-    .toInt(),
-];
-
-const validarParamIdPresentacion = [
-  param('id_presentacion')
-    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
-    .toInt(),
-];
-
 const validarParamIdSucursal = [
   param('id_sucursal')
     .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
@@ -109,33 +97,6 @@ const validarActualizacion = [
     .toFloat(),
 ];
 
-const validarActualizacionPrecio = [
-  body('precio_venta')
-    .optional()
-    .isFloat({ min: 0 }).withMessage('precio_venta debe ser mayor o igual a 0')
-    .toFloat(),
-
-  body('margen_ganancia')
-    .optional()
-    .isFloat({ min: 0, max: 9999.9999 }).withMessage('margen_ganancia debe estar entre 0 y 9999.9999')
-    .toFloat(),
-
-  body('precio_mayoreo')
-    .optional({ nullable: true })
-    .isFloat({ min: 0 }).withMessage('precio_mayoreo debe ser mayor o igual a 0')
-    .toFloat(),
-
-  body('cantidad_mayoreo')
-    .optional({ nullable: true })
-    .isInt({ min: 1 }).withMessage('cantidad_mayoreo debe ser un entero mayor a 0')
-    .toInt(),
-
-  body('limpiar_mayoreo')
-    .optional()
-    .isBoolean().withMessage('limpiar_mayoreo debe ser un booleano')
-    .toBoolean(),
-];
-
 //  Rutas — Lote
 
 // POST   /api/lotes
@@ -168,35 +129,6 @@ router.get('/alertas',
   verificarToken,
   verificarRol('dueno', 'administrador'),
   LoteController.obtenerAlertas,
-);
-
-//  Rutas — LotePresentacion
-
-// GET    /api/lotes/:id_lote/precios
-router.get('/:id_lote/precios',
-  verificarToken,
-  verificarRol('dueno', 'administrador', 'dependiente'),
-  validarParamIdLote,
-  LoteController.obtenerPrecios,
-);
-
-// PATCH  /api/lotes/:id_lote/precios/:id_presentacion
-router.patch('/:id_lote/precios/:id_presentacion',
-  verificarToken,
-  verificarRol('dueno', 'administrador'),
-  validarParamIdLote,
-  validarParamIdPresentacion,
-  validarActualizacionPrecio,
-  LoteController.actualizarPrecio,
-);
-
-// DELETE /api/lotes/:id_lote/precios/:id_presentacion
-router.delete('/:id_lote/precios/:id_presentacion',
-  verificarToken,
-  verificarRol('dueno', 'administrador'),
-  validarParamIdLote,
-  validarParamIdPresentacion,
-  LoteController.eliminarPrecio,
 );
 
 //  Rutas anidadas
