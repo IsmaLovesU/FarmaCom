@@ -70,49 +70,6 @@ const obtenerAlertas = async (req, res) => {
   }
 };
 
-// LotePresentacion
-
-const obtenerPrecios = async (req, res) => {
-  try {
-    const precios = await LoteService.obtenerPreciosPorLote(Number(req.params.id_lote));
-    return res.status(200).json(precios);
-  } catch (error) {
-    return res.status(error.status || 500).json({ mensaje: error.message });
-  }
-};
-
-// PATCH /api/lotes/:id_lote/precios/:id_presentacion
-const actualizarPrecio = async (req, res) => {
-  const errores = validationResult(req);
-  if (!errores.isEmpty()) {
-    return res.status(400).json({ errores: errores.array() });
-  }
-
-  try {
-    const resultado = await LoteService.actualizarPrecio(
-      Number(req.params.id_lote),
-      Number(req.params.id_presentacion),
-      req.body,
-    );
-    return res.status(200).json(resultado);
-  } catch (error) {
-    return res.status(error.status || 500).json({ mensaje: error.message });
-  }
-};
-
-// DELETE /api/lotes/:id_lote/precios/:id_presentacion
-const eliminarPrecio = async (req, res) => {
-  try {
-    const resultado = await LoteService.eliminarPrecio(
-      Number(req.params.id_lote),
-      Number(req.params.id_presentacion),
-    );
-    return res.status(200).json(resultado);
-  } catch (error) {
-    return res.status(error.status || 500).json({ mensaje: error.message });
-  }
-};
-
 module.exports = {
   crear,
   obtenerPorSucursal,
@@ -120,7 +77,4 @@ module.exports = {
   obtenerPorId,
   actualizar,
   obtenerAlertas,
-  obtenerPrecios,
-  actualizarPrecio,
-  eliminarPrecio,
 };
