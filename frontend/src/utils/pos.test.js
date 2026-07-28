@@ -60,7 +60,7 @@ describe('utilidades del punto de venta', () => {
       id_lote: 10,
       nombre_comercial: 'Paracetamol',
       presentacion_nombre: 'Blíster',
-      stock_disponible: 4,
+      stock_disponible: 40,
       precio_venta: 8.5,
       tiene_precio: true,
     });
@@ -81,6 +81,31 @@ describe('utilidades del punto de venta', () => {
 
     expect(resultado[0].precio_venta).toBeNull();
     expect(resultado[0].tiene_precio).toBe(false);
+  });
+
+  it('prefiere un lote con precio positivo cuando hay lotes con precio cero', () => {
+    const resultado = construirCatalogoPOS(inventario, [
+      {
+        id_lote: 10,
+        id_producto: 1,
+        stock_actual: 5,
+        precio_venta: '0.00',
+        estado_vencimiento: 'normal',
+      },
+      {
+        id_lote: 11,
+        id_producto: 1,
+        stock_actual: 5,
+        precio_venta: '1.25',
+        estado_vencimiento: 'normal',
+      },
+    ]);
+
+    expect(resultado[0]).toMatchObject({
+      id_lote: 11,
+      precio_venta: 1.25,
+      tiene_precio: true,
+    });
   });
 
   it('filtra por código, nombre genérico o presentación', () => {

@@ -26,7 +26,7 @@ export const construirCatalogoPOS = (inventario = [], lotes = []) => {
       && lote.precio_venta !== undefined
       && lote.precio_venta !== ''
       && Number.isFinite(precioVenta)
-      && precioVenta >= 0;
+      && precioVenta > 0;
     const estaVencido = lote.estado_vencimiento === 'vencido';
     const productoActivo = producto?.activo !== false;
 
@@ -43,6 +43,8 @@ export const construirCatalogoPOS = (inventario = [], lotes = []) => {
       nombre_generico: lote.nombre_generico || producto.nombre_generico,
       concentracion: lote.concentracion || producto.concentracion,
       presentacion: lote.presentacion || producto.presentacion,
+      presentacion_nombre: obtenerEtiquetaPresentacion(lote.presentacion || producto.presentacion)
+        || lote.presentacion_nombre,
       numero_lote: lote.numero_lote,
       fecha_vencimiento: lote.fecha_vencimiento,
       estado_vencimiento: lote.estado_vencimiento,
@@ -71,6 +73,7 @@ export const filtrarCatalogoPOS = (productos, busqueda) => {
     producto.nombre_generico,
     producto.concentracion,
     producto.codigo,
+    producto.presentacion_nombre,
     obtenerEtiquetaPresentacion(producto.presentacion),
   ].some((valor) => String(valor || '').toLocaleLowerCase('es').includes(termino)));
 };
