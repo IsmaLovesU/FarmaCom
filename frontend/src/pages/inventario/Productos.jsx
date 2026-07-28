@@ -48,7 +48,8 @@ export default function Productos() {
   const [errorFormulario, setErrorFormulario] = useState(null);
 
   const cargandoDatos = cargandoCategorias || cargandoCasas || cargandoProveedores;
-
+  const codigoSugerido = useMemo(() => siguienteCodigoMed(productos), [productos]);
+  
   const handleCrear = useCallback(() => {
     setModoEdicion(false);
     setProductoEditando(null);
@@ -158,7 +159,7 @@ export default function Productos() {
   const totalActivos = useMemo(() => productos.filter((p) => p.activo).length, [productos]);
   const totalInactivos = useMemo(() => productos.filter((p) => !p.activo).length, [productos]);
   const totalConMayoreo = useMemo(() => productos.filter((p) => p.aplica_mayoreo).length, [productos]);
-  const codigoSugerido = useMemo(() => siguienteCodigoMed(productos), [productos]);
+  
 
   return (
     <div className="space-y-6">
