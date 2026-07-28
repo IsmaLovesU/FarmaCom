@@ -2,9 +2,11 @@ import React, { useCallback, useState } from 'react';
 import { Info, X } from 'lucide-react';
 import CatalogoProductosPOS from '../../components/ventas/CatalogoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
+import VencimientoAvisoModal from '../../components/ventas/VencimientoAvisoModal';
 import { useAuth } from '../../context/AuthContext';
 import { useCarrito } from '../../context/CarritoContext';
 import useCatalogoPOS from '../../hooks/useCatalogoPOS';
+import useClientes from '../../hooks/useClientes';
 
 export default function PuntoVenta() {
   const { sucursalActivaId } = useAuth();
@@ -25,11 +27,15 @@ export default function PuntoVenta() {
     error,
     refrescar,
   } = useCatalogoPOS(sucursalActivaId);
+  const { clientes, cargando: cargandoClientes } = useClientes();
 
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [aviso, setAviso] = useState(null);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [productoPendiente, setProductoPendiente] = useState(null);
+  const [confirmandoVenta, setConfirmandoVenta] = useState(false);
 
-  const agregarProducto = useCallback((producto) => {
+  const agregarAlCarritoValidandoStock = useCallback((producto) => {
     const existente = items.find((item) => item.clave === producto.carritoKey);
     if (existente?.cantidad >= producto.stock_disponible) {
       setAviso(`No hay más existencias disponibles de ${producto.nombre_comercial}.`);
@@ -39,6 +45,21 @@ export default function PuntoVenta() {
     agregarAlCarrito(producto, { precioUnitario: producto.precio_venta });
     setAviso(null);
   }, [agregarAlCarrito, items]);
+
+  const agregarProducto = useCallback((producto) => {
+    if (producto.estado_vencimiento === 'proximo_a_vencer') {
+      setProductoPendiente(producto);
+      return;
+    }
+
+    agregarAlCarritoValidandoStock(producto);
+  }, [agregarAlCarritoValidandoStock]);
+
+  const confirmarAgregarPendiente = useCallback(() => {
+    if (!productoPendiente) return;
+    agregarAlCarritoValidandoStock(productoPendiente);
+    setProductoPendiente(null);
+  }, [productoPendiente, agregarAlCarritoValidandoStock]);
 
   const incrementarProducto = useCallback((item) => {
     if (item.cantidad >= item.stock_disponible) {
@@ -81,10 +102,25 @@ export default function PuntoVenta() {
     setAviso(null);
   }, [eliminarDelCarrito]);
 
-  const procesarVenta = () => {
+  const itemsProximosAVencer = items.filter(
+    (item) => item.estado_vencimiento === 'proximo_a_vencer',
+  );
+
+  const finalizarVenta = useCallback(() => {
+    const nombreCliente = clienteSeleccionado?.nombre_cliente || 'Consumidor final';
     setAviso(
-      `Cobro ${metodoPago} preparado. Falta conectar la confirmación con el endpoint de ventas.`,
+      `Cobro ${metodoPago} preparado para ${nombreCliente}. Falta conectar la confirmación con el endpoint de ventas.`,
     );
+    setConfirmandoVenta(false);
+  }, [clienteSeleccionado, metodoPago]);
+
+  const procesarVenta = () => {
+    if (itemsProximosAVencer.length > 0) {
+      setConfirmandoVenta(true);
+      return;
+    }
+
+    finalizarVenta();
   };
 
   return (
@@ -121,6 +157,10 @@ export default function PuntoVenta() {
           cantidadTotal={cantidadTotal}
           metodoPago={metodoPago}
           onMetodoPagoChange={setMetodoPago}
+          clientes={clientes}
+          cargandoClientes={cargandoClientes}
+          clienteSeleccionado={clienteSeleccionado}
+          onClienteChange={setClienteSeleccionado}
           onIncrementar={incrementarProducto}
           onDisminuir={disminuirProducto}
           onActualizarCantidad={actualizarCantidadProducto}
@@ -129,6 +169,24 @@ export default function PuntoVenta() {
           onProcesar={procesarVenta}
         />
       </div>
+
+      <VencimientoAvisoModal
+        isOpen={Boolean(productoPendiente)}
+        productos={productoPendiente ? [productoPendiente] : []}
+        titulo="Producto próximo a vencer"
+        mensaje="Este producto está próximo a vencer. ¿Deseas agregarlo de todas formas al carrito?"
+        onClose={() => setProductoPendiente(null)}
+        onConfirm={confirmarAgregarPendiente}
+      />
+
+      <VencimientoAvisoModal
+        isOpen={confirmandoVenta}
+        productos={itemsProximosAVencer}
+        titulo="Venta con productos próximos a vencer"
+        mensaje="El carrito incluye productos próximos a vencer. ¿Deseas continuar con la venta?"
+        onClose={() => setConfirmandoVenta(false)}
+        onConfirm={finalizarVenta}
+      />
     </div>
   );
 }

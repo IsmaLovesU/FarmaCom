@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ReceiptText, ShoppingCart, Trash2 } from 'lucide-react';
 import CarritoVentaItem from './CarritoVentaItem';
 import MetodoPagoSelector from './MetodoPagoSelector';
+import ClienteSelectorPOS from './ClienteSelectorPOS';
 import { formatearQuetzales } from '../../utils/pos';
 
 export default function CarritoVenta({
@@ -10,6 +11,10 @@ export default function CarritoVenta({
   cantidadTotal,
   metodoPago,
   onMetodoPagoChange,
+  clientes,
+  cargandoClientes,
+  clienteSeleccionado,
+  onClienteChange,
   onIncrementar,
   onDisminuir,
   onActualizarCantidad,
@@ -64,6 +69,15 @@ export default function CarritoVenta({
           </button>
         )}
       </header>
+
+      <div className="border-b border-slate-200/70 px-5 py-4 sm:px-6">
+        <ClienteSelectorPOS
+          clientes={clientes}
+          cargando={cargandoClientes}
+          clienteSeleccionado={clienteSeleccionado}
+          onSeleccionar={onClienteChange}
+        />
+      </div>
 
       <div className="hidden grid-cols-12 gap-3 bg-surface-container-low/60 px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 sm:grid">
         <span className="col-span-5">Producto</span>
