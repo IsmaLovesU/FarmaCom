@@ -4,6 +4,7 @@ const ProductoController      = require('../controllers/ProductoController');
 const PromocionController     = require('../controllers/PromocionController');
 const verificarToken          = require('../middlewares/verificarToken');
 const verificarRol            = require('../middlewares/verificarRol');
+const { PRESENTACIONES, normalizarPresentacion } = require('../constants/presentaciones');
 
 const router = Router();
 
@@ -33,9 +34,18 @@ const validarCreacionProducto = [
     .isLength({ max: 150 }).withMessage('El nombre comercial no puede superar los 150 caracteres'),
 
   body('nombre_generico')
-    .optional({ nullable: true })
     .trim()
+    .notEmpty().withMessage('El nombre genérico es requerido')
     .isLength({ max: 150 }).withMessage('El nombre genérico no puede superar los 150 caracteres'),
+
+  body('concentracion')
+    .trim()
+    .notEmpty().withMessage('La concentración es requerida')
+    .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
+
+  body('presentacion')
+    .customSanitizer(normalizarPresentacion)
+    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
 
   body('descripcion')
     .optional({ nullable: true })
@@ -87,10 +97,21 @@ const validarActualizacionProducto = [
     .isLength({ max: 150 }).withMessage('El nombre comercial no puede superar los 150 caracteres'),
 
   body('nombre_generico')
-    .optional({ nullable: true })
+    .optional()
     .trim()
+    .notEmpty().withMessage('El nombre genérico no puede estar vacío')
     .isLength({ max: 150 }).withMessage('El nombre genérico no puede superar los 150 caracteres'),
 
+  body('concentracion')
+    .optional()
+    .trim()
+    .notEmpty().withMessage('La concentración no puede estar vacía')
+    .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
+
+  body('presentacion')
+    .optional()
+    .customSanitizer(normalizarPresentacion)
+    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
   body('descripcion')
     .optional({ nullable: true })
     .trim(),
