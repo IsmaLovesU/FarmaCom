@@ -104,63 +104,78 @@ class LoteDAO {
   }
 
   // Busca si ya existe el mismo número de lote para ese producto y sucursal
-  async obtenerPorNumeroLote(numero_lote, id_producto, id_sucursal) {
+  async obtenerPorNumeroLote(numero_lote, id_producto, id_sucursal, excluir_id = null) {
     const query = `
       SELECT * FROM lote
       WHERE LOWER(numero_lote) = LOWER($1)
         AND id_producto  = $2
         AND id_sucursal  = $3
+        AND ($4::INTEGER IS NULL OR id_lote != $4)
     `;
-    const { rows } = await pool.query(query, [numero_lote, id_producto, id_sucursal]);
+    const { rows } = await pool.query(query, [numero_lote, id_producto, id_sucursal, excluir_id]);
     return rows[0] || null;
   }
 
   // UPDATE
 
-  // Permite ajustar el stock, la fecha de vencimiento y los precios del lote.
+  // Permite editar los datos propios del lote.
   async actualizar(id_lote, campos) {
     const {
+      id_producto,
+      id_proveedor,
+      id_sucursal,
+      numero_lote,
       fecha_vencimiento,
+      cantidad_ingresada,
       stock_actual,
       precio_venta,
       margen_ganancia,
       precio_mayoreo,
       cantidad_mayoreo,
+      limpiar_mayoreo,
     } = campos;
 
     const query = `
       UPDATE lote SET
-        fecha_vencimiento = COALESCE($1, fecha_vencimiento),
-        stock_actual      = COALESCE($2, stock_actual),
-        precio_venta      = COALESCE($3, precio_venta),
-        margen_ganancia   = COALESCE($4, margen_ganancia),
-        precio_mayoreo    = COALESCE($5, precio_mayoreo),
-        cantidad_mayoreo  = COALESCE($6, cantidad_mayoreo)
-      WHERE id_lote = $7
+        id_producto        = COALESCE($1, id_producto),
+        id_proveedor       = COALESCE($2, id_proveedor),
+        id_sucursal        = COALESCE($3, id_sucursal),
+        numero_lote        = COALESCE($4, numero_lote),
+        fecha_vencimiento  = COALESCE($5, fecha_vencimiento),
+        cantidad_ingresada = COALESCE($6, cantidad_ingresada),
+        stock_actual       = COALESCE($7, stock_actual),
+        precio_venta       = COALESCE($8, precio_venta),
+        margen_ganancia    = COALESCE($9, margen_ganancia),
+        precio_mayoreo     = CASE WHEN $12 THEN NULL ELSE COALESCE($10, precio_mayoreo) END,
+        cantidad_mayoreo   = CASE WHEN $12 THEN NULL ELSE COALESCE($11, cantidad_mayoreo) END
+      WHERE id_lote = $13
       RETURNING *
     `;
     const { rows } = await pool.query(query, [
-      fecha_vencimiento ?? null,
-      stock_actual      ?? null,
-      precio_venta      ?? null,
-      margen_ganancia   ?? null,
-      precio_mayoreo    ?? null,
-      cantidad_mayoreo  ?? null,
+      id_producto        ?? null,
+      id_proveedor       ?? null,
+      id_sucursal        ?? null,
+      numero_lote        ?? null,
+      fecha_vencimiento  ?? null,
+      cantidad_ingresada ?? null,
+      stock_actual       ?? null,
+      precio_venta       ?? null,
+      margen_ganancia    ?? null,
+      precio_mayoreo     ?? null,
+      cantidad_mayoreo   ?? null,
+      limpiar_mayoreo    === true,
       id_lote,
     ]);
     return rows[0] || null;
   }
 
-  // Borra el precio de mayoreo. Se necesita un método aparte porque con
-  // COALESCE es imposible distinguir "no mandes nada" de "ponlo en nulo".
-  async limpiarMayoreo(id_lote) {
-    const query = `
-      UPDATE lote
-      SET precio_mayoreo = NULL, cantidad_mayoreo = NULL
-      WHERE id_lote = $1
-      RETURNING *
-    `;
-    const { rows } = await pool.query(query, [id_lote]);
+  // DELETE
+
+  async eliminar(id_lote) {
+    const { rows } = await pool.query(
+      'DELETE FROM lote WHERE id_lote = $1 RETURNING *',
+      [id_lote],
+    );
     return rows[0] || null;
   }
 

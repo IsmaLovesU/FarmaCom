@@ -44,7 +44,7 @@ const obtenerPorId = async (req, res) => {
   }
 };
 
-// PATCH /api/lotes/:id — solo fecha_vencimiento y stock_actual
+// PATCH /api/lotes/:id — edición parcial de los datos del lote
 const actualizar = async (req, res) => {
   const errores = validationResult(req);
   if (!errores.isEmpty()) {
@@ -54,6 +54,20 @@ const actualizar = async (req, res) => {
   try {
     const lote = await LoteService.actualizarLote(Number(req.params.id), req.body);
     return res.status(200).json(lote);
+  } catch (error) {
+    return res.status(error.status || 500).json({ mensaje: error.message });
+  }
+};
+
+const eliminar = async (req, res) => {
+  const errores = validationResult(req);
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ errores: errores.array() });
+  }
+
+  try {
+    const resultado = await LoteService.eliminarLote(Number(req.params.id));
+    return res.status(200).json(resultado);
   } catch (error) {
     return res.status(error.status || 500).json({ mensaje: error.message });
   }
@@ -76,5 +90,6 @@ module.exports = {
   obtenerPorProducto,
   obtenerPorId,
   actualizar,
+  eliminar,
   obtenerAlertas,
 };

@@ -74,10 +74,36 @@ const validarCreacion = [
 ];
 
 const validarActualizacion = [
+  body('id_producto')
+    .optional()
+    .isInt({ min: 1 }).withMessage('id_producto debe ser un entero positivo')
+    .toInt(),
+
+  body('id_proveedor')
+    .optional()
+    .isInt({ min: 1 }).withMessage('id_proveedor debe ser un entero positivo')
+    .toInt(),
+
+  body('id_sucursal')
+    .optional()
+    .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
+    .toInt(),
+
+  body('numero_lote')
+    .optional()
+    .trim()
+    .notEmpty().withMessage('numero_lote no puede estar vacío')
+    .isLength({ max: 100 }).withMessage('numero_lote no puede superar los 100 caracteres'),
+
   body('fecha_vencimiento')
     .optional()
     .isISO8601().withMessage('fecha_vencimiento debe ser una fecha válida (YYYY-MM-DD)')
     .toDate(),
+
+  body('cantidad_ingresada')
+    .optional()
+    .isInt({ min: 1 }).withMessage('cantidad_ingresada debe ser un entero mayor a 0')
+    .toInt(),
 
   body('stock_actual')
     .optional()
@@ -120,12 +146,12 @@ router.post('/',
   LoteController.crear,
 );
 
-// GET    /api/lotes/:id
-router.get('/:id',
+// GET    /api/lotes/alertas
+// Debe declararse antes de /:id para que "alertas" no se interprete como un id.
+router.get('/alertas',
   verificarToken,
-  verificarRol('dueno', 'administrador', 'dependiente'),
-  validarParamId,
-  LoteController.obtenerPorId,
+  verificarRol('dueno', 'administrador'),
+  LoteController.obtenerAlertas,
 );
 
 // PATCH  /api/lotes/:id
@@ -137,11 +163,20 @@ router.patch('/:id',
   LoteController.actualizar,
 );
 
-// GET    /api/lotes/alertas 
-router.get('/alertas',
+// DELETE /api/lotes/:id
+router.delete('/:id',
   verificarToken,
   verificarRol('dueno', 'administrador'),
-  LoteController.obtenerAlertas,
+  validarParamId,
+  LoteController.eliminar,
+);
+
+// GET    /api/lotes/:id
+router.get('/:id',
+  verificarToken,
+  verificarRol('dueno', 'administrador', 'dependiente'),
+  validarParamId,
+  LoteController.obtenerPorId,
 );
 
 //  Rutas anidadas

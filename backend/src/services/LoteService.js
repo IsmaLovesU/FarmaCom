@@ -96,53 +96,122 @@ const obtenerPorId = async (id_lote) => {
 };
 
 /**
- * Permite actualizar la fecha de vencimiento, el stock y los precios de venta.
+ * Permite actualizar los datos propios del lote.
  * El stock no puede quedar negativo ni superar la cantidad ingresada.
  */
 const actualizarLote = async (id_lote, campos) => {
   const lote = await LoteDAO.obtenerPorId(id_lote);
   if (!lote) lanzarError('Lote no encontrado', 404);
 
-  if (campos.fecha_vencimiento !== undefined) {
+  const camposPermitidos = [
+    'id_producto', 'id_proveedor', 'id_sucursal', 'numero_lote',
+    'fecha_vencimiento', 'cantidad_ingresada', 'stock_actual',
+    'precio_venta', 'margen_ganancia', 'precio_mayoreo',
+    'cantidad_mayoreo', 'limpiar_mayoreo',
+  ];
+  const datos = Object.fromEntries(
+    Object.entries(campos).filter(([campo]) => camposPermitidos.includes(campo)),
+  );
+  const tieneCambio = Object.keys(datos).some((campo) => campo !== 'limpiar_mayoreo')
+    || datos.limpiar_mayoreo === true;
+  if (!tieneCambio)
+    lanzarError('Debe proporcionar al menos un campo válido para actualizar', 400);
+
+  if (datos.id_producto !== undefined && datos.id_producto !== lote.id_producto) {
+    const producto = await ProductoDAO.obtenerPorId(datos.id_producto);
+    if (!producto) lanzarError('Producto no encontrado', 404);
+    if (!producto.activo) lanzarError('No se puede asignar el lote a un producto inactivo', 409);
+  }
+
+  const numeroLote = datos.numero_lote ?? lote.numero_lote;
+  const idProducto = datos.id_producto ?? lote.id_producto;
+  const idSucursal = datos.id_sucursal ?? lote.id_sucursal;
+  if (
+    numeroLote !== lote.numero_lote
+    || idProducto !== lote.id_producto
+    || idSucursal !== lote.id_sucursal
+  ) {
+    const duplicado = await LoteDAO.obtenerPorNumeroLote(
+      numeroLote,
+      idProducto,
+      idSucursal,
+      id_lote,
+    );
+    if (duplicado) {
+      lanzarError(
+        `Ya existe un lote con el número "${numeroLote}" para este producto en esta sucursal`,
+        409,
+      );
+    }
+  }
+
+  if (datos.fecha_vencimiento !== undefined) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    const fechaVenc = new Date(campos.fecha_vencimiento);
+    const fechaVenc = new Date(datos.fecha_vencimiento);
     if (isNaN(fechaVenc.getTime()))
       lanzarError('fecha_vencimiento no es una fecha válida', 400);
     if (fechaVenc <= hoy)
       lanzarError('La fecha de vencimiento debe ser posterior a hoy', 400);
   }
 
-  if (campos.stock_actual !== undefined) {
-    if (campos.stock_actual < 0)
-      lanzarError('El stock actual no puede ser negativo', 400);
-    if (campos.stock_actual > Number(lote.cantidad_ingresada))
-      lanzarError('El stock actual no puede superar la cantidad ingresada del lote', 400);
-  }
+  const cantidadIngresada = datos.cantidad_ingresada ?? Number(lote.cantidad_ingresada);
+  const stockActual = datos.stock_actual ?? Number(lote.stock_actual);
+  if (stockActual < 0)
+    lanzarError('El stock actual no puede ser negativo', 400);
+  if (stockActual > cantidadIngresada)
+    lanzarError('El stock actual no puede superar la cantidad ingresada del lote', 400);
 
-  if (campos.precio_venta !== undefined && campos.precio_venta < 0)
+  if (datos.precio_venta !== undefined && datos.precio_venta < 0)
     lanzarError('El precio de venta no puede ser negativo', 400);
 
   if (
-    campos.margen_ganancia !== undefined
-    && (campos.margen_ganancia < 0 || campos.margen_ganancia > 9999.9999)
+    datos.margen_ganancia !== undefined
+    && (datos.margen_ganancia < 0 || datos.margen_ganancia > 9999.9999)
   )
     lanzarError('El margen de ganancia debe estar entre 0 y 9999.9999', 400);
 
   // Limpiar mayoreo explícitamente
-  if (campos.limpiar_mayoreo === true) {
-    const limpiado = await LoteDAO.limpiarMayoreo(id_lote);
-    if (!limpiado) lanzarError('No se pudo limpiar el precio de mayoreo', 500);
+  if (datos.limpiar_mayoreo === true) {
+    delete datos.precio_mayoreo;
+    delete datos.cantidad_mayoreo;
   } else {
-    const tienePrecioMayoreo   = campos.precio_mayoreo   != null;
-    const tieneCantidadMayoreo = campos.cantidad_mayoreo != null;
+    const tienePrecioMayoreo   = datos.precio_mayoreo   != null;
+    const tieneCantidadMayoreo = datos.cantidad_mayoreo != null;
     if (tienePrecioMayoreo !== tieneCantidadMayoreo)
       lanzarError('precio_mayoreo y cantidad_mayoreo deben definirse juntos', 400);
   }
 
-  const actualizado = await LoteDAO.actualizar(id_lote, campos);
+  let actualizado;
+  try {
+    actualizado = await LoteDAO.actualizar(id_lote, datos);
+  } catch (error) {
+    if (error.code === '23505') {
+      lanzarError('Ya existe un lote con ese número para este producto en esta sucursal', 409);
+    }
+    if (error.code === '23503') {
+      lanzarError('El producto, proveedor o sucursal indicado no existe', 400);
+    }
+    throw error;
+  }
   if (!actualizado) lanzarError('No se pudo actualizar el lote', 500);
   return await obtenerPorId(id_lote);
+};
+
+const eliminarLote = async (id_lote) => {
+  const existente = await LoteDAO.obtenerPorId(id_lote);
+  if (!existente) lanzarError('Lote no encontrado', 404);
+
+  try {
+    const eliminado = await LoteDAO.eliminar(id_lote);
+    if (!eliminado) lanzarError('No se pudo eliminar el lote', 500);
+    return { mensaje: 'Lote eliminado correctamente' };
+  } catch (error) {
+    if (error.code === '23503') {
+      lanzarError('No se puede eliminar un lote asociado a ventas', 409);
+    }
+    throw error;
+  }
 };
 
 //  Alertas
@@ -157,5 +226,6 @@ module.exports = {
   obtenerPorProducto,
   obtenerPorId,
   actualizarLote,
+  eliminarLote,
   obtenerAlertas,
 };
