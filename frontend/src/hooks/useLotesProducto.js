@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
 
-const useLotesProducto = (idProducto, { enabled = true } = {}) => {
+const useLotesProducto = (idProducto, { enabled = true, refreshKey = 0 } = {}) => {
   const [lotes, setLotes] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
@@ -21,7 +21,7 @@ const useLotesProducto = (idProducto, { enabled = true } = {}) => {
     } finally {
       setCargando(false);
     }
-  }, [enabled, idProducto]);
+  }, [enabled, idProducto, refreshKey]);
 
   useEffect(() => {
     cargarLotes();

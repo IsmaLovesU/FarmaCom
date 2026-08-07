@@ -34,6 +34,42 @@ const useLotes = () => {
     }
   }, []);
 
+  const actualizar = useCallback(async (idLote, payload) => {
+    setGuardando(true);
+    setError(null);
+
+    try {
+      const { data } = await api.patch(`/lotes/${idLote}`, payload);
+      return data;
+    } catch (err) {
+      const mensaje = err.response
+        ? obtenerMensajeError(err, 'Error al actualizar lote')
+        : err.message || 'Error al actualizar lote';
+      setError(mensaje);
+      throw new Error(mensaje);
+    } finally {
+      setGuardando(false);
+    }
+  }, []);
+
+  const eliminar = useCallback(async (idLote) => {
+    setGuardando(true);
+    setError(null);
+
+    try {
+      const { data } = await api.delete(`/lotes/${idLote}`);
+      return data;
+    } catch (err) {
+      const mensaje = err.response
+        ? obtenerMensajeError(err, 'Error al eliminar lote')
+        : err.message || 'Error al eliminar lote';
+      setError(mensaje);
+      throw new Error(mensaje);
+    } finally {
+      setGuardando(false);
+    }
+  }, []);
+
   const limpiarError = useCallback(() => {
     setError(null);
   }, []);
@@ -42,6 +78,8 @@ const useLotes = () => {
     guardando,
     error,
     crear,
+    actualizar,
+    eliminar,
     limpiarError,
   };
 };
