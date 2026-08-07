@@ -5,6 +5,7 @@ import InventarioStatsCards from '../../components/inventario/stock/InventarioSt
 import InventarioActionBar from '../../components/inventario/stock/InventarioActionBar.jsx';
 import InventarioTable from '../../components/inventario/stock/InventarioTable.jsx';
 import LoteFormModal from '../../components/inventario/stock/LoteFormModal.jsx';
+import LoteDeleteModal from '../../components/inventario/stock/LoteDeleteModal.jsx';
 import useInventarioSucursal from '../../hooks/useInventarioSucursal.js';
 import useCategorias from '../../hooks/useCategorias.js';
 import useSucursales from '../../hooks/useSucursales.js';
@@ -36,7 +37,7 @@ const detalleEsCompatible = (tarjeta, detalle) => {
 };
 
 export default function InventarioSucursal() {
-  const { sucursalActivaId } = useAuth();
+  const { sucursalActivaId, usuario } = useAuth();
 
   const [sucursalId, setSucursalId] = useState(sucursalActivaId);
   const [busqueda, setBusqueda] = useState('');
@@ -44,7 +45,10 @@ export default function InventarioSucursal() {
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroTarjeta, setFiltroTarjeta] = useState(null);
   const [mostrarModalLote, setMostrarModalLote] = useState(false);
-  const [lotePreparado, setLotePreparado] = useState(null);
+  const [loteEditando, setLoteEditando] = useState(null);
+  const [loteAEliminar, setLoteAEliminar] = useState(null);
+  const [mensajeAccion, setMensajeAccion] = useState(null);
+  const [lotesRefreshKey, setLotesRefreshKey] = useState(0);
 
   const { sucursales, cargando: cargandoSucursales } = useSucursales();
   const { categorias } = useCategorias();
@@ -54,6 +58,8 @@ export default function InventarioSucursal() {
     guardando: guardandoLote,
     error: errorLote,
     crear: crearLote,
+    actualizar: actualizarLote,
+    eliminar: eliminarLote,
     limpiarError: limpiarErrorLote,
   } = useLotes();
   const {
@@ -85,26 +91,63 @@ export default function InventarioSucursal() {
   }, []);
 
   const handleAbrirModalLote = useCallback(() => {
-    setLotePreparado(null);
+    setLoteEditando(null);
+    setMensajeAccion(null);
     limpiarErrorLote();
     setMostrarModalLote(true);
   }, [limpiarErrorLote]);
 
+  const handleEditarLote = useCallback((lote) => {
+    setLoteEditando(lote);
+    setMensajeAccion(null);
+    limpiarErrorLote();
+    setMostrarModalLote(true);
+  }, [limpiarErrorLote]);
+
+  const handleSolicitarEliminarLote = useCallback((lote) => {
+    setLoteAEliminar(lote);
+    setMensajeAccion(null);
+    limpiarErrorLote();
+  }, [limpiarErrorLote]);
+
   const handleCerrarModalLote = useCallback(() => {
     setMostrarModalLote(false);
+    setLoteEditando(null);
     limpiarErrorLote();
   }, [limpiarErrorLote]);
 
   const handleGuardarFormularioLote = useCallback(async (payload) => {
     try {
-      const resultado = await crearLote(payload);
-      setLotePreparado({ ...payload, id_lote: resultado.lote?.id_lote });
+      if (loteEditando) {
+        await actualizarLote(loteEditando.id_lote, payload);
+        setMensajeAccion(`Lote ${payload.numero_lote} actualizado correctamente.`);
+      } else {
+        await crearLote(payload);
+        setMensajeAccion(`Lote ${payload.numero_lote} creado correctamente.`);
+      }
       setMostrarModalLote(false);
+      setLoteEditando(null);
+      setLotesRefreshKey((valor) => valor + 1);
       await refrescarInventario();
     } catch {
       // El hook expone el mensaje para mantenerlo dentro del modal.
     }
-  }, [crearLote, refrescarInventario]);
+  }, [actualizarLote, crearLote, loteEditando, refrescarInventario]);
+
+  const handleConfirmarEliminarLote = useCallback(async () => {
+    if (!loteAEliminar) return;
+
+    try {
+      const numeroLote = loteAEliminar.numero_lote;
+      await eliminarLote(loteAEliminar.id_lote);
+      setLoteAEliminar(null);
+      setMensajeAccion(`Lote ${numeroLote} eliminado correctamente.`);
+      setLotesRefreshKey((valor) => valor + 1);
+      await refrescarInventario();
+    } catch {
+      // El mensaje del backend permanece visible dentro del modal.
+    }
+  }, [eliminarLote, loteAEliminar, refrescarInventario]);
 
   const productosFiltrados = useMemo(() => {
     return productosInventario.filter((p) => {
@@ -141,6 +184,7 @@ export default function InventarioSucursal() {
   }, [sucursales, sucursalId]);
 
   const cargandoDatosLote = cargandoSucursales || cargandoProductosCatalogo || cargandoProveedores;
+  const puedeGestionarLotes = ['dueno', 'administrador'].includes(usuario?.rol);
 
   return (
     <div className="space-y-6">
@@ -200,12 +244,10 @@ export default function InventarioSucursal() {
         onNuevoLote={handleAbrirModalLote}
       />
 
-      {lotePreparado && (
+      {mensajeAccion && (
         <div className="bg-surface-container-lowest border border-primary/10 rounded-2xl px-5 py-4 shadow-[0_4px_20px_rgba(0,81,71,0.02)]">
-          <p className="font-headline font-extrabold text-primary">Lote guardado correctamente</p>
-          <p className="text-sm text-slate-500 mt-1">
-            Lote {lotePreparado.numero_lote} creado con precio de venta definido.
-          </p>
+          <p className="font-headline font-extrabold text-primary">Operación completada</p>
+          <p className="mt-1 text-sm text-slate-500">{mensajeAccion}</p>
         </div>
       )}
 
@@ -219,6 +261,9 @@ export default function InventarioSucursal() {
         cargando={cargando}
         productos={productosFiltrados}
         sucursalId={sucursalId}
+        onEditarLote={puedeGestionarLotes ? handleEditarLote : undefined}
+        onEliminarLote={puedeGestionarLotes ? handleSolicitarEliminarLote : undefined}
+        lotesRefreshKey={lotesRefreshKey}
       />
 
       <LoteFormModal
@@ -227,11 +272,26 @@ export default function InventarioSucursal() {
         proveedores={proveedores}
         sucursales={sucursales}
         sucursalInicialId={sucursalId}
+        lote={loteEditando}
         cargandoDatos={cargandoDatosLote}
         guardando={guardandoLote}
         errorFormulario={errorLote}
         onClose={handleCerrarModalLote}
         onSubmit={handleGuardarFormularioLote}
+      />
+
+      <LoteDeleteModal
+        isOpen={Boolean(loteAEliminar)}
+        lote={loteAEliminar}
+        eliminando={guardandoLote}
+        error={errorLote}
+        onClose={() => {
+          if (!guardandoLote) {
+            setLoteAEliminar(null);
+            limpiarErrorLote();
+          }
+        }}
+        onConfirm={handleConfirmarEliminarLote}
       />
     </div>
   );
