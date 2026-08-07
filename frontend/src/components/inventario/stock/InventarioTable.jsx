@@ -17,7 +17,14 @@ function InventarioTableHeader() {
   );
 }
 
-export default function InventarioTable({ cargando, productos, sucursalId }) {
+export default function InventarioTable({
+  cargando,
+  productos,
+  sucursalId,
+  onEditarLote,
+  onEliminarLote,
+  lotesRefreshKey,
+}) {
   if (cargando) {
     return (
       <motion.section
@@ -68,7 +75,13 @@ export default function InventarioTable({ cargando, productos, sucursalId }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.03, duration: 0.2 }}
           >
-            <InventarioProductoFila producto={producto} sucursalId={sucursalId} />
+            <InventarioProductoFila
+              producto={producto}
+              sucursalId={sucursalId}
+              onEditarLote={onEditarLote}
+              onEliminarLote={onEliminarLote}
+              lotesRefreshKey={lotesRefreshKey}
+            />
           </motion.div>
         ))}
       </div>

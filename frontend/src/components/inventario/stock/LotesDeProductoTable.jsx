@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AlertCircle, Boxes, Loader2 } from 'lucide-react';
+import { AlertCircle, Boxes, Loader2, Pencil, Trash2 } from 'lucide-react';
 import EstadoBadge from './EstadoBadge.jsx';
 import useLotesProducto from '../../../hooks/useLotesProducto.js';
 import { obtenerEtiquetaPresentacion, obtenerPluralPresentacion } from '../../../constants/presentaciones.js';
@@ -43,8 +43,19 @@ const obtenerEstadoLote = (lote) => {
   return 'normal';
 };
 
-export default function LotesDeProductoTable({ producto, sucursalId, activo }) {
-  const { lotes, cargando, error } = useLotesProducto(producto.id_producto, { enabled: activo });
+export default function LotesDeProductoTable({
+  producto,
+  sucursalId,
+  activo,
+  onEditar,
+  onEliminar,
+  refreshKey,
+}) {
+  const { lotes, cargando, error } = useLotesProducto(producto.id_producto, {
+    enabled: activo,
+    refreshKey,
+  });
+  const mostrarAcciones = Boolean(onEditar && onEliminar);
 
   const lotesSucursal = useMemo(
     () => lotes.filter((lote) => String(lote.id_sucursal) === String(sucursalId)),
@@ -88,7 +99,8 @@ export default function LotesDeProductoTable({ producto, sucursalId, activo }) {
         <span className="col-span-2">Vencimiento</span>
         <span className="col-span-2 text-right">Stock</span>
         <span className="col-span-2 text-center">Estado</span>
-        <span className="col-span-2 text-right">Precio venta</span>
+        <span className={`${mostrarAcciones ? 'col-span-1' : 'col-span-2'} text-right`}>Precio</span>
+        {mostrarAcciones && <span className="col-span-1 text-center">Acciones</span>}
       </div>
 
       <div className="divide-y divide-slate-100">
@@ -116,7 +128,7 @@ export default function LotesDeProductoTable({ producto, sucursalId, activo }) {
             <div className="col-span-2 flex justify-center">
               <EstadoBadge estado={obtenerEstadoLote(lote)} />
             </div>
-            <div className="col-span-2 text-right">
+            <div className={`${mostrarAcciones ? 'col-span-1' : 'col-span-2'} text-right`}>
               <p className="font-bold text-slate-800">{formatoMoneda(lote.precio_venta)}</p>
               {lote.precio_mayoreo != null && (
                 <p className="text-[10px] font-medium text-slate-400">
@@ -124,6 +136,26 @@ export default function LotesDeProductoTable({ producto, sucursalId, activo }) {
                 </p>
               )}
             </div>
+            {mostrarAcciones && <div className="col-span-1 flex justify-center gap-1">
+              <button
+                type="button"
+                onClick={() => onEditar(lote)}
+                className="rounded-lg p-2 text-primary transition-colors hover:bg-primary/10"
+                title="Editar lote"
+                aria-label={`Editar lote ${lote.numero_lote}`}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onEliminar(lote)}
+                className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50"
+                title="Eliminar lote"
+                aria-label={`Eliminar lote ${lote.numero_lote}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>}
           </div>
         ))}
       </div>
