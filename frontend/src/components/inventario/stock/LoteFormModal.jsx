@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, PackagePlus, X } from 'lucide-react';
+import { ChevronDown, PackagePlus, Pencil, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { obtenerEtiquetaPresentacion } from '../../../constants/presentaciones.js';
 
@@ -11,6 +11,7 @@ const ESTADO_INICIAL = {
   numero_lote: '',
   fecha_vencimiento: '',
   cantidad_ingresada: '',
+  stock_actual: '',
   margen_ganancia: '',
   precio_venta: '',
   precio_mayoreo: '',
@@ -40,6 +41,7 @@ export default function LoteFormModal({
   proveedores,
   sucursales,
   sucursalInicialId,
+  lote = null,
   cargandoDatos,
   guardando = false,
   errorFormulario = null,
@@ -48,10 +50,13 @@ export default function LoteFormModal({
 }) {
   const [formulario, setFormulario] = useState(ESTADO_INICIAL);
   const [errorLocal, setErrorLocal] = useState(null);
+  const modoEdicion = Boolean(lote);
 
   const productosActivos = useMemo(
-    () => (productos || []).filter((producto) => producto.activo),
-    [productos],
+    () => (productos || []).filter(
+      (producto) => producto.activo || String(producto.id_producto) === String(lote?.id_producto),
+    ),
+    [productos, lote?.id_producto],
   );
 
   const productoSeleccionado = useMemo(
@@ -65,12 +70,24 @@ export default function LoteFormModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    setFormulario({
+    setFormulario(lote ? {
+      id_producto: String(lote.id_producto ?? ''),
+      id_proveedor: String(lote.id_proveedor ?? ''),
+      id_sucursal: String(lote.id_sucursal ?? ''),
+      numero_lote: lote.numero_lote ?? '',
+      fecha_vencimiento: String(lote.fecha_vencimiento ?? '').slice(0, 10),
+      cantidad_ingresada: String(lote.cantidad_ingresada ?? ''),
+      stock_actual: String(lote.stock_actual ?? ''),
+      margen_ganancia: String(lote.margen_ganancia ?? ''),
+      precio_venta: String(lote.precio_venta ?? ''),
+      precio_mayoreo: lote.precio_mayoreo == null ? '' : String(lote.precio_mayoreo),
+      cantidad_mayoreo: lote.cantidad_mayoreo == null ? '' : String(lote.cantidad_mayoreo),
+    } : {
       ...ESTADO_INICIAL,
       id_sucursal: sucursalInicialId ? String(sucursalInicialId) : '',
     });
     setErrorLocal(null);
-  }, [isOpen, sucursalInicialId]);
+  }, [isOpen, lote, sucursalInicialId]);
 
   if (!isOpen || typeof document === 'undefined') return null;
 
@@ -111,6 +128,15 @@ export default function LoteFormModal({
     if (!esEnteroPositivo(formulario.cantidad_ingresada)) {
       return 'La cantidad ingresada debe ser un entero mayor a 0.';
     }
+    if (modoEdicion) {
+      const stock = Number(formulario.stock_actual);
+      if (!Number.isInteger(stock) || stock < 0) {
+        return 'El stock actual debe ser un entero mayor o igual a 0.';
+      }
+      if (stock > Number(formulario.cantidad_ingresada)) {
+        return 'El stock actual no puede superar la cantidad ingresada.';
+      }
+    }
     
     if (formulario.precio_venta === '' || Number(formulario.precio_venta) < 0) {
       return 'Ingresa un precio de venta válido.';
@@ -145,7 +171,7 @@ export default function LoteFormModal({
       return;
     }
 
-    onSubmit({
+    const payload = {
       id_producto: Number(formulario.id_producto),
       id_proveedor: Number(formulario.id_proveedor),
       id_sucursal: Number(formulario.id_sucursal),
@@ -156,7 +182,14 @@ export default function LoteFormModal({
       margen_ganancia: Number(formulario.margen_ganancia),
       precio_mayoreo: formulario.precio_mayoreo === '' ? null : Number(formulario.precio_mayoreo),
       cantidad_mayoreo: formulario.cantidad_mayoreo === '' ? null : Number(formulario.cantidad_mayoreo),
-    });
+    };
+
+    if (modoEdicion) {
+      payload.stock_actual = Number(formulario.stock_actual);
+      payload.limpiar_mayoreo = lote.precio_mayoreo != null && formulario.precio_mayoreo === '';
+    }
+
+    onSubmit(payload);
   };
 
   const renderSelectIcon = () => (
@@ -173,21 +206,24 @@ export default function LoteFormModal({
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex min-w-0 items-center gap-3">
             <span className="rounded-xl bg-primary/10 p-2 text-primary">
-              <PackagePlus className="h-5 w-5" />
+              {modoEdicion ? <Pencil className="h-5 w-5" /> : <PackagePlus className="h-5 w-5" />}
             </span>
             <div className="min-w-0">
               <h3 className="font-headline text-lg font-extrabold text-primary">
-                Ingresar lote
+                {modoEdicion ? 'Editar lote' : 'Ingresar lote'}
               </h3>
               <p className="truncate text-xs text-slate-500">
-                Registro manual para el inventario de sucursal
+                {modoEdicion
+                  ? `Actualiza los datos de ${lote.numero_lote}`
+                  : 'Registro manual para el inventario de sucursal'}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-700"
+            disabled={guardando}
+            className="text-slate-500 hover:text-slate-700 disabled:opacity-50"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
@@ -262,6 +298,27 @@ export default function LoteFormModal({
                 </div>
               </div>
             </div>
+
+            {modoEdicion && (
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">
+                  Stock actual <span className="text-error">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="stock_actual"
+                  value={formulario.stock_actual}
+                  onChange={manejarCambio}
+                  min="0"
+                  step="1"
+                  required
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                <p className="text-xs text-slate-500">
+                  No puede superar la cantidad ingresada del lote.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1">
@@ -439,7 +496,7 @@ export default function LoteFormModal({
               disabled={cargandoDatos || guardando}
               className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
-              {guardando ? 'Guardando...' : 'Guardar lote'}
+              {guardando ? 'Guardando...' : modoEdicion ? 'Guardar cambios' : 'Guardar lote'}
             </button>
           </div>
         </form>

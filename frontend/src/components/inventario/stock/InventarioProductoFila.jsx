@@ -5,7 +5,13 @@ import EstadoBadge from './EstadoBadge.jsx';
 import LotesDeProductoTable from './LotesDeProductoTable.jsx';
 import { obtenerEtiquetaPresentacion, obtenerPluralPresentacion } from '../../../constants/presentaciones.js';
 
-export default function InventarioProductoFila({ producto, sucursalId }) {
+export default function InventarioProductoFila({
+  producto,
+  sucursalId,
+  onEditarLote,
+  onEliminarLote,
+  lotesRefreshKey,
+}) {
   const [expandido, setExpandido] = useState(false);
 
   const stockTotal = Number(producto.stock_total ?? 0);
@@ -126,6 +132,9 @@ export default function InventarioProductoFila({ producto, sucursalId }) {
                 producto={producto}
                 sucursalId={sucursalId}
                 activo={expandido}
+                onEditar={onEditarLote}
+                onEliminar={onEliminarLote}
+                refreshKey={lotesRefreshKey}
               />
 
               <div className="mt-4 grid grid-cols-4 gap-3">
