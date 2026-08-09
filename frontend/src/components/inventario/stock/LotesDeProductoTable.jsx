@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { AlertCircle, Boxes, Loader2, Pencil, Trash2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { AlertCircle, Boxes, ChevronDown, Loader2, Pencil, Trash2 } from 'lucide-react';
 import EstadoBadge from './EstadoBadge.jsx';
 import useLotesProducto from '../../../hooks/useLotesProducto.js';
 import { obtenerEtiquetaPresentacion, obtenerPluralPresentacion } from '../../../constants/presentaciones.js';
@@ -51,6 +51,7 @@ export default function LotesDeProductoTable({
   onEliminar,
   refreshKey,
 }) {
+  const [mostrarAgotados, setMostrarAgotados] = useState(false);
   const { lotes, cargando, error } = useLotesProducto(producto.id_producto, {
     enabled: activo,
     refreshKey,
@@ -60,6 +61,75 @@ export default function LotesDeProductoTable({
   const lotesSucursal = useMemo(
     () => lotes.filter((lote) => String(lote.id_sucursal) === String(sucursalId)),
     [lotes, sucursalId],
+  );
+  const lotesConExistencias = useMemo(
+    () => lotesSucursal.filter((lote) => Number(lote.stock_actual) > 0),
+    [lotesSucursal],
+  );
+  const lotesAgotados = useMemo(
+    () => lotesSucursal.filter((lote) => Number(lote.stock_actual) <= 0),
+    [lotesSucursal],
+  );
+
+  const renderizarLote = (lote, agotado = false) => (
+    <div
+      key={lote.id_lote}
+      className={`grid grid-cols-12 items-center gap-3 px-4 py-3 text-sm text-slate-600 ${
+        agotado ? 'bg-slate-50/70' : ''
+      }`}
+    >
+      <div className="col-span-2 min-w-0">
+        <p className="truncate font-bold text-slate-800">{lote.numero_lote}</p>
+        <p className="truncate text-[11px] text-slate-400">
+          {obtenerEtiquetaPresentacion(lote.presentacion)}
+        </p>
+      </div>
+      <span className="col-span-2 text-xs font-medium">
+        {formatoFecha(lote.fecha_ingreso)}
+      </span>
+      <span className="col-span-2 text-xs font-medium">
+        {formatoFecha(lote.fecha_vencimiento)}
+      </span>
+      <div className="col-span-2 text-right">
+        <p className={`font-black ${agotado ? 'text-slate-400' : 'text-primary'}`}>
+          {formatoNumero(lote.stock_actual)}
+        </p>
+        <p className="text-[10px] text-slate-400">
+          {obtenerPluralPresentacion(lote.presentacion)}
+        </p>
+      </div>
+      <div className="col-span-2 flex justify-center">
+        <EstadoBadge estado={obtenerEstadoLote(lote)} />
+      </div>
+      <div className={`${mostrarAcciones ? 'col-span-1' : 'col-span-2'} text-right`}>
+        <p className="font-bold text-slate-800">{formatoMoneda(lote.precio_venta)}</p>
+        {lote.precio_mayoreo != null && (
+          <p className="text-[10px] font-medium text-slate-400">
+            Mayoreo {formatoMoneda(lote.precio_mayoreo)}
+          </p>
+        )}
+      </div>
+      {mostrarAcciones && <div className="col-span-1 flex justify-center gap-1">
+        <button
+          type="button"
+          onClick={() => onEditar(lote)}
+          className="rounded-lg p-2 text-primary transition-colors hover:bg-primary/10"
+          title="Editar lote"
+          aria-label={`Editar lote ${lote.numero_lote}`}
+        >
+          <Pencil className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onEliminar(lote)}
+          className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50"
+          title="Eliminar lote"
+          aria-label={`Eliminar lote ${lote.numero_lote}`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>}
+    </div>
   );
 
   if (cargando) {
@@ -104,60 +174,44 @@ export default function LotesDeProductoTable({
       </div>
 
       <div className="divide-y divide-slate-100">
-        {lotesSucursal.map((lote) => (
-          <div
-            key={lote.id_lote}
-            className="grid grid-cols-12 items-center gap-3 px-4 py-3 text-sm text-slate-600"
-          >
-            <div className="col-span-2 min-w-0">
-              <p className="truncate font-bold text-slate-800">{lote.numero_lote}</p>
-              <p className="truncate text-[11px] text-slate-400">
-                {obtenerEtiquetaPresentacion(lote.presentacion)}
-              </p>
-            </div>
-            <span className="col-span-2 text-xs font-medium">
-              {formatoFecha(lote.fecha_ingreso)}
-            </span>
-            <span className="col-span-2 text-xs font-medium">
-              {formatoFecha(lote.fecha_vencimiento)}
-            </span>
-            <div className="col-span-2 text-right">
-              <p className="font-black text-primary">{formatoNumero(lote.stock_actual)}</p>
-              <p className="text-[10px] text-slate-400">{obtenerPluralPresentacion(lote.presentacion)}</p>
-            </div>
-            <div className="col-span-2 flex justify-center">
-              <EstadoBadge estado={obtenerEstadoLote(lote)} />
-            </div>
-            <div className={`${mostrarAcciones ? 'col-span-1' : 'col-span-2'} text-right`}>
-              <p className="font-bold text-slate-800">{formatoMoneda(lote.precio_venta)}</p>
-              {lote.precio_mayoreo != null && (
-                <p className="text-[10px] font-medium text-slate-400">
-                  Mayoreo {formatoMoneda(lote.precio_mayoreo)}
-                </p>
-              )}
-            </div>
-            {mostrarAcciones && <div className="col-span-1 flex justify-center gap-1">
-              <button
-                type="button"
-                onClick={() => onEditar(lote)}
-                className="rounded-lg p-2 text-primary transition-colors hover:bg-primary/10"
-                title="Editar lote"
-                aria-label={`Editar lote ${lote.numero_lote}`}
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onEliminar(lote)}
-                className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50"
-                title="Eliminar lote"
-                aria-label={`Eliminar lote ${lote.numero_lote}`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>}
+        {lotesConExistencias.map((lote) => renderizarLote(lote))}
+
+        {lotesConExistencias.length === 0 && (
+          <div className="px-4 py-6 text-center">
+            <Boxes className="mx-auto mb-2 h-7 w-7 text-slate-300" />
+            <p className="text-sm font-semibold text-slate-500">
+              No hay lotes con existencias en esta sucursal.
+            </p>
           </div>
-        ))}
+        )}
+
+        {lotesAgotados.length > 0 && (
+          <button
+            type="button"
+            aria-expanded={mostrarAgotados}
+            aria-controls={`lotes-agotados-${producto.id_producto}`}
+            onClick={() => setMostrarAgotados((valor) => !valor)}
+            className="flex w-full items-center justify-between bg-slate-50 px-4 py-3 text-left text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100"
+          >
+            <span>
+              {mostrarAgotados ? 'Ocultar' : 'Ver'} lotes agotados ({lotesAgotados.length})
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${mostrarAgotados ? 'rotate-180' : ''}`}
+            />
+          </button>
+        )}
+
+        {mostrarAgotados && lotesAgotados.length > 0 && (
+          <div
+            id={`lotes-agotados-${producto.id_producto}`}
+            role="region"
+            aria-label="Lotes agotados"
+            className="divide-y divide-slate-100"
+          >
+            {lotesAgotados.map((lote) => renderizarLote(lote, true))}
+          </div>
+        )}
       </div>
     </div>
   );

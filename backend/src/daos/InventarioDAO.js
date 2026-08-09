@@ -45,7 +45,8 @@ class InventarioDAO {
         CASE
           WHEN COUNT(*) FILTER (WHERE v.estado_vencimiento = 'vencido') > 0
             THEN 'vencido'
-          WHEN COUNT(*) FILTER (WHERE v.estado_stock = 'agotado') > 0
+          -- Un lote histórico agotado no agota el producto si otro lote tiene stock.
+          WHEN COALESCE(SUM(v.stock_actual), 0) = 0
             THEN 'agotado'
           WHEN COUNT(*) FILTER (WHERE v.estado_vencimiento = 'proximo_a_vencer') > 0
             THEN 'proximo_a_vencer'
@@ -71,7 +72,7 @@ class InventarioDAO {
         -- Primero los críticos
         CASE
           WHEN COUNT(*) FILTER (WHERE v.estado_vencimiento = 'vencido') > 0 THEN 1
-          WHEN COUNT(*) FILTER (WHERE v.estado_stock = 'agotado') > 0       THEN 2
+          WHEN COALESCE(SUM(v.stock_actual), 0) = 0                         THEN 2
           WHEN COUNT(*) FILTER (WHERE v.estado_vencimiento = 'proximo_a_vencer') > 0 THEN 3
           WHEN COUNT(*) FILTER (WHERE v.estado_stock = 'poco_stock') > 0    THEN 4
           ELSE 5
@@ -85,48 +86,35 @@ class InventarioDAO {
 
   async obtenerResumenPorSucursal(id_sucursal) {
     const query = `
+      WITH estado_por_producto AS (
+        SELECT
+          p.id_producto,
+          COALESCE(SUM(v.stock_actual), 0) AS stock_total,
+          BOOL_OR(v.estado_vencimiento = 'vencido') AS tiene_vencidos,
+          BOOL_OR(v.estado_vencimiento = 'proximo_a_vencer') AS tiene_proximos_vencer,
+          BOOL_OR(v.estado_stock = 'poco_stock') AS tiene_poco_stock
+        FROM producto p
+        JOIN v_lote_estado v ON v.id_producto = p.id_producto
+                            AND v.id_sucursal = $1
+        GROUP BY p.id_producto
+      )
       SELECT
-        COUNT(DISTINCT p.id_producto)                                        AS total_productos,
-
-        COUNT(DISTINCT p.id_producto) FILTER (
-          WHERE EXISTS (
-            SELECT 1 FROM v_lote_estado v2
-            WHERE v2.id_producto = p.id_producto
-              AND v2.id_sucursal = $1
-              AND (v2.estado_vencimiento = 'vencido' OR v2.estado_stock = 'agotado')
-          )
-        )                                                                     AS productos_criticos,
-
-        COUNT(DISTINCT p.id_producto) FILTER (
-          WHERE EXISTS (
-            SELECT 1 FROM v_lote_estado v2
-            WHERE v2.id_producto = p.id_producto
-              AND v2.id_sucursal = $1
-              AND v2.estado_vencimiento = 'proximo_a_vencer'
-          )
-          AND NOT EXISTS (
-            SELECT 1 FROM v_lote_estado v3
-            WHERE v3.id_producto = p.id_producto
-              AND v3.id_sucursal = $1
-              AND (v3.estado_vencimiento = 'vencido' OR v3.estado_stock = 'agotado')
-          )
-        )                                                                     AS productos_proximos_vencer,
-
-        COUNT(DISTINCT p.id_producto) FILTER (
-          WHERE NOT EXISTS (
-            SELECT 1 FROM v_lote_estado v2
-            WHERE v2.id_producto = p.id_producto
-              AND v2.id_sucursal = $1
-              AND (
-                v2.estado_vencimiento != 'normal'
-                OR v2.estado_stock     != 'normal'
-              )
-          )
-        )                                                                     AS productos_optimos
-
-      FROM producto p
-      JOIN v_lote_estado v ON v.id_producto = p.id_producto
-                          AND v.id_sucursal  = $1
+        COUNT(*) AS total_productos,
+        COUNT(*) FILTER (
+          WHERE tiene_vencidos OR stock_total = 0
+        ) AS productos_criticos,
+        COUNT(*) FILTER (
+          WHERE NOT tiene_vencidos
+            AND stock_total > 0
+            AND tiene_proximos_vencer
+        ) AS productos_proximos_vencer,
+        COUNT(*) FILTER (
+          WHERE NOT tiene_vencidos
+            AND stock_total > 0
+            AND NOT tiene_proximos_vencer
+            AND NOT tiene_poco_stock
+        ) AS productos_optimos
+      FROM estado_por_producto
     `;
 
     const { rows } = await pool.query(query, [id_sucursal]);
