@@ -122,7 +122,7 @@ export default function InventarioProductoFila({
                   : 'text-primary'
               }`}>
                 <Layers className="w-3.5 h-3.5" />
-                Lotes activos — {producto.nombre_comercial}
+                Lotes del producto — {producto.nombre_comercial}
                 <span className="ml-2 text-[10px] font-semibold text-slate-400 normal-case tracking-normal">
                   ({producto.total_lotes} lote{producto.total_lotes !== 1 ? 's' : ''} en esta sucursal)
                 </span>
