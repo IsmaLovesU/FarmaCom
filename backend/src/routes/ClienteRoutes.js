@@ -17,6 +17,16 @@ const validarObservaciones = body('observaciones')
   .optional({ nullable: true })
   .trim()
   .isLength({ max: 2000 }).withMessage('observaciones no puede superar los 2000 caracteres');
+const validarNit = body('nit')
+  .optional({ nullable: true })
+  .customSanitizer((valor) => {
+    if (typeof valor !== 'string') return valor;
+    const normalizado = valor.trim().toUpperCase().replace(/\s+/g, '');
+    return normalizado || null;
+  })
+  .custom((valor) => valor === null || /^[0-9]{1,15}-?[0-9K]$/.test(valor))
+  .withMessage('nit debe contener dígitos, con guion opcional y verificador numérico o K')
+  .isLength({ max: 20 }).withMessage('nit no puede superar los 20 caracteres');
 const validarFiltrosHistorial = [
   query('id_sucursal')
     .optional()
@@ -46,8 +56,8 @@ router.get(
   HistorialCompraController.obtenerPorCliente,
 );
 router.get('/:id', verificarToken, validarId, ClienteController.obtenerPorId);
-router.post('/', verificarToken, [validarNombre(true), validarObservaciones], ClienteController.crear);
-router.put('/:id', verificarToken, validarId, [validarNombre(false), validarObservaciones], ClienteController.actualizar);
+router.post('/', verificarToken, [validarNombre(true), validarNit, validarObservaciones], ClienteController.crear);
+router.put('/:id', verificarToken, validarId, [validarNombre(false), validarNit, validarObservaciones], ClienteController.actualizar);
 router.delete('/:id', verificarToken, validarId, ClienteController.eliminar);
 
 module.exports = router;

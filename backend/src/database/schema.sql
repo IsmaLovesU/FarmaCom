@@ -75,8 +75,13 @@ CREATE TABLE IF NOT EXISTS usuario (
 CREATE TABLE IF NOT EXISTS cliente (
     id_cliente SERIAL PRIMARY KEY,
     nombre_cliente VARCHAR(150) NOT NULL,
+    nit VARCHAR(20),
     observaciones TEXT
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_cliente_nit
+    ON cliente (nit)
+    WHERE nit IS NOT NULL;
 
 -- =========================
 -- TABLA: categoria

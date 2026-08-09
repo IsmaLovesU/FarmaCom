@@ -1,11 +1,11 @@
 const pool = require('../database/db');
 
 class ClienteDAO {
-  async crear({ nombre_cliente, observaciones }) {
+  async crear({ nombre_cliente, nit, observaciones }) {
     const { rows } = await pool.query(
-      `INSERT INTO cliente (nombre_cliente, observaciones)
-       VALUES ($1, $2) RETURNING *`,
-      [nombre_cliente, observaciones || null],
+      `INSERT INTO cliente (nombre_cliente, nit, observaciones)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [nombre_cliente, nit ?? null, observaciones || null],
     );
     return rows[0];
   }
@@ -25,14 +25,25 @@ class ClienteDAO {
     return rows[0] || null;
   }
 
-  async actualizar(id_cliente, { nombre_cliente, observaciones }) {
+  async obtenerPorNit(nit) {
+    const { rows } = await pool.query(
+      'SELECT * FROM cliente WHERE nit = $1',
+      [nit],
+    );
+    return rows[0] || null;
+  }
+
+  async actualizar(id_cliente, campos) {
+    const { nombre_cliente, observaciones, nit } = campos;
+    const incluyeNit = Object.prototype.hasOwnProperty.call(campos, 'nit');
     const { rows } = await pool.query(
       `UPDATE cliente
        SET nombre_cliente = COALESCE($1, nombre_cliente),
-           observaciones = $2
-       WHERE id_cliente = $3
+           observaciones = $2,
+           nit = CASE WHEN $3 THEN $4 ELSE nit END
+       WHERE id_cliente = $5
        RETURNING *`,
-      [nombre_cliente, observaciones, id_cliente],
+      [nombre_cliente, observaciones, incluyeNit, nit ?? null, id_cliente],
     );
     return rows[0] || null;
   }

@@ -6,8 +6,36 @@ const noEncontrado = () => {
   return error;
 };
 
-const crearCliente = ({ nombre_cliente, observaciones }) =>
-  ClienteDAO.crear({ nombre_cliente, observaciones });
+const lanzarError = (mensaje, status) => {
+  const error = new Error(mensaje);
+  error.status = status;
+  throw error;
+};
+
+const normalizarNit = (nit) => {
+  if (nit == null) return null;
+  const normalizado = String(nit).trim().toUpperCase().replace(/\s+/g, '');
+  return normalizado || null;
+};
+
+const crearCliente = async ({ nombre_cliente, nit, observaciones }) => {
+  const nitNormalizado = normalizarNit(nit);
+  if (nitNormalizado) {
+    const existente = await ClienteDAO.obtenerPorNit(nitNormalizado);
+    if (existente) lanzarError('Ya existe un cliente con ese NIT', 409);
+  }
+
+  try {
+    return await ClienteDAO.crear({
+      nombre_cliente,
+      nit: nitNormalizado,
+      observaciones,
+    });
+  } catch (error) {
+    if (error.code === '23505') lanzarError('Ya existe un cliente con ese NIT', 409);
+    throw error;
+  }
+};
 
 const obtenerTodos = () => ClienteDAO.obtenerTodos();
 
@@ -18,7 +46,27 @@ const obtenerPorId = async (id_cliente) => {
 };
 
 const actualizarCliente = async (id_cliente, campos) => {
-  const cliente = await ClienteDAO.actualizar(id_cliente, campos);
+  const existente = await ClienteDAO.obtenerPorId(id_cliente);
+  if (!existente) throw noEncontrado();
+
+  const datos = { ...campos };
+  if (Object.prototype.hasOwnProperty.call(datos, 'nit')) {
+    datos.nit = normalizarNit(datos.nit);
+    if (datos.nit && datos.nit !== existente.nit) {
+      const duplicado = await ClienteDAO.obtenerPorNit(datos.nit);
+      if (duplicado && duplicado.id_cliente !== id_cliente) {
+        lanzarError('Ya existe un cliente con ese NIT', 409);
+      }
+    }
+  }
+
+  let cliente;
+  try {
+    cliente = await ClienteDAO.actualizar(id_cliente, datos);
+  } catch (error) {
+    if (error.code === '23505') lanzarError('Ya existe un cliente con ese NIT', 409);
+    throw error;
+  }
   if (!cliente) throw noEncontrado();
   return cliente;
 };
