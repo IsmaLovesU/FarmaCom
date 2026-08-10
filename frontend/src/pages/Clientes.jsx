@@ -12,8 +12,9 @@ import {
 import { createPortal } from 'react-dom';
 import HistorialClienteModal from '../components/clientes/HistorialClienteModal';
 import useClientes from '../hooks/useClientes';
+import { esNitValido, MENSAJE_NIT_INVALIDO, normalizarNit } from '../utils/nit';
 
-const inicial = { nombre_cliente: '', observaciones: '' };
+const inicial = { nombre_cliente: '', nit: '', observaciones: '' };
 
 function Modal({ children, onClose, disabled = false }) {
   if (typeof document === 'undefined') return null;
@@ -56,7 +57,7 @@ export default function Clientes() {
     return !texto
       ? clientes
       : clientes.filter((cliente) => (
-        `${cliente.nombre_cliente} ${cliente.observaciones || ''}`
+        `${cliente.nombre_cliente} ${cliente.nit || ''} ${cliente.observaciones || ''}`
           .toLowerCase()
           .includes(texto)
       ));
@@ -72,6 +73,7 @@ export default function Clientes() {
     setEditando(cliente);
     setFormulario({
       nombre_cliente: cliente.nombre_cliente,
+      nit: cliente.nit || '',
       observaciones: cliente.observaciones || '',
     });
     setErrorFormulario(null);
@@ -86,11 +88,17 @@ export default function Clientes() {
       return;
     }
 
+    if (!esNitValido(formulario.nit)) {
+      setErrorFormulario(MENSAJE_NIT_INVALIDO);
+      return;
+    }
+
     try {
       setGuardando(true);
       setErrorFormulario(null);
       const datos = {
         nombre_cliente: nombreCliente,
+        nit: normalizarNit(formulario.nit) || null,
         observaciones: formulario.observaciones.trim() || null,
       };
 
@@ -147,7 +155,7 @@ export default function Clientes() {
           <input
             value={busqueda}
             onChange={(evento) => setBusqueda(evento.target.value)}
-            placeholder="Buscar por nombre u observaciones..."
+            placeholder="Buscar por nombre, NIT u observaciones..."
             className="w-full rounded-xl border-none bg-surface-container-lowest py-3 pl-12 pr-4 text-sm font-medium shadow-sm focus:ring-2 focus:ring-primary/20"
           />
         </div>
@@ -160,12 +168,13 @@ export default function Clientes() {
       )}
 
       <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-surface-container-low/60">
-        <div className="min-w-[850px]">
+        <div className="min-w-[950px]">
           <div className="grid grid-cols-12 gap-4 border-b border-slate-200 bg-surface-container-low px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">
             <span className="col-span-1">#</span>
             <span className="col-span-3">Nombre</span>
-            <span className="col-span-4">Observaciones</span>
-            <span className="col-span-4 text-center">Acciones</span>
+            <span className="col-span-2">NIT</span>
+            <span className="col-span-3">Observaciones</span>
+            <span className="col-span-3 text-center">Acciones</span>
           </div>
 
           {cargando ? (
@@ -186,13 +195,16 @@ export default function Clientes() {
                 <span className="col-span-3 font-semibold text-primary">
                   {cliente.nombre_cliente}
                 </span>
+                <span className="col-span-2 font-mono text-sm font-semibold text-slate-600">
+                  {cliente.nit || '—'}
+                </span>
                 <span
-                  className="col-span-4 truncate text-sm text-slate-600"
+                  className="col-span-3 truncate text-sm text-slate-600"
                   title={cliente.observaciones || ''}
                 >
                   {cliente.observaciones || '—'}
                 </span>
-                <div className="col-span-4 flex justify-center gap-2">
+                <div className="col-span-3 flex justify-center gap-2">
                   <button
                     type="button"
                     onClick={() => setClienteHistorial(cliente)}
@@ -246,6 +258,24 @@ export default function Clientes() {
                 required
                 maxLength={150}
                 className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="nit-cliente" className="text-sm font-semibold text-slate-700">
+                NIT <span className="font-normal text-slate-400">(opcional)</span>
+              </label>
+              <input
+                id="nit-cliente"
+                name="nit"
+                value={formulario.nit}
+                onChange={(evento) => setFormulario({
+                  ...formulario,
+                  [evento.target.name]: evento.target.value,
+                })}
+                maxLength={20}
+                autoCapitalize="characters"
+                placeholder="Ej. 1234567-K"
+                className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-2.5 font-mono text-sm uppercase"
               />
             </div>
             <div>

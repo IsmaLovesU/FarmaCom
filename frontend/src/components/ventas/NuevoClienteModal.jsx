@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { AlertCircle, UserPlus, X } from 'lucide-react';
+import { esNitValido, MENSAJE_NIT_INVALIDO, normalizarNit } from '../../utils/nit';
 
 const formularioInicial = {
   nombre_cliente: '',
+  nit: '',
   observaciones: '',
 };
 
@@ -42,11 +44,17 @@ export default function NuevoClienteModal({
       return;
     }
 
+    if (!esNitValido(formulario.nit)) {
+      setError(MENSAJE_NIT_INVALIDO);
+      return;
+    }
+
     try {
       setGuardando(true);
       setError(null);
       await onCrear({
         nombre_cliente: nombreCliente,
+        nit: normalizarNit(formulario.nit) || null,
         observaciones: formulario.observaciones.trim() || null,
       });
     } catch (err) {
@@ -113,6 +121,25 @@ export default function NuevoClienteModal({
               autoFocus
               placeholder="Ej. María López"
               className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="nit-cliente-pos"
+              className="text-sm font-semibold text-slate-700"
+            >
+              NIT <span className="font-normal text-slate-400">(opcional)</span>
+            </label>
+            <input
+              id="nit-cliente-pos"
+              name="nit"
+              value={formulario.nit}
+              onChange={manejarCambio}
+              maxLength={20}
+              autoCapitalize="characters"
+              placeholder="Ej. 1234567-K"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-sm uppercase outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
