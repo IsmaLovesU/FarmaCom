@@ -2,10 +2,10 @@ const pool = require('../database/db');
 
 class ProductoDAO {
 
-  async crear({ codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo }) {
+  async crear({ codigo, nombre_comercial, nombre_generico, concentracion, id_presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo }) {
     const query = `
       INSERT INTO producto (
-        codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion,
+        codigo, nombre_comercial, nombre_generico, concentracion, id_presentacion, descripcion,
         id_categoria, id_casa, id_proveedor,
         precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo
       )
@@ -17,7 +17,7 @@ class ProductoDAO {
       nombre_comercial,
       nombre_generico,
       concentracion,
-      presentacion,
+      id_presentacion,
       descripcion                  ?? null,
       id_categoria,
       id_casa,
@@ -36,10 +36,12 @@ class ProductoDAO {
     const query = `
       SELECT
         p.*,
+        pre.nombre AS presentacion,
         c.nombre   AS categoria_nombre,
         cf.nombre  AS casa_nombre,
         pr.nombre  AS proveedor_nombre
       FROM producto p
+      JOIN presentacion      pre ON pre.id_presentacion = p.id_presentacion
       JOIN categoria         c  ON c.id_categoria  = p.id_categoria
       JOIN casa_farmaceutica cf ON cf.id_casa       = p.id_casa
       LEFT JOIN proveedor    pr ON pr.id_proveedor  = p.id_proveedor
@@ -53,10 +55,12 @@ class ProductoDAO {
     const query = `
       SELECT
         p.*,
+        pre.nombre AS presentacion,
         c.nombre   AS categoria_nombre,
         cf.nombre  AS casa_nombre,
         pr.nombre  AS proveedor_nombre
       FROM producto p
+      JOIN presentacion      pre ON pre.id_presentacion = p.id_presentacion
       JOIN categoria         c  ON c.id_categoria  = p.id_categoria
       JOIN casa_farmaceutica cf ON cf.id_casa       = p.id_casa
       LEFT JOIN proveedor    pr ON pr.id_proveedor  = p.id_proveedor
@@ -74,22 +78,22 @@ class ProductoDAO {
     return rows[0] || null;
   }
 
-   async obtenerPorIdentidad({ nombre_generico, concentracion, id_casa, presentacion }) {
+   async obtenerPorIdentidad({ nombre_generico, concentracion, id_casa, id_presentacion }) {
     const query = `
       SELECT *
       FROM producto
       WHERE LOWER(TRIM(nombre_generico)) = LOWER(TRIM($1))
         AND LOWER(TRIM(concentracion))   = LOWER(TRIM($2))
         AND id_casa                      = $3
-        AND presentacion                 = $4
+        AND id_presentacion              = $4
     `;
-    const { rows } = await pool.query(query, [nombre_generico, concentracion, id_casa, presentacion]);
+    const { rows } = await pool.query(query, [nombre_generico, concentracion, id_casa, id_presentacion]);
     return rows[0] || null;
   }
 
   async actualizar(id_producto, campos) {
     const {
-      codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion,
+      codigo, nombre_comercial, nombre_generico, concentracion, id_presentacion, descripcion,
       id_categoria, id_casa, id_proveedor,
       precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo,
     } = campos;
@@ -100,7 +104,7 @@ class ProductoDAO {
         nombre_comercial         = COALESCE($2,  nombre_comercial),
         nombre_generico          = COALESCE($3,  nombre_generico),
         concentracion            = COALESCE($4,  concentracion),
-        presentacion             = COALESCE($5,  presentacion),
+        id_presentacion          = COALESCE($5,  id_presentacion),
         descripcion              = COALESCE($6,  descripcion),
         id_categoria             = COALESCE($7,  id_categoria),
         id_casa                  = COALESCE($8,  id_casa),
@@ -117,7 +121,7 @@ class ProductoDAO {
       nombre_comercial         ?? null,
       nombre_generico          ?? null,
       concentracion            ?? null,
-      presentacion             ?? null,
+      id_presentacion          ?? null,
       descripcion              ?? null,
       id_categoria             ?? null,
       id_casa                  ?? null,

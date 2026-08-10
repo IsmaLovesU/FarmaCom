@@ -9,7 +9,7 @@ class InventarioDAO {
         p.nombre_comercial,
         p.nombre_generico,
         p.concentracion,
-        p.presentacion,
+        pre.nombre                       AS presentacion,
         p.stock_minimo,
         p.meses_alerta_vencimiento,
         p.aplica_mayoreo,
@@ -58,13 +58,14 @@ class InventarioDAO {
       FROM producto p
       JOIN categoria         c   ON c.id_categoria  = p.id_categoria
       JOIN casa_farmaceutica cf  ON cf.id_casa       = p.id_casa
+      JOIN presentacion      pre ON pre.id_presentacion = p.id_presentacion
       LEFT JOIN proveedor    pr  ON pr.id_proveedor  = p.id_proveedor
       JOIN v_lote_estado     v   ON v.id_producto    = p.id_producto
                                 AND v.id_sucursal    = $1
 
       GROUP BY
         p.id_producto, p.codigo, p.nombre_comercial, p.nombre_generico,
-        p.concentracion, p.presentacion,
+        p.concentracion, pre.nombre,
         p.stock_minimo, p.meses_alerta_vencimiento, p.aplica_mayoreo, p.activo,
         c.nombre, cf.nombre, pr.nombre
 

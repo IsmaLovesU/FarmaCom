@@ -4,7 +4,6 @@ const ProductoController      = require('../controllers/ProductoController');
 const PromocionController     = require('../controllers/PromocionController');
 const verificarToken          = require('../middlewares/verificarToken');
 const verificarRol            = require('../middlewares/verificarRol');
-const { PRESENTACIONES, normalizarPresentacion } = require('../constants/presentaciones');
 
 const router = Router();
 
@@ -43,9 +42,9 @@ const validarCreacionProducto = [
     .notEmpty().withMessage('La concentración es requerida')
     .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
 
-  body('presentacion')
-    .customSanitizer(normalizarPresentacion)
-    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
+  body('id_presentacion')
+    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
+    .toInt(),
 
   body('descripcion')
     .optional({ nullable: true })
@@ -108,10 +107,10 @@ const validarActualizacionProducto = [
     .notEmpty().withMessage('La concentración no puede estar vacía')
     .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
 
-  body('presentacion')
+  body('id_presentacion')
     .optional()
-    .customSanitizer(normalizarPresentacion)
-    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
+    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
+    .toInt(),
   body('descripcion')
     .optional({ nullable: true })
     .trim(),

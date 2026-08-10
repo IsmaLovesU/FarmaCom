@@ -51,10 +51,11 @@ class LoteDAO {
         p.nombre_comercial,
         p.nombre_generico,
         p.concentracion,
-        p.presentacion,
+        pre.nombre AS presentacion,
         pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
       JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN presentacion pre ON pre.id_presentacion = p.id_presentacion
       JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE v.id_sucursal = $1
       ORDER BY v.fecha_vencimiento ASC, v.id_lote
@@ -69,11 +70,12 @@ class LoteDAO {
       SELECT
         v.*,
         p.concentracion,
-        p.presentacion,
+        pre.nombre AS presentacion,
         s.nombre_sucursal,
         pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
       JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN presentacion pre ON pre.id_presentacion = p.id_presentacion
       JOIN sucursal  s  ON s.id_sucursal   = v.id_sucursal
       JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE v.id_producto = $1
@@ -90,11 +92,12 @@ class LoteDAO {
         p.nombre_comercial,
         p.nombre_generico,
         p.concentracion,
-        p.presentacion,
+        pre.nombre AS presentacion,
         s.nombre_sucursal,
         pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
       JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN presentacion pre ON pre.id_presentacion = p.id_presentacion
       JOIN sucursal  s  ON s.id_sucursal   = v.id_sucursal
       JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE v.id_lote = $1
@@ -205,11 +208,12 @@ class LoteDAO {
         p.nombre_comercial,
         p.nombre_generico,
         p.concentracion,
-        p.presentacion,
+        pre.nombre AS presentacion,
         s.nombre_sucursal,
         pr.nombre AS proveedor_nombre
       FROM v_lote_estado v
       JOIN producto  p  ON p.id_producto   = v.id_producto
+      JOIN presentacion pre ON pre.id_presentacion = p.id_presentacion
       JOIN sucursal  s  ON s.id_sucursal   = v.id_sucursal
       JOIN proveedor pr ON pr.id_proveedor = v.id_proveedor
       WHERE (v.estado_vencimiento != 'normal' OR v.estado_stock != 'normal')
