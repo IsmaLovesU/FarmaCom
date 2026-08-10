@@ -52,7 +52,7 @@ class HistorialCompraDAO {
                'nombre_comercial', p.nombre_comercial,
                'nombre_generico', p.nombre_generico,
                'concentracion', p.concentracion,
-               'presentacion', p.presentacion,
+               'presentacion', pr.nombre,
                'cantidad', dv.cantidad,
                'precio_unitario', dv.precio_unitario,
                'subtotal', dv.subtotal
@@ -68,6 +68,7 @@ class HistorialCompraDAO {
        LEFT JOIN detalle_venta dv ON dv.id_venta = v.id_venta
        LEFT JOIN lote l ON l.id_lote = dv.id_lote
        LEFT JOIN producto p ON p.id_producto = l.id_producto
+       LEFT JOIN presentacion pr ON pr.id_presentacion = p.id_presentacion
        WHERE ${condiciones.join(' AND ')}
        GROUP BY
          v.id_venta,

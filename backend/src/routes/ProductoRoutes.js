@@ -4,9 +4,22 @@ const ProductoController      = require('../controllers/ProductoController');
 const PromocionController     = require('../controllers/PromocionController');
 const verificarToken          = require('../middlewares/verificarToken');
 const verificarRol            = require('../middlewares/verificarRol');
-const { PRESENTACIONES, normalizarPresentacion } = require('../constants/presentaciones');
 
 const router = Router();
+
+const normalizarConcentracion = (valor) => {
+  if (valor === null || valor === undefined) return null;
+  if (typeof valor !== 'string') return valor;
+  return valor.trim() || null;
+};
+
+const validarConcentracionOpcional = () => body('concentracion')
+  .optional({ nullable: true })
+  .customSanitizer(normalizarConcentracion)
+  .custom((valor) => valor === null || typeof valor === 'string')
+  .withMessage('La concentración debe ser texto')
+  .custom((valor) => valor === null || valor.length <= 50)
+  .withMessage('La concentración no puede superar los 50 caracteres');
 
 // ── validadores — Producto ────────────────────────────────────────────────────
 
@@ -38,14 +51,11 @@ const validarCreacionProducto = [
     .notEmpty().withMessage('El nombre genérico es requerido')
     .isLength({ max: 150 }).withMessage('El nombre genérico no puede superar los 150 caracteres'),
 
-  body('concentracion')
-    .trim()
-    .notEmpty().withMessage('La concentración es requerida')
-    .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
+  validarConcentracionOpcional(),
 
-  body('presentacion')
-    .customSanitizer(normalizarPresentacion)
-    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
+  body('id_presentacion')
+    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
+    .toInt(),
 
   body('descripcion')
     .optional({ nullable: true })
@@ -102,16 +112,12 @@ const validarActualizacionProducto = [
     .notEmpty().withMessage('El nombre genérico no puede estar vacío')
     .isLength({ max: 150 }).withMessage('El nombre genérico no puede superar los 150 caracteres'),
 
-  body('concentracion')
-    .optional()
-    .trim()
-    .notEmpty().withMessage('La concentración no puede estar vacía')
-    .isLength({ max: 50 }).withMessage('La concentración no puede superar los 50 caracteres'),
+  validarConcentracionOpcional(),
 
-  body('presentacion')
+  body('id_presentacion')
     .optional()
-    .customSanitizer(normalizarPresentacion)
-    .isIn(PRESENTACIONES).withMessage(`La presentación debe ser una de: ${PRESENTACIONES.join(', ')}`),
+    .isInt({ min: 1 }).withMessage('id_presentacion debe ser un entero positivo')
+    .toInt(),
   body('descripcion')
     .optional({ nullable: true })
     .trim(),
