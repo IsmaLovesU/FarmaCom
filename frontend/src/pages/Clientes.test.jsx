@@ -4,8 +4,10 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Clientes from './Clientes';
 
-const { mockObtenerHistorialCompras } = vi.hoisted(() => ({
+const { mockObtenerHistorialCompras, mockCrearCliente, mockActualizarCliente } = vi.hoisted(() => ({
   mockObtenerHistorialCompras: vi.fn(),
+  mockCrearCliente: vi.fn(),
+  mockActualizarCliente: vi.fn(),
 }));
 
 vi.mock('../api/clientes', () => ({
@@ -18,13 +20,14 @@ vi.mock('../hooks/useClientes', () => ({
       {
         id_cliente: 7,
         nombre_cliente: 'María López',
+        nit: '1234567-K',
         observaciones: 'Cliente frecuente',
       },
     ],
     cargando: false,
     error: null,
-    crear: vi.fn(),
-    actualizar: vi.fn(),
+    crear: mockCrearCliente,
+    actualizar: mockActualizarCliente,
     eliminar: vi.fn(),
   }),
 }));
@@ -69,6 +72,39 @@ describe('Clientes', () => {
   beforeEach(() => {
     mockObtenerHistorialCompras.mockReset();
     mockObtenerHistorialCompras.mockResolvedValue(historial);
+    mockCrearCliente.mockReset();
+    mockCrearCliente.mockResolvedValue({ id_cliente: 8 });
+    mockActualizarCliente.mockReset();
+  });
+
+  it('muestra el NIT y lo incluye al crear un cliente', async () => {
+    const user = userEvent.setup();
+    render(<Clientes />);
+
+    expect(screen.getByText('1234567-K')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Nuevo cliente' }));
+    await user.type(screen.getByLabelText('Nombre completo'), 'Carlos Pérez');
+    await user.type(screen.getByLabelText(/NIT/), ' 7654321-k ');
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    expect(mockCrearCliente).toHaveBeenCalledWith({
+      nombre_cliente: 'Carlos Pérez',
+      nit: '7654321-K',
+      observaciones: null,
+    });
+  });
+
+  it('evita guardar un NIT con formato inválido', async () => {
+    const user = userEvent.setup();
+    render(<Clientes />);
+
+    await user.click(screen.getByRole('button', { name: 'Nuevo cliente' }));
+    await user.type(screen.getByLabelText('Nombre completo'), 'Carlos Pérez');
+    await user.type(screen.getByLabelText(/NIT/), 'ABC-123');
+    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    expect(screen.getByText(/Ingresa un NIT válido/)).toBeInTheDocument();
+    expect(mockCrearCliente).not.toHaveBeenCalled();
   });
 
   it('consulta y muestra el historial del cliente seleccionado', async () => {

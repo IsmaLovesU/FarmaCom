@@ -137,6 +137,7 @@ describe('PuntoVenta', () => {
     await waitFor(() => {
       expect(mockCrearCliente).toHaveBeenCalledWith({
         nombre_cliente: 'Ana Pérez',
+        nit: null,
         observaciones: null,
       });
     });
