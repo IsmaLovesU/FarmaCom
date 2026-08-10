@@ -185,7 +185,7 @@ CREATE TABLE IF NOT EXISTS producto (
     codigo                   VARCHAR(50)   NOT NULL UNIQUE,
     nombre_comercial         VARCHAR(150)  NOT NULL,
     nombre_generico          VARCHAR(150),
-    concentracion            VARCHAR(50)   NOT NULL,
+    concentracion            VARCHAR(50),
     id_presentacion          INTEGER       NOT NULL,
     descripcion              TEXT,
     id_categoria             INTEGER       NOT NULL,
@@ -225,7 +225,7 @@ CREATE TABLE IF NOT EXISTS producto (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_producto_identidad
     ON producto (
         LOWER(TRIM(nombre_generico)),
-        LOWER(TRIM(concentracion)),
+        COALESCE(LOWER(TRIM(concentracion)), ''),
         id_casa,
         id_presentacion
     );
@@ -234,7 +234,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_producto_identidad
 CREATE INDEX IF NOT EXISTS idx_producto_familia
     ON producto (
         LOWER(TRIM(nombre_generico)),
-        LOWER(TRIM(concentracion)),
+        COALESCE(LOWER(TRIM(concentracion)), ''),
         id_casa
     );
 

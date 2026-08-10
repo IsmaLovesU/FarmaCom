@@ -16,7 +16,7 @@ class ProductoDAO {
       codigo,
       nombre_comercial,
       nombre_generico,
-      concentracion,
+      concentracion                ?? null,
       id_presentacion,
       descripcion                  ?? null,
       id_categoria,
@@ -83,7 +83,8 @@ class ProductoDAO {
       SELECT *
       FROM producto
       WHERE LOWER(TRIM(nombre_generico)) = LOWER(TRIM($1))
-        AND LOWER(TRIM(concentracion))   = LOWER(TRIM($2))
+        AND COALESCE(LOWER(TRIM(concentracion)), '')
+            = COALESCE(LOWER(TRIM($2)), '')
         AND id_casa                      = $3
         AND id_presentacion              = $4
     `;
@@ -97,13 +98,14 @@ class ProductoDAO {
       id_categoria, id_casa, id_proveedor,
       precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo,
     } = campos;
+    const actualizaConcentracion = Object.prototype.hasOwnProperty.call(campos, 'concentracion');
 
     const query = `
       UPDATE producto SET
         codigo                   = COALESCE($1,  codigo),
         nombre_comercial         = COALESCE($2,  nombre_comercial),
         nombre_generico          = COALESCE($3,  nombre_generico),
-        concentracion            = COALESCE($4,  concentracion),
+        concentracion            = CASE WHEN $14 THEN $4 ELSE concentracion END,
         id_presentacion          = COALESCE($5,  id_presentacion),
         descripcion              = COALESCE($6,  descripcion),
         id_categoria             = COALESCE($7,  id_categoria),
@@ -113,7 +115,7 @@ class ProductoDAO {
         stock_minimo             = COALESCE($11, stock_minimo),
         meses_alerta_vencimiento = COALESCE($12, meses_alerta_vencimiento),
         aplica_mayoreo           = COALESCE($13, aplica_mayoreo)
-      WHERE id_producto = $14
+      WHERE id_producto = $15
       RETURNING *
     `;
     const valores = [
@@ -130,6 +132,7 @@ class ProductoDAO {
       stock_minimo             ?? null,
       meses_alerta_vencimiento ?? null,
       aplica_mayoreo           ?? null,
+      actualizaConcentracion,
       id_producto,
     ];
 

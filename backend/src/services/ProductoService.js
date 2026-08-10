@@ -9,6 +9,13 @@ const lanzarError = (mensaje, status) => {
   throw err;
 };
 
+const normalizarConcentracion = (valor) => {
+  if (valor === null || valor === undefined) return null;
+  if (typeof valor !== 'string') lanzarError('La concentración debe ser texto', 400);
+  const concentracion = valor.trim();
+  return concentracion || null;
+};
+
 // Operaciones
 
 const crearProducto = async (datos) => {
@@ -19,7 +26,6 @@ const crearProducto = async (datos) => {
 
   if (!codigo || codigo.trim() === '')                   lanzarError('El código es requerido', 400);
   if (!nombre_generico || nombre_generico.trim() === '')  lanzarError('El nombre genérico es requerido', 400);
-  if (!concentracion || concentracion.trim() === '')      lanzarError('La concentración es requerida', 400);
   if (precio_compra < 0)                                  lanzarError('El precio de compra no puede ser negativo', 400);
   if (meses_alerta_vencimiento <= 0)                      lanzarError('Los meses de alerta deben ser mayores a 0', 400);
 
@@ -29,7 +35,12 @@ const crearProducto = async (datos) => {
   const existente = await ProductoDAO.obtenerPorCodigo(codigo);
   if (existente) lanzarError(`Ya existe un producto con el código "${codigo}"`, 409);
 
-  const duplicado = await ProductoDAO.obtenerPorIdentidad(datos);
+  const datosNormalizados = {
+    ...datos,
+    concentracion: normalizarConcentracion(concentracion),
+  };
+
+  const duplicado = await ProductoDAO.obtenerPorIdentidad(datosNormalizados);
   if (duplicado) {
     lanzarError(
       `Ya existe "${duplicado.nombre_comercial}" de esa casa farmacéutica en presentación ${presentacion.nombre}`,
@@ -37,7 +48,7 @@ const crearProducto = async (datos) => {
     );
   }
 
-  const creado = await ProductoDAO.crear(datos);
+  const creado = await ProductoDAO.crear(datosNormalizados);
   return await ProductoDAO.obtenerPorId(creado.id_producto);
 };
 
@@ -73,13 +84,21 @@ const actualizarProducto = async (id_producto, campos) => {
     lanzarError('Los meses de alerta deben ser mayores a 0', 400);
   }
 
+  const datosNormalizados = { ...campos };
+  const actualizaConcentracion = Object.prototype.hasOwnProperty.call(campos, 'concentracion');
+  if (actualizaConcentracion) {
+    datosNormalizados.concentracion = normalizarConcentracion(campos.concentracion);
+  }
+
   // La identidad se arma mezclando lo que llega con lo que ya está guardado,
   // porque el usuario puede estar cambiando solo uno de los cuatro campos.
   const identidad = {
-    nombre_generico: campos.nombre_generico ?? existente.nombre_generico,
-    concentracion:   campos.concentracion   ?? existente.concentracion,
-    id_casa:         campos.id_casa         ?? existente.id_casa,
-    id_presentacion: campos.id_presentacion ?? existente.id_presentacion,
+    nombre_generico: datosNormalizados.nombre_generico ?? existente.nombre_generico,
+    concentracion:   actualizaConcentracion
+      ? datosNormalizados.concentracion
+      : existente.concentracion,
+    id_casa:         datosNormalizados.id_casa         ?? existente.id_casa,
+    id_presentacion: datosNormalizados.id_presentacion ?? existente.id_presentacion,
   };
 
   const mismaIdentidad = await ProductoDAO.obtenerPorIdentidad(identidad);
@@ -87,7 +106,7 @@ const actualizarProducto = async (id_producto, campos) => {
     lanzarError('Ya existe otro producto con ese medicamento en esa misma presentación', 409);
   }
 
-  const actualizado = await ProductoDAO.actualizar(id_producto, campos);
+  const actualizado = await ProductoDAO.actualizar(id_producto, datosNormalizados);
   if (!actualizado) lanzarError('No se pudo actualizar el producto', 500);
   return await ProductoDAO.obtenerPorId(id_producto);
 };
