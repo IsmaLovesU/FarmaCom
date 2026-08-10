@@ -166,6 +166,18 @@ CREATE TABLE IF NOT EXISTS proveedor_email (
 );
 
 -- =========================
+-- TABLA: presentacion
+-- =========================
+CREATE TABLE IF NOT EXISTS presentacion (
+    id_presentacion SERIAL PRIMARY KEY,
+    nombre          VARCHAR(100) NOT NULL UNIQUE
+);
+
+INSERT INTO presentacion (nombre)
+VALUES ('Caja'), ('Blíster'), ('Unidad')
+ON CONFLICT (nombre) DO NOTHING;
+
+-- =========================
 -- TABLA: producto
 -- =========================
 CREATE TABLE IF NOT EXISTS producto (
@@ -174,7 +186,7 @@ CREATE TABLE IF NOT EXISTS producto (
     nombre_comercial         VARCHAR(150)  NOT NULL,
     nombre_generico          VARCHAR(150),
     concentracion            VARCHAR(50)   NOT NULL,
-    presentacion             VARCHAR(20)   NOT NULL,
+    id_presentacion          INTEGER       NOT NULL,
     descripcion              TEXT,
     id_categoria             INTEGER       NOT NULL,
     id_casa                  INTEGER       NOT NULL,
@@ -185,9 +197,6 @@ CREATE TABLE IF NOT EXISTS producto (
     aplica_mayoreo           BOOLEAN       NOT NULL DEFAULT FALSE,
     activo                   BOOLEAN       NOT NULL DEFAULT TRUE,
     fecha_creacion           TIMESTAMP     NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT chk_producto_presentacion
-        CHECK (presentacion IN ('caja', 'blister', 'unidad')),
 
     CONSTRAINT fk_producto_categoria
         FOREIGN KEY (id_categoria)
@@ -202,7 +211,12 @@ CREATE TABLE IF NOT EXISTS producto (
     CONSTRAINT fk_producto_proveedor
         FOREIGN KEY (id_proveedor)
         REFERENCES proveedor(id_proveedor)
-        ON DELETE SET NULL
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_producto_presentacion
+        FOREIGN KEY (id_presentacion)
+        REFERENCES presentacion(id_presentacion)
+        ON DELETE RESTRICT
 );
 
 -- =========================
@@ -213,7 +227,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_producto_identidad
         LOWER(TRIM(nombre_generico)),
         LOWER(TRIM(concentracion)),
         id_casa,
-        presentacion
+        id_presentacion
     );
 
 -- Agrupación de familia para los reportes comparativos por presentación.
@@ -530,13 +544,13 @@ WHERE c.nombre = 'Medicamentos Globales'
       WHERE cp.id_casa = c.id_casa AND cp.id_proveedor = p.id_proveedor
   );
 
-INSERT INTO producto (codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo)
+INSERT INTO producto (codigo, nombre_comercial, nombre_generico, concentracion, id_presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo)
 SELECT
     'MED001-UN',
     'Tylenol',
     'Paracetamol',
     '500 mg',
-    'unidad',
+    (SELECT id_presentacion FROM presentacion WHERE nombre = 'Unidad'),
     'Analgésico y antipirético para aliviar el dolor y reducir la fiebre.',
     (SELECT id_categoria FROM categoria WHERE nombre = 'Analgésico'),
     (SELECT id_casa FROM casa_farmaceutica WHERE nombre = 'Farmacéutica ABC'),
@@ -593,13 +607,13 @@ WHERE p.codigo = 'MED001-UN'
 -- 2) Un producto con lote vencido.
 -- 3) Un producto con lote próximo a vencer.
 
-INSERT INTO producto (codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo)
+INSERT INTO producto (codigo, nombre_comercial, nombre_generico, concentracion, id_presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo)
 SELECT
     'MED002-UN',
     'Amoxicilina',
     'Amoxicilina',
     '500 mg',
-    'unidad',
+    (SELECT id_presentacion FROM presentacion WHERE nombre = 'Unidad'),
     'Antibiótico de demostración para probar lotes vencidos.',
     (SELECT id_categoria FROM categoria WHERE nombre = 'Antibiótico'),
     (SELECT id_casa FROM casa_farmaceutica WHERE nombre = 'Laboratorios XYZ'),
@@ -612,13 +626,13 @@ WHERE NOT EXISTS (
     SELECT 1 FROM producto WHERE codigo = 'MED002-UN'
 );
 
-INSERT INTO producto (codigo, nombre_comercial, nombre_generico, concentracion, presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo)
+INSERT INTO producto (codigo, nombre_comercial, nombre_generico, concentracion, id_presentacion, descripcion, id_categoria, id_casa, id_proveedor, precio_compra, stock_minimo, meses_alerta_vencimiento, aplica_mayoreo)
 SELECT
     'MED003-UN',
     'Ibuprofeno',
     'Ibuprofeno',
     '400 mg',
-    'unidad',
+    (SELECT id_presentacion FROM presentacion WHERE nombre = 'Unidad'),
     'Antiinflamatorio de demostración para probar lotes próximos a vencer.',
     (SELECT id_categoria FROM categoria WHERE nombre = 'Antiinflamatorio'),
     (SELECT id_casa FROM casa_farmaceutica WHERE nombre = 'Medicamentos Globales'),
