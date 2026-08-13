@@ -32,10 +32,14 @@ export default function InventarioTable({
         animate={{ opacity: 1 }}
         className="bg-surface-container-lowest border border-slate-200 rounded-2xl overflow-hidden shadow-sm"
       >
-        <InventarioTableHeader />
-        <div className="px-6 py-16 text-center">
-          <Warehouse className="w-10 h-10 text-slate-200 mx-auto mb-3 animate-pulse" />
-          <p className="text-sm text-slate-400 font-medium">Cargando inventario...</p>
+        <div className="overflow-x-auto">
+          <div className="min-w-[1040px]">
+            <InventarioTableHeader />
+            <div className="px-6 py-16 text-center">
+              <Warehouse className="w-10 h-10 text-slate-200 mx-auto mb-3 animate-pulse" />
+              <p className="text-sm text-slate-400 font-medium">Cargando inventario...</p>
+            </div>
+          </div>
         </div>
       </motion.section>
     );
@@ -48,12 +52,16 @@ export default function InventarioTable({
         animate={{ opacity: 1 }}
         className="bg-surface-container-lowest border border-slate-200 rounded-2xl overflow-hidden shadow-sm"
       >
-        <InventarioTableHeader />
-        <div className="px-6 py-16 text-center">
-          <Warehouse className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-          <p className="text-sm text-slate-400 font-medium">
-            No se encontraron productos con stock en esta sucursal.
-          </p>
+        <div className="overflow-x-auto">
+          <div className="min-w-[1040px]">
+            <InventarioTableHeader />
+            <div className="px-6 py-16 text-center">
+              <Warehouse className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-sm text-slate-400 font-medium">
+                No se encontraron productos con stock en esta sucursal.
+              </p>
+            </div>
+          </div>
         </div>
       </motion.section>
     );
@@ -66,24 +74,28 @@ export default function InventarioTable({
       transition={{ delay: 0.1, duration: 0.3 }}
       className="bg-surface-container-lowest border border-slate-200 rounded-2xl overflow-hidden shadow-sm"
     >
-      <InventarioTableHeader />
-      <div className="divide-y divide-slate-100">
-        {productos.map((producto, idx) => (
-          <motion.div
-            key={producto.id_producto}
-            initial={{ opacity: 0, x: -4 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.03, duration: 0.2 }}
-          >
-            <InventarioProductoFila
-              producto={producto}
-              sucursalId={sucursalId}
-              onEditarLote={onEditarLote}
-              onEliminarLote={onEliminarLote}
-              lotesRefreshKey={lotesRefreshKey}
-            />
-          </motion.div>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="min-w-[1040px]">
+          <InventarioTableHeader />
+          <div className="divide-y divide-slate-100">
+            {productos.map((producto, idx) => (
+              <motion.div
+                key={producto.id_producto}
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.03, duration: 0.2 }}
+              >
+                <InventarioProductoFila
+                  producto={producto}
+                  sucursalId={sucursalId}
+                  onEditarLote={onEditarLote}
+                  onEliminarLote={onEliminarLote}
+                  lotesRefreshKey={lotesRefreshKey}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
     </motion.section>
   );

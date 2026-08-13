@@ -268,45 +268,49 @@ export default function Ciudades() {
       <SucursalAlert mensaje={errorCiudades || errorAccion} />
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-surface-container-low/60">
-        <div className="grid grid-cols-12 gap-4 border-b border-slate-200 bg-surface-container-low px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">
-          <span className="col-span-1">#</span>
-          <span className="col-span-7">Nombre</span>
-          <span className="col-span-4 text-center">Acciones</span>
-        </div>
+        <div className="overflow-x-auto">
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-12 gap-4 border-b border-slate-200 bg-surface-container-low px-5 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <span className="col-span-1">#</span>
+              <span className="col-span-7">Nombre</span>
+              <span className="col-span-4 text-center">Acciones</span>
+            </div>
 
-        {cargandoCiudades ? (
-          <div className="px-5 py-10 text-center font-medium text-slate-500">Cargando ciudades...</div>
-        ) : ciudadesFiltradas.length === 0 ? (
-          <div className="px-5 py-10 text-center font-medium text-slate-500">No hay ciudades para mostrar.</div>
-        ) : (
-          <div className="divide-y divide-slate-200">
-            {ciudadesFiltradas.map((ciudad) => (
-              <div key={ciudad.id_ciudad} className="grid grid-cols-12 items-center gap-4 bg-white/60 px-5 py-4">
-                <span className="col-span-1 font-mono text-sm text-slate-400">{ciudad.id_ciudad}</span>
-                <span className="col-span-7 font-semibold text-primary">{ciudad.nombre_ciudad}</span>
-                <div className="col-span-4 flex justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => abrirModalEditar(ciudad)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-primary/20 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/5"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCiudadAEliminar(ciudad)}
-                    disabled={eliminandoId === ciudad.id_ciudad}
-                    className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    {eliminandoId === ciudad.id_ciudad ? 'Eliminando...' : 'Eliminar'}
-                  </button>
-                </div>
+            {cargandoCiudades ? (
+              <div className="px-5 py-10 text-center font-medium text-slate-500">Cargando ciudades...</div>
+            ) : ciudadesFiltradas.length === 0 ? (
+              <div className="px-5 py-10 text-center font-medium text-slate-500">No hay ciudades para mostrar.</div>
+            ) : (
+              <div className="divide-y divide-slate-200">
+                {ciudadesFiltradas.map((ciudad) => (
+                  <div key={ciudad.id_ciudad} className="grid grid-cols-12 items-center gap-4 bg-white/60 px-5 py-4">
+                    <span className="col-span-1 font-mono text-sm text-slate-400">{ciudad.id_ciudad}</span>
+                    <span className="col-span-7 font-semibold text-primary">{ciudad.nombre_ciudad}</span>
+                    <div className="col-span-4 flex justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => abrirModalEditar(ciudad)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-primary/20 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/5"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCiudadAEliminar(ciudad)}
+                        disabled={eliminandoId === ciudad.id_ciudad}
+                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {eliminandoId === ciudad.id_ciudad ? 'Eliminando...' : 'Eliminar'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+        </div>
       </section>
 
       <CiudadFormModal

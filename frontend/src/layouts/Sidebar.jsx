@@ -16,6 +16,7 @@ import {
   BarChart3,
   HelpCircle,
   LogOut,
+  X,
 } from 'lucide-react';
 import { logout } from '../api/auth';
 import BrandLogo from '../components/BrandLogo.jsx';
@@ -60,7 +61,7 @@ const nestedItemClass = (isActive) =>
       : 'font-medium text-slate-500 hover:bg-primary/5 hover:text-primary'
   } focus-visible:ring-2 focus-visible:ring-primary/20`;
 
-export default function Sidebar() {
+export default function Sidebar({ abierta, onCerrar, onNavegar }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { dispatch, usuario } = useAuth();
@@ -110,9 +111,35 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-100 bg-slate-50/50 p-4 backdrop-blur-sm">
-      <div className="mb-8 flex justify-center py-6">
-        <BrandLogo subtitle="San Gabriel" centered />
+    <aside
+      id="sidebar-principal"
+      aria-hidden={!abierta}
+      onClick={(event) => {
+        if (event.target.closest('a')) {
+          onNavegar();
+        }
+      }}
+      className={`fixed left-0 top-0 z-40 flex h-screen w-72 max-w-[85vw] flex-col border-r border-slate-100 bg-slate-50/95 p-4 shadow-2xl backdrop-blur-sm transition-transform duration-300 md:w-64 md:bg-slate-50/50 md:shadow-none ${
+        abierta ? 'translate-x-0' : 'invisible -translate-x-full pointer-events-none'
+      }`}
+    >
+      <div className="mb-8">
+        <div className="flex h-9 justify-end">
+          <button
+            type="button"
+            onClick={onCerrar}
+            aria-controls="sidebar-principal"
+            aria-expanded="true"
+            aria-label="Cerrar menú lateral"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 outline-none transition-colors hover:border-primary/20 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="flex -translate-x-3 justify-center py-3">
+          <BrandLogo subtitle="San Gabriel" centered />
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto">

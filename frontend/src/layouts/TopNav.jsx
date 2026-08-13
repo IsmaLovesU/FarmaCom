@@ -1,8 +1,8 @@
 import React from 'react';
-import { Bell, Settings } from 'lucide-react';
+import { Bell, Menu, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function TopNav() {
+export default function TopNav({ sidebarAbierta, onAbrirSidebar }) {
   const { usuario } = useAuth();
 
   const initials = (usuario?.nombre_usuario || 'Usuario')
@@ -21,28 +21,42 @@ export default function TopNav() {
   }).format(new Date());
 
   return (
-    <header className="sticky top-0 z-30 flex w-full items-center justify-between border-b border-primary/5 bg-white/80 px-8 py-4 shadow-[0_12px_40px_rgba(0,81,71,0.04)] backdrop-blur-md">
-      <div className="flex items-center gap-4">
-        <h2 className="font-headline text-lg font-extrabold tracking-tight text-primary">
+    <header className="sticky top-0 z-30 flex w-full items-center justify-between border-b border-primary/5 bg-white/80 px-4 py-3 shadow-[0_12px_40px_rgba(0,81,71,0.04)] backdrop-blur-md sm:px-6 md:px-8 md:py-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+        <div className="h-9 w-9 flex-shrink-0">
+          {!sidebarAbierta && (
+            <button
+              type="button"
+              onClick={onAbrirSidebar}
+              aria-controls="sidebar-principal"
+              aria-expanded="false"
+              aria-label="Mostrar menú lateral"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-500 outline-none transition-colors hover:border-primary/20 hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <h2 className="truncate font-headline text-sm font-extrabold tracking-tight text-primary sm:text-lg">
           Sucursales de Farmacia
         </h2>
-        <span className="h-4 w-[1px] bg-slate-200" />
-        <span className="text-xs font-medium capitalize text-slate-500">{currentDate}</span>
+        <span className="hidden h-4 w-[1px] bg-slate-200 lg:block" />
+        <span className="hidden text-xs font-medium capitalize text-slate-500 lg:block">{currentDate}</span>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="flex gap-2">
-          <button className="group relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-50">
+      <div className="ml-2 flex flex-shrink-0 items-center gap-2 sm:gap-4 lg:gap-6">
+        <div className="hidden gap-1 sm:flex sm:gap-2">
+          <button type="button" aria-label="Ver notificaciones" className="group relative rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-50">
             <Bell className="h-5 w-5 transition-transform group-hover:rotate-12" />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-error" />
           </button>
-          <button className="group rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-50">
+          <button type="button" aria-label="Abrir configuración" className="group rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-50">
             <Settings className="h-5 w-5 transition-transform duration-500 group-hover:rotate-90" />
           </button>
         </div>
 
-        <div className="flex items-center gap-3 border-l border-slate-100 pl-4">
-          <div className="text-right">
+        <div className="flex items-center gap-2 border-l border-slate-100 pl-2 sm:gap-3 sm:pl-4">
+          <div className="hidden text-right md:block">
             <p className="text-xs font-bold leading-none text-primary">
               {usuario?.nombre_usuario || 'Usuario FarmaCom'}
             </p>
