@@ -4,14 +4,28 @@ import TopNav from './TopNav.jsx';
 import { Outlet, useLocation } from 'react-router-dom';
 
 const ANCHO_ESCRITORIO = 768;
+const CLAVE_PREFERENCIA_SIDEBAR = 'farmacom:sidebar-abierta';
 
 const detectarEscritorio = () =>
   typeof window === 'undefined' || window.innerWidth >= ANCHO_ESCRITORIO;
 
+const obtenerPreferenciaSidebar = () => {
+  if (!detectarEscritorio()) {
+    return false;
+  }
+
+  try {
+    const preferenciaGuardada = window.localStorage.getItem(CLAVE_PREFERENCIA_SIDEBAR);
+    return preferenciaGuardada === null ? true : preferenciaGuardada === 'true';
+  } catch {
+    return true;
+  }
+};
+
 export default function MainLayout() {
   const location = useLocation();
   const [esEscritorio, setEsEscritorio] = useState(detectarEscritorio);
-  const [sidebarAbierta, setSidebarAbierta] = useState(detectarEscritorio);
+  const [sidebarAbierta, setSidebarAbierta] = useState(obtenerPreferenciaSidebar);
 
   useEffect(() => {
     const manejarCambioDeTamano = () => {
@@ -19,7 +33,9 @@ export default function MainLayout() {
 
       if (siguienteEsEscritorio !== esEscritorio) {
         setEsEscritorio(siguienteEsEscritorio);
-        setSidebarAbierta(siguienteEsEscritorio);
+        setSidebarAbierta(
+          siguienteEsEscritorio ? obtenerPreferenciaSidebar() : false,
+        );
       }
     };
 
@@ -32,6 +48,21 @@ export default function MainLayout() {
       setSidebarAbierta(false);
     }
   }, [esEscritorio, location.pathname]);
+
+  useEffect(() => {
+    if (!esEscritorio) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        CLAVE_PREFERENCIA_SIDEBAR,
+        String(sidebarAbierta),
+      );
+    } catch {
+      // La Sidebar sigue funcionando aunque el navegador bloquee el almacenamiento.
+    }
+  }, [esEscritorio, sidebarAbierta]);
 
   useEffect(() => {
     if (esEscritorio || !sidebarAbierta) {

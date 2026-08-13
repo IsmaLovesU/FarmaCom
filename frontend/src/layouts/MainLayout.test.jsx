@@ -40,11 +40,13 @@ const renderizarLayout = (rutaInicial = '/inventario/productos') =>
   );
 
 const obtenerSidebar = () => document.getElementById('sidebar-principal');
+const CLAVE_PREFERENCIA_SIDEBAR = 'farmacom:sidebar-abierta';
 
 describe('MainLayout y Sidebar', () => {
   beforeEach(() => {
     establecerAncho(1280);
     document.body.style.overflow = '';
+    window.localStorage.clear();
   });
 
   it('abre y cierra la Sidebar en escritorio sin ocultar el contenido', async () => {
@@ -136,5 +138,30 @@ describe('MainLayout y Sidebar', () => {
     establecerAncho(1024);
     fireEvent(window, new Event('resize'));
     expect(sidebar).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('recuerda en escritorio si el usuario dejó cerrada la Sidebar', async () => {
+    window.localStorage.setItem(CLAVE_PREFERENCIA_SIDEBAR, 'false');
+    const user = userEvent.setup();
+    renderizarLayout();
+
+    const sidebar = obtenerSidebar();
+    expect(sidebar).toHaveAttribute('aria-hidden', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Mostrar menú lateral' }));
+    expect(window.localStorage.getItem(CLAVE_PREFERENCIA_SIDEBAR)).toBe('true');
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar menú lateral' }));
+    expect(window.localStorage.getItem(CLAVE_PREFERENCIA_SIDEBAR)).toBe('false');
+  });
+
+  it('inicia cerrada en móvil sin sobrescribir la preferencia de escritorio', () => {
+    window.localStorage.setItem(CLAVE_PREFERENCIA_SIDEBAR, 'true');
+    establecerAncho(390);
+
+    renderizarLayout();
+
+    expect(obtenerSidebar()).toHaveAttribute('aria-hidden', 'true');
+    expect(window.localStorage.getItem(CLAVE_PREFERENCIA_SIDEBAR)).toBe('true');
   });
 });
