@@ -23,7 +23,11 @@ export default function MainLayout() {
         }`}
       >
         <TopNav sidebarAbierta={sidebarAbierta} onAlternarSidebar={alternarSidebar} />
-        <div className="p-8 max-w-7xl mx-auto w-full">
+        <div
+          className={`mx-auto w-full min-w-0 p-8 ${
+            sidebarAbierta ? 'max-w-7xl' : 'max-w-none'
+          }`}
+        >
           <Outlet />
         </div>
       </main>
