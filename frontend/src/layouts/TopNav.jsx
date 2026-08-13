@@ -1,8 +1,8 @@
 import React from 'react';
-import { Bell, Settings } from 'lucide-react';
+import { Bell, Menu, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function TopNav() {
+export default function TopNav({ sidebarAbierta, onAlternarSidebar }) {
   const { usuario } = useAuth();
 
   const initials = (usuario?.nombre_usuario || 'Usuario')
@@ -23,6 +23,16 @@ export default function TopNav() {
   return (
     <header className="sticky top-0 z-30 flex w-full items-center justify-between border-b border-primary/5 bg-white/80 px-8 py-4 shadow-[0_12px_40px_rgba(0,81,71,0.04)] backdrop-blur-md">
       <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={onAlternarSidebar}
+          aria-controls="sidebar-principal"
+          aria-expanded={sidebarAbierta}
+          aria-label={sidebarAbierta ? 'Ocultar menú lateral' : 'Mostrar menú lateral'}
+          className="rounded-xl p-2 text-slate-500 outline-none transition-colors hover:bg-primary/5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+        >
+          <Menu className="h-5 w-5" aria-hidden="true" />
+        </button>
         <h2 className="font-headline text-lg font-extrabold tracking-tight text-primary">
           Sucursales de Farmacia
         </h2>

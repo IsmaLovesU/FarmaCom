@@ -60,7 +60,7 @@ const nestedItemClass = (isActive) =>
       : 'font-medium text-slate-500 hover:bg-primary/5 hover:text-primary'
   } focus-visible:ring-2 focus-visible:ring-primary/20`;
 
-export default function Sidebar() {
+export default function Sidebar({ abierta }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { dispatch, usuario } = useAuth();
@@ -110,7 +110,13 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-100 bg-slate-50/50 p-4 backdrop-blur-sm">
+    <aside
+      id="sidebar-principal"
+      aria-hidden={!abierta}
+      className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-slate-100 bg-slate-50/50 p-4 backdrop-blur-sm transition-transform duration-300 ${
+        abierta ? 'translate-x-0' : 'invisible -translate-x-full pointer-events-none'
+      }`}
+    >
       <div className="mb-8 flex justify-center py-6">
         <BrandLogo subtitle="San Gabriel" centered />
       </div>
