@@ -336,6 +336,11 @@ CREATE TABLE IF NOT EXISTS venta (
     id_usuario        INTEGER        NOT NULL,
     id_cliente        INTEGER,
     metodo_pago       VARCHAR(20)    NOT NULL DEFAULT 'efectivo',
+    proveedor_pago    VARCHAR(30),
+    referencia_pago   VARCHAR(120),
+    estado_pago       VARCHAR(30),
+    autorizacion_pago VARCHAR(120),
+    tarjeta_ultimos4  CHAR(4),
     total             NUMERIC(12,2)  NOT NULL CHECK (total > 0),
     monto_recibido    NUMERIC(12,2)  NOT NULL CHECK (monto_recibido >= total),
     cambio            NUMERIC(12,2)  NOT NULL CHECK (cambio = monto_recibido - total),
@@ -345,7 +350,28 @@ CREATE TABLE IF NOT EXISTS venta (
     motivo_anulacion  VARCHAR(500),
 
     CONSTRAINT chk_venta_metodo_pago
-        CHECK (metodo_pago IN ('efectivo')),
+        CHECK (metodo_pago IN ('efectivo', 'tarjeta')),
+
+    CONSTRAINT chk_venta_pago_tarjeta
+        CHECK (
+            (
+                metodo_pago = 'efectivo'
+                AND proveedor_pago IS NULL
+                AND referencia_pago IS NULL
+                AND estado_pago IS NULL
+                AND autorizacion_pago IS NULL
+                AND tarjeta_ultimos4 IS NULL
+            )
+            OR
+            (
+                metodo_pago = 'tarjeta'
+                AND proveedor_pago IS NOT NULL
+                AND referencia_pago IS NOT NULL
+                AND estado_pago = 'pagado'
+                AND monto_recibido = total
+                AND cambio = 0
+            )
+        ),
 
     CONSTRAINT chk_venta_estado
         CHECK (estado IN ('completada', 'anulada')),
@@ -406,6 +432,10 @@ CREATE INDEX IF NOT EXISTS idx_venta_sucursal_fecha
 CREATE INDEX IF NOT EXISTS idx_venta_cliente
     ON venta (id_cliente)
     WHERE id_cliente IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_venta_referencia_pago
+    ON venta (proveedor_pago, referencia_pago)
+    WHERE referencia_pago IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_detalle_venta_lote
     ON detalle_venta (id_lote);
