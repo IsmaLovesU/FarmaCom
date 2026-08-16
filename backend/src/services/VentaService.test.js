@@ -1,6 +1,8 @@
 jest.mock('../daos/VentaDAO');
+jest.mock('./RecurrenteService');
 
 const VentaDAO = require('../daos/VentaDAO');
+const RecurrenteService = require('./RecurrenteService');
 const VentaService = require('./VentaService');
 
 const usuarioDependiente = {
@@ -59,6 +61,12 @@ describe('VentaService', () => {
         id_sucursal: 1,
         id_usuario: 7,
         id_cliente: null,
+        metodo_pago: 'efectivo',
+        proveedor_pago: null,
+        referencia_pago: null,
+        estado_pago: null,
+        autorizacion_pago: null,
+        tarjeta_ultimos4: null,
         total: '25.00',
         monto_recibido: '30.00',
         cambio: '5.00',
@@ -71,6 +79,55 @@ describe('VentaService', () => {
         precio_unitario: '7.50',
       }, {});
       expect(resultado).toEqual({ id_venta: 21, total: '25.00' });
+    });
+
+    it('registra una venta con tarjeta cuando Recurrente confirma el checkout', async () => {
+      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
+      VentaDAO.crearVenta.mockResolvedValue({ id_venta: 22 });
+      VentaDAO.descontarStock.mockResolvedValue({ id_lote: 1 });
+      VentaDAO.crearDetalle.mockResolvedValue({});
+      VentaDAO.obtenerPorId.mockResolvedValue({
+        id_venta: 22,
+        metodo_pago: 'tarjeta',
+        total: '25.00',
+      });
+      RecurrenteService.validarCheckoutPagado.mockResolvedValue({
+        referencia_pago: 'ch_test_123',
+        estado_pago: 'pagado',
+        autorizacion_pago: 'auth_123',
+        tarjeta_ultimos4: '4242',
+      });
+
+      const resultado = await VentaService.crearVenta({
+        ...datosVenta,
+        metodo_pago: 'tarjeta',
+        monto_recibido: undefined,
+        referencia_pago: 'ch_test_123',
+      }, usuarioDependiente);
+
+      expect(RecurrenteService.validarCheckoutPagado).toHaveBeenCalledWith(
+        'ch_test_123',
+        2500,
+      );
+      expect(VentaDAO.crearVenta).toHaveBeenCalledWith({
+        id_sucursal: 1,
+        id_usuario: 7,
+        id_cliente: null,
+        metodo_pago: 'tarjeta',
+        proveedor_pago: 'recurrente',
+        referencia_pago: 'ch_test_123',
+        estado_pago: 'pagado',
+        autorizacion_pago: 'auth_123',
+        tarjeta_ultimos4: '4242',
+        total: '25.00',
+        monto_recibido: '25.00',
+        cambio: '0.00',
+      }, {});
+      expect(resultado).toEqual({
+        id_venta: 22,
+        metodo_pago: 'tarjeta',
+        total: '25.00',
+      });
     });
 
     it('rechaza la venta completa si un lote no tiene stock suficiente', async () => {
@@ -98,21 +155,54 @@ describe('VentaService', () => {
         VentaService.crearVenta(datosVenta, usuarioDependiente),
       ).rejects.toMatchObject({
         status: 409,
-        message: 'No se puede vender el lote 1 porque está vencido',
+        message: 'No se puede vender el lote 1 porque esta vencido',
       });
     });
 
-    it('rechaza pagos distintos de efectivo', async () => {
+    it('rechaza pagos que no sean efectivo o tarjeta', async () => {
       await expect(
         VentaService.crearVenta(
-          { ...datosVenta, metodo_pago: 'tarjeta' },
+          { ...datosVenta, metodo_pago: 'mixto' },
           usuarioDependiente,
         ),
       ).rejects.toMatchObject({
         status: 400,
-        message: 'Por el momento, únicamente se aceptan ventas en efectivo',
+        message: 'metodo_pago debe ser efectivo o tarjeta',
       });
       expect(VentaDAO.ejecutarEnTransaccion).not.toHaveBeenCalled();
+    });
+
+    it('rechaza ventas con tarjeta sin referencia de pago', async () => {
+      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
+
+      await expect(
+        VentaService.crearVenta(
+          { ...datosVenta, metodo_pago: 'tarjeta', referencia_pago: null },
+          usuarioDependiente,
+        ),
+      ).rejects.toMatchObject({
+        status: 400,
+        message: 'referencia_pago es requerida para ventas con tarjeta',
+      });
+      expect(VentaDAO.crearVenta).not.toHaveBeenCalled();
+    });
+
+    it('rechaza ventas con tarjeta si el checkout no esta pagado', async () => {
+      const error = new Error('El pago con tarjeta aun no esta confirmado');
+      error.status = 409;
+      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
+      RecurrenteService.validarCheckoutPagado.mockRejectedValue(error);
+
+      await expect(
+        VentaService.crearVenta(
+          { ...datosVenta, metodo_pago: 'tarjeta', referencia_pago: 'ch_unpaid' },
+          usuarioDependiente,
+        ),
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'El pago con tarjeta aun no esta confirmado',
+      });
+      expect(VentaDAO.crearVenta).not.toHaveBeenCalled();
     });
 
     it('rechaza un monto recibido menor que el total calculado', async () => {
@@ -157,6 +247,41 @@ describe('VentaService', () => {
     });
   });
 
+  describe('crearCheckoutTarjeta', () => {
+    it('calcula el total en backend y crea un checkout en Recurrente', async () => {
+      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
+      RecurrenteService.crearCheckoutVenta.mockResolvedValue({
+        id: 'ch_test_123',
+        checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+        status: 'unpaid',
+        currency: 'GTQ',
+        live_mode: false,
+      });
+
+      const resultado = await VentaService.crearCheckoutTarjeta(
+        datosVenta,
+        usuarioDependiente,
+      );
+
+      expect(RecurrenteService.crearCheckoutVenta).toHaveBeenCalledWith({
+        totalCentavos: 2500,
+        idSucursal: 1,
+        idCliente: null,
+        idUsuario: 7,
+      });
+      expect(resultado).toEqual({
+        id_checkout: 'ch_test_123',
+        checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+        estado: 'unpaid',
+        total: '25.00',
+        moneda: 'GTQ',
+        live_mode: false,
+      });
+      expect(VentaDAO.crearVenta).not.toHaveBeenCalled();
+      expect(VentaDAO.descontarStock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('asociarCliente', () => {
     it('permite asociar una venta existente a un cliente', async () => {
       VentaDAO.obtenerParaActualizar.mockResolvedValue({
@@ -195,14 +320,14 @@ describe('VentaService', () => {
 
       const resultado = await VentaService.anularVenta(
         21,
-        'Error de digitación',
+        'Error de digitacion',
         usuarioDependiente,
       );
 
       expect(VentaDAO.restaurarStock).toHaveBeenCalledTimes(2);
       expect(VentaDAO.anular).toHaveBeenCalledWith(
         21,
-        'Error de digitación',
+        'Error de digitacion',
         {},
       );
       expect(resultado.estado).toBe('anulada');
@@ -219,7 +344,7 @@ describe('VentaService', () => {
         VentaService.anularVenta(21, null, usuarioDependiente),
       ).rejects.toMatchObject({
         status: 409,
-        message: 'La venta ya está anulada',
+        message: 'La venta ya esta anulada',
       });
       expect(VentaDAO.restaurarStock).not.toHaveBeenCalled();
     });

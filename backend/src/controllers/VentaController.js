@@ -20,6 +20,17 @@ const crear = async (req, res) => {
   }
 };
 
+const crearCheckoutTarjeta = async (req, res) => {
+  if (responderErrores(req, res)) return;
+
+  try {
+    const checkout = await VentaService.crearCheckoutTarjeta(req.body, req.usuario);
+    return res.status(201).json(checkout);
+  } catch (error) {
+    return res.status(error.status || 500).json({ mensaje: error.message });
+  }
+};
+
 const obtenerTodas = async (req, res) => {
   if (responderErrores(req, res)) return;
 
@@ -77,6 +88,7 @@ const anular = async (req, res) => {
 
 module.exports = {
   crear,
+  crearCheckoutTarjeta,
   obtenerTodas,
   obtenerPorId,
   asociarCliente,

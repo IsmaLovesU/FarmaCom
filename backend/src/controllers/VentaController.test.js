@@ -36,6 +36,26 @@ describe('VentaController', () => {
     expect(res.json).toHaveBeenCalledWith({ id_venta: 15 });
   });
 
+  it('responde 201 con el checkout de tarjeta creado por el usuario autenticado', async () => {
+    const usuario = { id_usuario: 7, id_sucursal: 1, rol: 'dependiente' };
+    const body = { id_sucursal: 1, detalles: [] };
+    VentaService.crearCheckoutTarjeta.mockResolvedValue({
+      id_checkout: 'ch_test_123',
+      checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+    });
+    const req = { body, usuario };
+    const res = mockResponse();
+
+    await VentaController.crearCheckoutTarjeta(req, res);
+
+    expect(VentaService.crearCheckoutTarjeta).toHaveBeenCalledWith(body, usuario);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      id_checkout: 'ch_test_123',
+      checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+    });
+  });
+
   it('no llama al servicio cuando la petición es inválida', async () => {
     validationResult.mockReturnValue({
       isEmpty: () => false,

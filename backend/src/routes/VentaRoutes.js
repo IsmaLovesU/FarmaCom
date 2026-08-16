@@ -23,7 +23,7 @@ const validarId = [
     .toInt(),
 ];
 
-const validarCreacion = [
+const validarDatosVenta = [
   body('id_sucursal')
     .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
     .toInt(),
@@ -31,12 +31,6 @@ const validarCreacion = [
     .optional({ nullable: true })
     .isInt({ min: 1 }).withMessage('id_cliente debe ser un entero positivo o null')
     .toInt(),
-  body('metodo_pago')
-    .equals('efectivo').withMessage('Por el momento, metodo_pago debe ser efectivo'),
-  body('monto_recibido')
-    .custom(esMontoValido)
-    .withMessage('monto_recibido debe ser un monto válido con máximo dos decimales')
-    .toFloat(),
   body('detalles')
     .isArray({ min: 1 }).withMessage('detalles debe contener al menos un producto'),
   body('detalles.*.id_lote')
@@ -45,6 +39,35 @@ const validarCreacion = [
   body('detalles.*.cantidad')
     .isInt({ min: 1 }).withMessage('Cada cantidad debe ser un entero positivo')
     .toInt(),
+];
+
+const validarCreacion = [
+  ...validarDatosVenta,
+  body('metodo_pago')
+    .isIn(['efectivo', 'tarjeta']).withMessage('metodo_pago debe ser efectivo o tarjeta'),
+  body('monto_recibido')
+    .if(body('metodo_pago').equals('efectivo'))
+    .custom(esMontoValido)
+    .withMessage('monto_recibido debe ser un monto valido con maximo dos decimales')
+    .toFloat(),
+  body('monto_recibido')
+    .optional({ nullable: true })
+    .custom(esMontoValido)
+    .withMessage('monto_recibido debe ser un monto valido con maximo dos decimales')
+    .toFloat(),
+  body('referencia_pago')
+    .if(body('metodo_pago').equals('tarjeta'))
+    .trim()
+    .notEmpty().withMessage('referencia_pago es requerida para pagos con tarjeta')
+    .isLength({ max: 120 }).withMessage('referencia_pago no puede superar 120 caracteres'),
+  body('referencia_pago')
+    .optional()
+    .trim()
+    .isLength({ max: 120 }).withMessage('referencia_pago no puede superar 120 caracteres'),
+];
+
+const validarCheckoutTarjeta = [
+  ...validarDatosVenta,
 ];
 
 const validarFiltros = [
@@ -87,6 +110,14 @@ const validarAnulacion = [
     .isLength({ max: 500 })
     .withMessage('motivo_anulacion no puede superar los 500 caracteres'),
 ];
+
+router.post(
+  '/tarjeta/checkout',
+  verificarToken,
+  rolesVenta,
+  validarCheckoutTarjeta,
+  VentaController.crearCheckoutTarjeta,
+);
 
 router.post(
   '/',
