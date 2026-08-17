@@ -5,7 +5,11 @@ import {
   AlertCircle,
   Banknote,
   CheckCircle2,
+  CreditCard,
+  ExternalLink,
+  Loader2,
   ReceiptText,
+  RefreshCw,
   User,
   X,
 } from 'lucide-react';
@@ -28,9 +32,11 @@ export default function CobroModal({
   total,
   metodoPago,
   clienteSeleccionado,
+  checkoutTarjeta,
   procesando = false,
   error,
   onClose,
+  onCrearCheckoutTarjeta,
   onConfirm,
 }) {
   const [montoRecibido, setMontoRecibido] = useState('');
@@ -44,12 +50,23 @@ export default function CobroModal({
   const totalNumerico = normalizarMonto(total);
   const montoNumerico = normalizarMonto(montoRecibido);
   const cambio = Math.max(0, montoNumerico - totalNumerico);
-  const metodoSoportado = metodoPago === 'efectivo';
-  const montoInsuficiente = metodoSoportado && montoNumerico < totalNumerico;
-  const puedeConfirmar = metodoSoportado
+  const esEfectivo = metodoPago === 'efectivo';
+  const esTarjeta = metodoPago === 'tarjeta';
+  const metodoSoportado = esEfectivo || esTarjeta;
+  const montoInsuficiente = esEfectivo && montoNumerico < totalNumerico;
+  const checkoutListo = Boolean(checkoutTarjeta?.id_checkout);
+  const puedeConfirmarEfectivo = esEfectivo
     && items.length > 0
     && !montoInsuficiente
     && !procesando;
+  const puedeGenerarCheckout = esTarjeta
+    && items.length > 0
+    && !procesando
+    && !checkoutListo;
+  const puedeConfirmarTarjeta = esTarjeta
+    && items.length > 0
+    && !procesando
+    && checkoutListo;
 
   const resumenItems = useMemo(() => items.slice(0, 3), [items]);
   const restantes = Math.max(0, items.length - resumenItems.length);
@@ -58,8 +75,24 @@ export default function CobroModal({
 
   const manejarEnvio = (evento) => {
     evento.preventDefault();
-    if (!puedeConfirmar) return;
-    onConfirm(Number(montoNumerico.toFixed(2)));
+    if (puedeConfirmarEfectivo) {
+      onConfirm({ montoRecibido: Number(montoNumerico.toFixed(2)) });
+      return;
+    }
+
+    if (puedeGenerarCheckout) {
+      onCrearCheckoutTarjeta();
+      return;
+    }
+
+    if (puedeConfirmarTarjeta) {
+      onConfirm({ referenciaPago: checkoutTarjeta.id_checkout });
+    }
+  };
+
+  const abrirCheckout = () => {
+    if (!checkoutTarjeta?.checkout_url) return;
+    window.open(checkoutTarjeta.checkout_url, '_blank', 'noopener,noreferrer');
   };
 
   return createPortal(
@@ -123,39 +156,88 @@ export default function CobroModal({
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-3">
-              <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-                Cambio
-              </p>
-              <p className="mt-1 font-mono text-lg font-black text-primary">
-                {formatearQuetzales(cambio)}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="monto-recibido" className="text-sm font-semibold text-slate-700">
-              Monto recibido
-            </label>
-            <input
-              id="monto-recibido"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={montoRecibido}
-              onChange={(evento) => setMontoRecibido(evento.target.value)}
-              disabled={!metodoSoportado || procesando}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-lg font-extrabold text-on-surface outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-slate-100 disabled:text-slate-400"
-              placeholder="0.00"
-              autoFocus
-            />
-            {montoInsuficiente && (
-              <p className="text-sm font-semibold text-error">
-                El monto recibido no cubre el total de la venta.
-              </p>
+            {esEfectivo ? (
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
+                  Cambio
+                </p>
+                <p className="mt-1 font-mono text-lg font-black text-primary">
+                  {formatearQuetzales(cambio)}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-slate-400">
+                  <CreditCard className="h-3.5 w-3.5" />
+                  Estado
+                </p>
+                <p className="mt-1 truncate text-sm font-bold text-on-surface">
+                  {checkoutListo ? 'Checkout generado' : 'Pendiente de generar'}
+                </p>
+              </div>
             )}
           </div>
+
+          {esEfectivo && (
+            <div className="space-y-2">
+              <label htmlFor="monto-recibido" className="text-sm font-semibold text-slate-700">
+                Monto recibido
+              </label>
+              <input
+                id="monto-recibido"
+                type="number"
+                min="0"
+                step="0.01"
+                inputMode="decimal"
+                value={montoRecibido}
+                onChange={(evento) => setMontoRecibido(evento.target.value)}
+                disabled={procesando}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 font-mono text-lg font-extrabold text-on-surface outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-slate-100 disabled:text-slate-400"
+                placeholder="0.00"
+                autoFocus
+              />
+              {montoInsuficiente && (
+                <p className="text-sm font-semibold text-error">
+                  El monto recibido no cubre el total de la venta.
+                </p>
+              )}
+            </div>
+          )}
+
+          {esTarjeta && (
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div>
+                <p className="text-sm font-extrabold text-on-surface">
+                  Cobro con tarjeta
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  Genera checkout y valida la referencia para registrar la venta.
+                </p>
+              </div>
+
+              {checkoutListo && (
+                <div className="space-y-3">
+                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                    <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
+                      Referencia
+                    </p>
+                    <p className="mt-1 truncate font-mono text-sm font-bold text-primary">
+                      {checkoutTarjeta.id_checkout}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={abrirCheckout}
+                    disabled={procesando || !checkoutTarjeta.checkout_url}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-white px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 disabled:opacity-60"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Abrir checkout de Recurrente
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="rounded-xl border border-slate-200">
             <div className="border-b border-slate-100 px-4 py-3">
@@ -188,7 +270,7 @@ export default function CobroModal({
           {!metodoSoportado && (
             <div className="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              El backend de ventas por ahora solo permite registrar pagos en efectivo.
+              Este metodo de pago aun no esta disponible.
             </div>
           )}
 
@@ -210,11 +292,29 @@ export default function CobroModal({
             </button>
             <button
               type="submit"
-              disabled={!puedeConfirmar}
+              disabled={
+                !puedeConfirmarEfectivo
+                && !puedeGenerarCheckout
+                && !puedeConfirmarTarjeta
+              }
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
-              <CheckCircle2 className="h-4 w-4" />
-              {procesando ? 'Registrando...' : 'Confirmar cobro'}
+              {procesando ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : esTarjeta && !checkoutListo ? (
+                <CreditCard className="h-4 w-4" />
+              ) : esTarjeta ? (
+                <RefreshCw className="h-4 w-4" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              {procesando
+                ? 'Procesando...'
+                : esTarjeta && !checkoutListo
+                  ? 'Generar cobro con tarjeta'
+                  : esTarjeta
+                    ? 'Validar y registrar venta'
+                    : 'Confirmar cobro'}
             </button>
           </div>
         </form>

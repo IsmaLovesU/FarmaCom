@@ -80,6 +80,31 @@ describe('RecurrenteService', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it('incluye detalles de validacion devueltos por Recurrente', async () => {
+    global.fetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: jest.fn().mockResolvedValue(JSON.stringify({
+        message: 'Checkout Inválido',
+        errors: {
+          base: ['Debes tener al menos un método de pago activado'],
+        },
+      })),
+    });
+
+    await expect(
+      RecurrenteService.crearCheckoutVenta({
+        totalCentavos: 500,
+        idSucursal: 1,
+        idCliente: null,
+        idUsuario: 7,
+      }),
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'Checkout Inválido: Debes tener al menos un método de pago activado',
+    });
+  });
+
   it('valida que un checkout pagado coincida con el total esperado', async () => {
     global.fetch.mockResolvedValue({
       ok: true,

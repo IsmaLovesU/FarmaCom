@@ -34,6 +34,16 @@ const leerRespuesta = async (respuesta) => {
   }
 };
 
+const formatearErrores = (errores) => {
+  if (!errores || typeof errores !== 'object') return null;
+
+  const detalles = Object.values(errores)
+    .flat()
+    .filter(Boolean);
+
+  return detalles.length > 0 ? detalles.join('. ') : null;
+};
+
 const solicitar = async (ruta, opciones = {}) => {
   const respuesta = await obtenerFetch()(`${API_URL}${ruta}`, {
     ...opciones,
@@ -46,7 +56,9 @@ const solicitar = async (ruta, opciones = {}) => {
   const data = await leerRespuesta(respuesta);
 
   if (!respuesta.ok) {
-    const mensaje = data.error || data.message || 'Recurrente no pudo procesar la solicitud';
+    const detalle = formatearErrores(data.errors);
+    const mensajeBase = data.error || data.message || 'Recurrente no pudo procesar la solicitud';
+    const mensaje = detalle ? `${mensajeBase}: ${detalle}` : mensajeBase;
     lanzarError(mensaje, respuesta.status || 502);
   }
 
@@ -55,7 +67,7 @@ const solicitar = async (ruta, opciones = {}) => {
 
 const construirUrlRetorno = (estado) => {
   const base = process.env.FRONTEND_URL || 'http://localhost:5173';
-  return `${base}/ventas?recurrente=${estado}`;
+  return `${base}/pos?recurrente=${estado}`;
 };
 
 const crearCheckoutVenta = async ({

@@ -9,3 +9,13 @@ export const crearVenta = async (payload) => {
     throw new Error(mensaje);
   }
 };
+
+export const crearCheckoutTarjeta = async (payload) => {
+  try {
+    const { data } = await api.post('/ventas/tarjeta/checkout', payload);
+    return data;
+  } catch (err) {
+    const mensaje = err.response?.data?.mensaje || 'No se pudo generar el cobro con tarjeta.';
+    throw new Error(mensaje);
+  }
+};
