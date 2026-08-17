@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { formatearQuetzales } from '../../utils/pos';
-import { obtenerEtiquetaPresentacion } from '../../constants/presentaciones.js';
 
 export default function CarritoVentaItem({
   item,
@@ -32,7 +31,7 @@ export default function CarritoVentaItem({
           {item.nombre_comercial}
         </p>
         <p className="mt-0.5 truncate text-xs font-medium text-slate-400">
-          {obtenerEtiquetaPresentacion(item.presentacion)} · lote {item.numero_lote}
+          {item.presentacion} · lote {item.numero_lote}
         </p>
       </div>
 

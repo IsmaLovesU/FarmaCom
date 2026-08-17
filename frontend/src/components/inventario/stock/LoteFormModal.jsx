@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, PackagePlus, Pencil, X } from 'lucide-react';
 import { motion } from 'motion/react';
-import { obtenerEtiquetaPresentacion } from '../../../constants/presentaciones.js';
-
 const ESTADO_INICIAL = {
   id_producto: '',
   id_proveedor: '',
@@ -65,7 +63,7 @@ export default function LoteFormModal({
   );
 
   const precioCompra = Number(productoSeleccionado?.precio_compra ?? 0);
-  const presentacionEtiqueta = obtenerEtiquetaPresentacion(productoSeleccionado?.presentacion);
+  const presentacionEtiqueta = productoSeleccionado?.presentacion;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -254,7 +252,7 @@ export default function LoteFormModal({
                     <option key={producto.id_producto} value={producto.id_producto}>
                       {producto.nombre_comercial}
                       {producto.concentracion ? ` ${producto.concentracion}` : ''}
-                      {producto.presentacion ? ` · ${obtenerEtiquetaPresentacion(producto.presentacion)}` : ''}
+                      {producto.presentacion ? ` · ${producto.presentacion}` : ''}
                       {' '}- {producto.codigo}
                     </option>
                   ))}

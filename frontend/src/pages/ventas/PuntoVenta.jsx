@@ -4,6 +4,7 @@ import { crearVenta } from '../../api/ventas';
 import CatalogoProductosPOS from '../../components/ventas/CatalogoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
 import CobroModal from '../../components/ventas/CobroModal';
+import ComprobanteModal from '../../components/ventas/ComprobanteModal';
 import NuevoClienteModal from '../../components/ventas/NuevoClienteModal';
 import VencimientoAvisoModal from '../../components/ventas/VencimientoAvisoModal';
 import { useAuth } from '../../context/AuthContext';
@@ -45,6 +46,7 @@ export default function PuntoVenta() {
   const [mostrandoNuevoCliente, setMostrandoNuevoCliente] = useState(false);
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   const [errorCobro, setErrorCobro] = useState(null);
+  const [ventaCompletada, setVentaCompletada] = useState(null);
 
   const agregarAlCarritoValidandoStock = useCallback((producto) => {
     const existente = items.find((item) => item.clave === producto.carritoKey);
@@ -175,7 +177,7 @@ export default function PuntoVenta() {
 
       vaciarCarrito();
       setMostrandoCobro(false);
-      setAviso(`Venta #${venta.id_venta} registrada. Cambio: Q${Number(venta.cambio || 0).toFixed(2)}.`);
+      setVentaCompletada(venta);
       refrescar();
     } catch (err) {
       setErrorCobro(err.message || 'No se pudo registrar la venta.');
@@ -273,6 +275,12 @@ export default function PuntoVenta() {
         error={errorCobro}
         onClose={cerrarCobro}
         onConfirm={confirmarCobro}
+      />
+
+      <ComprobanteModal
+        isOpen={Boolean(ventaCompletada)}
+        venta={ventaCompletada}
+        onClose={() => setVentaCompletada(null)}
       />
     </div>
   );

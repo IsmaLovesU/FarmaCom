@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { AlertCircle, Boxes, ChevronDown, Loader2, Pencil, Trash2 } from 'lucide-react';
 import EstadoBadge from './EstadoBadge.jsx';
 import useLotesProducto from '../../../hooks/useLotesProducto.js';
-import { obtenerEtiquetaPresentacion, obtenerPluralPresentacion } from '../../../constants/presentaciones.js';
+import { pluralizarPresentacion } from '../../../constants/presentaciones.js';
 
 const formatoFecha = (valor) => {
   if (!valor) return '—';
@@ -81,7 +81,7 @@ export default function LotesDeProductoTable({
       <div className="col-span-2 min-w-0">
         <p className="truncate font-bold text-slate-800">{lote.numero_lote}</p>
         <p className="truncate text-[11px] text-slate-400">
-          {obtenerEtiquetaPresentacion(lote.presentacion)}
+          {lote.presentacion}
         </p>
       </div>
       <span className="col-span-2 text-xs font-medium">
@@ -95,7 +95,7 @@ export default function LotesDeProductoTable({
           {formatoNumero(lote.stock_actual)}
         </p>
         <p className="text-[10px] text-slate-400">
-          {obtenerPluralPresentacion(lote.presentacion)}
+          {pluralizarPresentacion(lote.presentacion)}
         </p>
       </div>
       <div className="col-span-2 flex justify-center">

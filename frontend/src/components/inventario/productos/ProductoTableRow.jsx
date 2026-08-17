@@ -1,6 +1,5 @@
 import React from 'react';
 import { Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
-import { obtenerEtiquetaPresentacion } from '../../../constants/presentaciones.js';
 
 export default function ProductoTableRow({ producto, onEditar, onCambiarEstado, cambiandoEstado }) {
   const esActivo = producto.activo;
@@ -19,7 +18,7 @@ export default function ProductoTableRow({ producto, onEditar, onCambiarEstado, 
           <p className="font-semibold text-primary truncate">{producto.nombre_comercial}</p>
           {producto.presentacion && (
             <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary">
-              {obtenerEtiquetaPresentacion(producto.presentacion)}
+              {producto.presentacion}
             </span>
           )}
         </div>

@@ -10,7 +10,8 @@ import useProductos from '../../hooks/useProductos.js';
 import useCategorias from '../../hooks/useCategorias.js';
 import useCasas from '../../hooks/useCasas.js';
 import useProveedores from '../../hooks/useProveedores.js';
-import { SUFIJOS_CODIGO } from '../../constants/presentaciones.js';
+import usePresentaciones from '../../hooks/usePresentaciones.js';
+import { sufijoPresentacion } from '../../constants/presentaciones.js';
 
 const siguienteCodigoMed = (productos) => {
   const numeros = (productos || [])
@@ -25,7 +26,7 @@ const siguienteCodigoMed = (productos) => {
 const filtrosIniciales = {
   id_categoria: '',
   id_casa: '',
-  presentacion: '',
+  id_presentacion: '',
   id_proveedor: '',
   activo: '',
 };
@@ -35,6 +36,11 @@ export default function Productos() {
   const { categorias, cargando: cargandoCategorias } = useCategorias();
   const { casas, cargando: cargandoCasas } = useCasas();
   const { proveedores, cargando: cargandoProveedores } = useProveedores();
+  const {
+    presentaciones,
+    cargando: cargandoPresentaciones,
+    crear: crearPresentacion,
+  } = usePresentaciones();
 
   const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState(filtrosIniciales);
@@ -47,7 +53,7 @@ export default function Productos() {
   const [guardando, setGuardando] = useState(false);
   const [errorFormulario, setErrorFormulario] = useState(null);
 
-  const cargandoDatos = cargandoCategorias || cargandoCasas || cargandoProveedores;
+  const cargandoDatos = cargandoCategorias || cargandoCasas || cargandoProveedores || cargandoPresentaciones;
   const codigoSugerido = useMemo(() => siguienteCodigoMed(productos), [productos]);
   
   const handleCrear = useCallback(() => {
@@ -74,7 +80,10 @@ export default function Productos() {
   const handleGuardar = useCallback(async (formulario) => {
     setErrorFormulario(null);
 
-    const sufijo = SUFIJOS_CODIGO[formulario.presentacion] || '';
+    const presentacionElegida = presentaciones.find(
+      (p) => String(p.id_presentacion) === formulario.id_presentacion,
+    );
+    const sufijo = sufijoPresentacion(presentacionElegida?.nombre);
 
     const payload = {
       codigo: modoEdicion && productoEditando
@@ -83,7 +92,7 @@ export default function Productos() {
       nombre_comercial: formulario.nombre_comercial.trim(),
       nombre_generico: formulario.nombre_generico.trim(),
       concentracion: formulario.concentracion.trim(),
-      presentacion: formulario.presentacion,
+      id_presentacion: Number(formulario.id_presentacion),
       id_categoria: Number(formulario.id_categoria),
       id_casa: Number(formulario.id_casa),
       id_proveedor: formulario.id_proveedor ? Number(formulario.id_proveedor) : undefined,
@@ -107,7 +116,7 @@ export default function Productos() {
     } finally {
       setGuardando(false);
     }
-  }, [modoEdicion, productoEditando, crear, actualizar, codigoSugerido]);
+  }, [modoEdicion, productoEditando, crear, actualizar, codigoSugerido, presentaciones]);
 
   const handleCambiarEstado = useCallback(async (producto) => {
     setErrorAccion(null);
@@ -142,7 +151,7 @@ export default function Productos() {
         !filtros.id_casa || String(p.id_casa) === filtros.id_casa;
 
       const coincidePresentacion =
-        !filtros.presentacion || p.presentacion === filtros.presentacion;
+        !filtros.id_presentacion || String(p.id_presentacion) === filtros.id_presentacion;
 
       const coincideProveedor =
         !filtros.id_proveedor || String(p.id_proveedor) === filtros.id_proveedor;
@@ -190,6 +199,7 @@ export default function Productos() {
         categorias={categorias}
         casas={casas}
         proveedores={proveedores}
+        presentaciones={presentaciones}
       />
 
       <ProductoStatsBanner
@@ -219,11 +229,13 @@ export default function Productos() {
         categorias={categorias}
         casas={casas}
         proveedores={proveedores}
+        presentaciones={presentaciones}
         cargandoDatos={cargandoDatos}
         guardando={guardando}
         errorFormulario={errorFormulario}
         onClose={handleCerrarModal}
         onSubmit={handleGuardar}
+        onCrearPresentacion={crearPresentacion}
       />
     </div>
   );

@@ -102,7 +102,26 @@ describe('PuntoVenta', () => {
       observaciones: null,
     });
     crearVenta.mockReset();
-    crearVenta.mockResolvedValue({ id_venta: 15, cambio: '1.50' });
+    crearVenta.mockResolvedValue({
+      id_venta: 15,
+      total: '17.00',
+      monto_recibido: '20.00',
+      cambio: '3.00',
+      metodo_pago: 'efectivo',
+      fecha_venta: '2026-01-01T12:00:00.000Z',
+      nombre_sucursal: 'Sucursal Central',
+      nombre_usuario: 'Dueno General',
+      nombre_cliente: null,
+      detalles: [
+        {
+          id_detalle_venta: 1,
+          nombre_comercial: 'Paracetamol',
+          cantidad: 2,
+          precio_unitario: '8.50',
+          subtotal: '17.00',
+        },
+      ],
+    });
   });
 
   it('renderiza el catalogo, el carrito y el selector de cliente con "Consumidor final" por defecto', () => {
@@ -214,6 +233,8 @@ describe('PuntoVenta', () => {
 
     expect(vaciarCarrito).toHaveBeenCalled();
     expect(refrescarCatalogo).toHaveBeenCalled();
-    expect(screen.getByText('Venta #15 registrada. Cambio: Q1.50.')).toBeInTheDocument();
+    expect(screen.getByText('Venta registrada')).toBeInTheDocument();
+    expect(screen.getByText(/Comprobante #15/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Imprimir comprobante' })).toBeInTheDocument();
   });
 });
