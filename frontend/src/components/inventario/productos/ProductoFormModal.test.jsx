@@ -75,6 +75,29 @@ describe('ProductoFormModal', () => {
     );
   });
 
+  it('permite guardar un producto sin concentración', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(<ProductoFormModal {...propsBase} onSubmit={onSubmit} />);
+
+    const concentracion = screen.getByRole('textbox', { name: /Concentración/ });
+    expect(concentracion).not.toBeRequired();
+
+    const [selectPresentacion, selectCategoria, selectCasa] = screen.getAllByRole('combobox');
+    await user.selectOptions(selectPresentacion, '1');
+    await user.selectOptions(selectCategoria, '1');
+    await user.selectOptions(selectCasa, '1');
+    await user.type(screen.getByPlaceholderText('Ej. Aspirina Forte'), 'Alcohol en gel');
+    await user.type(screen.getByPlaceholderText('Ej. Ácido Acetilsalicílico'), 'Alcohol');
+    await user.type(screen.getByPlaceholderText('0.00'), '15');
+    await user.type(screen.getByPlaceholderText('Ej. 6'), '6');
+    await user.click(screen.getByRole('button', { name: 'Guardar producto' }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ concentracion: '' }),
+    );
+  });
+
   it('permite crear una presentación nueva desde un modal, sin salir del formulario', async () => {
     const user = userEvent.setup();
     const onCrearPresentacion = vi.fn().mockResolvedValue({ id_presentacion: 3, nombre: 'Frasco' });

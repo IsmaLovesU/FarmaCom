@@ -91,7 +91,7 @@ export default function Productos() {
         : `${codigoSugerido}-${sufijo}`,
       nombre_comercial: formulario.nombre_comercial.trim(),
       nombre_generico: formulario.nombre_generico.trim(),
-      concentracion: formulario.concentracion.trim(),
+      concentracion: formulario.concentracion.trim() || null,
       id_presentacion: Number(formulario.id_presentacion),
       id_categoria: Number(formulario.id_categoria),
       id_casa: Number(formulario.id_casa),

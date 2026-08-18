@@ -197,17 +197,17 @@ export default function ProductoFormModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-slate-700">
-                Concentración <span className="text-error">*</span>
+              <label htmlFor="concentracion" className="text-sm font-semibold text-slate-700">
+                Concentración <span className="font-normal text-slate-500">(opcional)</span>
               </label>
               <input
+                id="concentracion"
                 type="text"
                 name="concentracion"
                 value={formulario.concentracion}
                 onChange={manejarCambio}
                 placeholder="Ej. 500 mg"
                 maxLength={50}
-                required
                 className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
               />
             </div>
