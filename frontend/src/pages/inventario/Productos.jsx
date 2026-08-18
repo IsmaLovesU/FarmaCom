@@ -12,6 +12,7 @@ import useCasas from '../../hooks/useCasas.js';
 import useProveedores from '../../hooks/useProveedores.js';
 import usePresentaciones from '../../hooks/usePresentaciones.js';
 import { sufijoPresentacion } from '../../constants/presentaciones.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const siguienteCodigoMed = (productos) => {
   const numeros = (productos || [])
@@ -32,6 +33,7 @@ const filtrosIniciales = {
 };
 
 export default function Productos() {
+  const { usuario } = useAuth();
   const { productos, cargando, error, crear, actualizar, cambiarEstado } = useProductos();
   const { categorias, cargando: cargandoCategorias } = useCategorias();
   const { casas, cargando: cargandoCasas } = useCasas();
@@ -40,6 +42,8 @@ export default function Productos() {
     presentaciones,
     cargando: cargandoPresentaciones,
     crear: crearPresentacion,
+    actualizar: actualizarPresentacion,
+    eliminar: eliminarPresentacion,
   } = usePresentaciones();
 
   const [busqueda, setBusqueda] = useState('');
@@ -236,6 +240,10 @@ export default function Productos() {
         onClose={handleCerrarModal}
         onSubmit={handleGuardar}
         onCrearPresentacion={crearPresentacion}
+        onActualizarPresentacion={actualizarPresentacion}
+        onEliminarPresentacion={eliminarPresentacion}
+        puedeGestionarPresentaciones={['dueno', 'administrador'].includes(usuario?.rol)}
+        puedeEliminarPresentaciones={usuario?.rol === 'dueno'}
       />
     </div>
   );
