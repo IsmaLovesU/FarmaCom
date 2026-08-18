@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Info, X } from 'lucide-react';
-import { crearVenta } from '../../api/ventas';
+import { crearCheckoutTarjeta, crearVenta } from '../../api/ventas';
 import CatalogoProductosPOS from '../../components/ventas/CatalogoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
 import CobroModal from '../../components/ventas/CobroModal';
@@ -47,6 +47,7 @@ export default function PuntoVenta() {
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   const [errorCobro, setErrorCobro] = useState(null);
   const [ventaCompletada, setVentaCompletada] = useState(null);
+  const [checkoutTarjeta, setCheckoutTarjeta] = useState(null);
 
   const agregarAlCarritoValidandoStock = useCallback((producto) => {
     const existente = items.find((item) => item.clave === producto.carritoKey);
@@ -121,6 +122,7 @@ export default function PuntoVenta() {
 
   const abrirCobro = useCallback(() => {
     setErrorCobro(null);
+    setCheckoutTarjeta(null);
     setMostrandoCobro(true);
     setConfirmandoVenta(false);
   }, []);
@@ -145,39 +147,67 @@ export default function PuntoVenta() {
     if (procesandoCobro) return;
     setMostrandoCobro(false);
     setErrorCobro(null);
+    setCheckoutTarjeta(null);
   }, [procesandoCobro]);
 
-  const confirmarCobro = useCallback(async (montoRecibido) => {
+  const cambiarMetodoPago = useCallback((metodo) => {
+    setMetodoPago(metodo);
+    setCheckoutTarjeta(null);
     setErrorCobro(null);
+  }, []);
 
+  const construirPayloadBaseVenta = useCallback(() => {
     const detalles = items.map((item) => ({
       id_lote: Number(item.id_lote),
       cantidad: Number(item.cantidad),
     }));
 
     if (!sucursalActivaId) {
-      setErrorCobro('No hay una sucursal activa para registrar la venta.');
-      return;
+      throw new Error('No hay una sucursal activa para registrar la venta.');
     }
 
     if (detalles.some((detalle) => !detalle.id_lote || detalle.cantidad <= 0)) {
-      setErrorCobro('El carrito contiene productos sin lote valido.');
-      return;
+      throw new Error('El carrito contiene productos sin lote valido.');
     }
+
+    return {
+      id_sucursal: Number(sucursalActivaId),
+      id_cliente: clienteSeleccionado?.id_cliente ?? null,
+      detalles,
+    };
+  }, [clienteSeleccionado, items, sucursalActivaId]);
+
+  const generarCheckoutTarjeta = useCallback(async () => {
+    setErrorCobro(null);
+
+    try {
+      setProcesandoCobro(true);
+      const checkout = await crearCheckoutTarjeta(construirPayloadBaseVenta());
+      setCheckoutTarjeta(checkout);
+    } catch (err) {
+      setErrorCobro(err.message || 'No se pudo generar el cobro con tarjeta.');
+    } finally {
+      setProcesandoCobro(false);
+    }
+  }, [construirPayloadBaseVenta]);
+
+  const confirmarCobro = useCallback(async ({ montoRecibido, referenciaPago } = {}) => {
+    setErrorCobro(null);
 
     try {
       setProcesandoCobro(true);
       const venta = await crearVenta({
-        id_sucursal: Number(sucursalActivaId),
-        id_cliente: clienteSeleccionado?.id_cliente ?? null,
+        ...construirPayloadBaseVenta(),
         metodo_pago: metodoPago,
-        monto_recibido: montoRecibido,
-        detalles,
+        ...(metodoPago === 'efectivo'
+          ? { monto_recibido: montoRecibido }
+          : { referencia_pago: referenciaPago }),
       });
 
       vaciarCarrito();
       setMostrandoCobro(false);
       setVentaCompletada(venta);
+      setCheckoutTarjeta(null);
       refrescar();
     } catch (err) {
       setErrorCobro(err.message || 'No se pudo registrar la venta.');
@@ -185,11 +215,9 @@ export default function PuntoVenta() {
       setProcesandoCobro(false);
     }
   }, [
-    clienteSeleccionado,
-    items,
+    construirPayloadBaseVenta,
     metodoPago,
     refrescar,
-    sucursalActivaId,
     vaciarCarrito,
   ]);
 
@@ -226,7 +254,7 @@ export default function PuntoVenta() {
           total={total}
           cantidadTotal={cantidadTotal}
           metodoPago={metodoPago}
-          onMetodoPagoChange={setMetodoPago}
+          onMetodoPagoChange={cambiarMetodoPago}
           clientes={clientes}
           cargandoClientes={cargandoClientes}
           clienteSeleccionado={clienteSeleccionado}
@@ -271,9 +299,11 @@ export default function PuntoVenta() {
         total={total}
         metodoPago={metodoPago}
         clienteSeleccionado={clienteSeleccionado}
+        checkoutTarjeta={checkoutTarjeta}
         procesando={procesandoCobro}
         error={errorCobro}
         onClose={cerrarCobro}
+        onCrearCheckoutTarjeta={generarCheckoutTarjeta}
         onConfirm={confirmarCobro}
       />
 

@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PuntoVenta from './PuntoVenta';
-import { crearVenta } from '../../api/ventas';
+import { crearCheckoutTarjeta, crearVenta } from '../../api/ventas';
 
 const productoNormal = {
   carritoKey: 'lote-1-presentacion-1',
@@ -49,6 +49,7 @@ const refrescarCatalogo = vi.fn();
 const mockCrearCliente = vi.fn();
 
 vi.mock('../../api/ventas', () => ({
+  crearCheckoutTarjeta: vi.fn(),
   crearVenta: vi.fn(),
 }));
 
@@ -100,6 +101,15 @@ describe('PuntoVenta', () => {
       id_cliente: 2,
       nombre_cliente: 'Ana Pérez',
       observaciones: null,
+    });
+    crearCheckoutTarjeta.mockReset();
+    crearCheckoutTarjeta.mockResolvedValue({
+      id_checkout: 'ch_test_123',
+      checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+      estado: 'unpaid',
+      total: '17.00',
+      moneda: 'GTQ',
+      live_mode: false,
     });
     crearVenta.mockReset();
     crearVenta.mockResolvedValue({
@@ -236,5 +246,46 @@ describe('PuntoVenta', () => {
     expect(screen.getByText('Venta registrada')).toBeInTheDocument();
     expect(screen.getByText(/Comprobante #15/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprimir comprobante' })).toBeInTheDocument();
+  });
+
+  it('genera checkout y registra una venta con tarjeta confirmada', async () => {
+    carritoItems = [{ ...productoNormal, cantidad: 2, precioUnitario: 8.5 }];
+    crearVenta.mockResolvedValue({
+      id_venta: 16,
+      metodo_pago: 'tarjeta',
+      cambio: '0.00',
+    });
+    const user = userEvent.setup();
+    render(<PuntoVenta />);
+
+    await user.click(screen.getByRole('button', { name: 'Tarjeta' }));
+    await user.click(screen.getByRole('button', { name: 'Procesar venta' }));
+    await user.click(screen.getByRole('button', { name: 'Generar cobro con tarjeta' }));
+
+    await waitFor(() => {
+      expect(crearCheckoutTarjeta).toHaveBeenCalledWith({
+        id_sucursal: 1,
+        id_cliente: null,
+        detalles: [{ id_lote: 1, cantidad: 2 }],
+      });
+    });
+
+    expect(screen.getByText('ch_test_123')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Validar y registrar venta' }));
+
+    await waitFor(() => {
+      expect(crearVenta).toHaveBeenCalledWith({
+        id_sucursal: 1,
+        id_cliente: null,
+        metodo_pago: 'tarjeta',
+        referencia_pago: 'ch_test_123',
+        detalles: [{ id_lote: 1, cantidad: 2 }],
+      });
+    });
+
+    expect(vaciarCarrito).toHaveBeenCalled();
+    expect(refrescarCatalogo).toHaveBeenCalled();
+    expect(screen.getByText('Venta #16 registrada. Pago con tarjeta confirmado.')).toBeInTheDocument();
   });
 });
