@@ -1,5 +1,3 @@
-import { obtenerEtiquetaPresentacion } from '../constants/presentaciones.js';
-
 export const formatearQuetzales = (valor) =>
   new Intl.NumberFormat('es-GT', {
     style: 'currency',
@@ -43,8 +41,6 @@ export const construirCatalogoPOS = (inventario = [], lotes = []) => {
       nombre_generico: lote.nombre_generico || producto.nombre_generico,
       concentracion: lote.concentracion || producto.concentracion,
       presentacion: lote.presentacion || producto.presentacion,
-      presentacion_nombre: obtenerEtiquetaPresentacion(lote.presentacion || producto.presentacion)
-        || lote.presentacion_nombre,
       numero_lote: lote.numero_lote,
       fecha_vencimiento: lote.fecha_vencimiento,
       estado_vencimiento: lote.estado_vencimiento,
@@ -73,7 +69,6 @@ export const filtrarCatalogoPOS = (productos, busqueda) => {
     producto.nombre_generico,
     producto.concentracion,
     producto.codigo,
-    producto.presentacion_nombre,
-    obtenerEtiquetaPresentacion(producto.presentacion),
+    producto.presentacion,
   ].some((valor) => String(valor || '').toLocaleLowerCase('es').includes(termino)));
 };

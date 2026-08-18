@@ -23,9 +23,7 @@ describe('utilidades del punto de venta', () => {
       {
         id_lote: 10,
         id_producto: 1,
-        presentacion_ingreso: 5,
-        presentacion_nombre: 'Blíster',
-        factor_conversion: 10,
+        presentacion: 'Blíster',
         stock_actual: 40,
         precio_venta: '8.50',
         numero_lote: 'L-001',
@@ -35,9 +33,7 @@ describe('utilidades del punto de venta', () => {
       {
         id_lote: 11,
         id_producto: 1,
-        presentacion_ingreso: 6,
-        presentacion_nombre: 'Caja',
-        factor_conversion: 100,
+        presentacion: 'Caja',
         stock_actual: 0,
         precio_venta: '75.00',
         estado_vencimiento: 'normal',
@@ -45,8 +41,7 @@ describe('utilidades del punto de venta', () => {
       {
         id_lote: 12,
         id_producto: 2,
-        presentacion_ingreso: 7,
-        factor_conversion: 1,
+        presentacion: 'Unidad',
         stock_actual: 20,
         precio_venta: '2.00',
         estado_vencimiento: 'normal',
@@ -59,7 +54,7 @@ describe('utilidades del punto de venta', () => {
     expect(resultado[0]).toMatchObject({
       id_lote: 10,
       nombre_comercial: 'Paracetamol',
-      presentacion_nombre: 'Blíster',
+      presentacion: 'Blíster',
       stock_disponible: 40,
       precio_venta: 8.5,
       tiene_precio: true,
@@ -71,8 +66,7 @@ describe('utilidades del punto de venta', () => {
       {
         id_lote: 10,
         id_producto: 1,
-        presentacion_ingreso: 5,
-        factor_conversion: 1,
+        presentacion: 'Blíster',
         stock_actual: 5,
         precio_venta: null,
         estado_vencimiento: 'normal',
@@ -114,12 +108,12 @@ describe('utilidades del punto de venta', () => {
         codigo: 'MED-001',
         nombre_comercial: 'Paracetamol',
         nombre_generico: 'Acetaminofén',
-        presentacion_nombre: 'Blíster',
+        presentacion: 'Blíster',
       },
       {
         codigo: 'HIG-010',
         nombre_comercial: 'Pañales',
-        presentacion_nombre: 'Paquete',
+        presentacion: 'Paquete',
       },
     ];
 

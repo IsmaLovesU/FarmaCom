@@ -4,6 +4,7 @@ import { crearCheckoutTarjeta, crearVenta } from '../../api/ventas';
 import CatalogoProductosPOS from '../../components/ventas/CatalogoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
 import CobroModal from '../../components/ventas/CobroModal';
+import ComprobanteModal from '../../components/ventas/ComprobanteModal';
 import NuevoClienteModal from '../../components/ventas/NuevoClienteModal';
 import VencimientoAvisoModal from '../../components/ventas/VencimientoAvisoModal';
 import { useAuth } from '../../context/AuthContext';
@@ -45,6 +46,7 @@ export default function PuntoVenta() {
   const [mostrandoNuevoCliente, setMostrandoNuevoCliente] = useState(false);
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   const [errorCobro, setErrorCobro] = useState(null);
+  const [ventaCompletada, setVentaCompletada] = useState(null);
   const [checkoutTarjeta, setCheckoutTarjeta] = useState(null);
 
   const agregarAlCarritoValidandoStock = useCallback((producto) => {
@@ -204,11 +206,8 @@ export default function PuntoVenta() {
 
       vaciarCarrito();
       setMostrandoCobro(false);
+      setVentaCompletada(venta);
       setCheckoutTarjeta(null);
-      const detallePago = metodoPago === 'tarjeta'
-        ? ' Pago con tarjeta confirmado.'
-        : ` Cambio: Q${Number(venta.cambio || 0).toFixed(2)}.`;
-      setAviso(`Venta #${venta.id_venta} registrada.${detallePago}`);
       refrescar();
     } catch (err) {
       setErrorCobro(err.message || 'No se pudo registrar la venta.');
@@ -306,6 +305,12 @@ export default function PuntoVenta() {
         onClose={cerrarCobro}
         onCrearCheckoutTarjeta={generarCheckoutTarjeta}
         onConfirm={confirmarCobro}
+      />
+
+      <ComprobanteModal
+        isOpen={Boolean(ventaCompletada)}
+        venta={ventaCompletada}
+        onClose={() => setVentaCompletada(null)}
       />
     </div>
   );

@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, PlusCircle, X } from 'lucide-react';
 import { motion } from 'motion/react';
-import { PRESENTACIONES, SUFIJOS_CODIGO } from '../../../constants/presentaciones.js';
+import { sufijoPresentacion } from '../../../constants/presentaciones.js';
+import PresentacionQuickCreateModal from './PresentacionQuickCreateModal.jsx';
 
 const ESTADO_INICIAL = {
   nombre_comercial: '',
   nombre_generico: '',
   concentracion: '',
-  presentacion: '',
+  id_presentacion: '',
   id_categoria: '',
   id_casa: '',
   id_proveedor: '',
@@ -27,13 +28,17 @@ export default function ProductoFormModal({
   categorias,
   casas,
   proveedores,
+  presentaciones,
   cargandoDatos,
   guardando,
   errorFormulario,
   onClose,
   onSubmit,
+  onCrearPresentacion,
 }) {
   const [formulario, setFormulario] = useState(ESTADO_INICIAL);
+  const [mostrarNuevaPresentacion, setMostrarNuevaPresentacion] = useState(false);
+  const [creandoPresentacion, setCreandoPresentacion] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -43,7 +48,7 @@ export default function ProductoFormModal({
         nombre_comercial: producto.nombre_comercial || '',
         nombre_generico: producto.nombre_generico || '',
         concentracion: producto.concentracion || '',
-        presentacion: producto.presentacion || '',
+        id_presentacion: String(producto.id_presentacion || ''),
         id_categoria: String(producto.id_categoria || ''),
         id_casa: String(producto.id_casa || ''),
         id_proveedor: String(producto.id_proveedor || ''),
@@ -63,6 +68,17 @@ export default function ProductoFormModal({
 
   if (!isOpen || typeof document === 'undefined') return null;
 
+  const crearPresentacion = async (datos) => {
+    try {
+      setCreandoPresentacion(true);
+      const nueva = await onCrearPresentacion(datos);
+      setFormulario((prev) => ({ ...prev, id_presentacion: String(nueva.id_presentacion) }));
+      setMostrarNuevaPresentacion(false);
+    } finally {
+      setCreandoPresentacion(false);
+    }
+  };
+
   const manejarCambio = (e) => {
     const { name, value, type, checked } = e.target;
     setFormulario((prev) => ({
@@ -80,7 +96,10 @@ export default function ProductoFormModal({
     onSubmit(formulario);
   };
 
-  const sufijo = SUFIJOS_CODIGO[formulario.presentacion] || '';
+  const presentacionSeleccionada = (presentaciones || []).find(
+    (p) => String(p.id_presentacion) === formulario.id_presentacion,
+  );
+  const sufijo = sufijoPresentacion(presentacionSeleccionada?.nombre);
   const codigoMostrado = modoEdicion && producto?.codigo
     ? producto.codigo
     : `${codigoSugerido || 'MED-AUTO'}${sufijo ? `-${sufijo}` : ''}`;
@@ -195,21 +214,33 @@ export default function ProductoFormModal({
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-semibold text-slate-700">
-              Presentación <span className="text-error">*</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="id_presentacion" className="text-sm font-semibold text-slate-700">
+                Presentación <span className="text-error">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setMostrarNuevaPresentacion(true)}
+                className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+              >
+                <PlusCircle className="h-3.5 w-3.5" />
+                Nueva presentación
+              </button>
+            </div>
             <div className="relative">
               <select
-                name="presentacion"
-                value={formulario.presentacion}
+                id="id_presentacion"
+                name="id_presentacion"
+                value={formulario.id_presentacion}
                 onChange={manejarCambio}
                 required
-                className="w-full appearance-none rounded-xl border border-slate-300 px-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                disabled={cargandoDatos}
+                className="w-full appearance-none rounded-xl border border-slate-300 px-4 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">Seleccionar...</option>
-                {PRESENTACIONES.map((p) => (
-                  <option key={p.valor} value={p.valor}>
-                    {p.etiqueta}
+                {(presentaciones || []).map((p) => (
+                  <option key={p.id_presentacion} value={p.id_presentacion}>
+                    {p.nombre}
                   </option>
                 ))}
               </select>
@@ -385,6 +416,13 @@ export default function ProductoFormModal({
           </div>
         </form>
       </motion.div>
+
+      <PresentacionQuickCreateModal
+        isOpen={mostrarNuevaPresentacion}
+        guardando={creandoPresentacion}
+        onClose={() => setMostrarNuevaPresentacion(false)}
+        onCrear={crearPresentacion}
+      />
     </div>,
     document.body,
   );

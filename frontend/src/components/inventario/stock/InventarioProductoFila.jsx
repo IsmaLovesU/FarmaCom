@@ -3,7 +3,7 @@ import { ChevronDown, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import EstadoBadge from './EstadoBadge.jsx';
 import LotesDeProductoTable from './LotesDeProductoTable.jsx';
-import { obtenerEtiquetaPresentacion, obtenerPluralPresentacion } from '../../../constants/presentaciones.js';
+import { pluralizarPresentacion } from '../../../constants/presentaciones.js';
 
 export default function InventarioProductoFila({
   producto,
@@ -52,7 +52,7 @@ export default function InventarioProductoFila({
             <p className="font-bold text-on-surface truncate">{producto.nombre_comercial}</p>
             {producto.presentacion && (
               <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary">
-                {obtenerEtiquetaPresentacion(producto.presentacion)}
+                {producto.presentacion}
               </span>
             )}
           </div>
@@ -82,7 +82,7 @@ export default function InventarioProductoFila({
             {stockTotal.toLocaleString('es-GT')}
           </span>
           <p className="text-[10px] text-slate-400 font-medium">
-            {obtenerPluralPresentacion(producto.presentacion)}
+            {pluralizarPresentacion(producto.presentacion)}
           </p>
         </div>
 
