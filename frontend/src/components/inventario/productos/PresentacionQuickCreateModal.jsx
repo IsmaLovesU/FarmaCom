@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import { PackagePlus, X } from 'lucide-react';
+import { PackagePlus, Pencil, X } from 'lucide-react';
 
-export default function PresentacionQuickCreateModal({ isOpen, guardando, onClose, onCrear }) {
+export default function PresentacionQuickCreateModal({
+  isOpen,
+  guardando,
+  presentacion = null,
+  onClose,
+  onGuardar,
+}) {
   const [nombre, setNombre] = useState('');
   const [error, setError] = useState(null);
+  const esEdicion = Boolean(presentacion);
 
   useEffect(() => {
     if (isOpen) {
-      setNombre('');
+      setNombre(presentacion?.nombre || '');
       setError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, presentacion]);
 
   if (!isOpen || typeof document === 'undefined') return null;
 
@@ -26,9 +33,12 @@ export default function PresentacionQuickCreateModal({ isOpen, guardando, onClos
 
     try {
       setError(null);
-      await onCrear({ nombre: nombreLimpio });
+      await onGuardar({ nombre: nombreLimpio });
     } catch (err) {
-      setError(err.response?.data?.mensaje || 'No se pudo crear la presentación.');
+      setError(
+        err.response?.data?.mensaje
+          || `No se pudo ${esEdicion ? 'actualizar' : 'crear'} la presentación.`,
+      );
     }
   };
 
@@ -42,10 +52,12 @@ export default function PresentacionQuickCreateModal({ isOpen, guardando, onClos
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div className="flex items-center gap-2">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <PackagePlus className="h-4 w-4" />
+              {esEdicion
+                ? <Pencil className="h-4 w-4" />
+                : <PackagePlus className="h-4 w-4" />}
             </span>
             <h3 className="font-headline text-base font-extrabold text-primary">
-              Nueva presentación
+              {esEdicion ? 'Editar presentación' : 'Nueva presentación'}
             </h3>
           </div>
           <button
@@ -91,7 +103,9 @@ export default function PresentacionQuickCreateModal({ isOpen, guardando, onClos
               disabled={guardando}
               className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
-              {guardando ? 'Guardando...' : 'Crear presentación'}
+              {guardando
+                ? 'Guardando...'
+                : esEdicion ? 'Guardar cambios' : 'Crear presentación'}
             </button>
           </div>
         </form>

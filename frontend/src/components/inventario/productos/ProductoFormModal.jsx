@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, PlusCircle, X } from 'lucide-react';
+import { ChevronDown, Pencil, PlusCircle, Trash2, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { sufijoPresentacion } from '../../../constants/presentaciones.js';
 import PresentacionQuickCreateModal from './PresentacionQuickCreateModal.jsx';
+import PresentacionDeleteModal from './PresentacionDeleteModal.jsx';
 
 const ESTADO_INICIAL = {
   nombre_comercial: '',
@@ -35,13 +36,25 @@ export default function ProductoFormModal({
   onClose,
   onSubmit,
   onCrearPresentacion,
+  onActualizarPresentacion,
+  onEliminarPresentacion,
+  puedeGestionarPresentaciones = true,
+  puedeEliminarPresentaciones = true,
 }) {
   const [formulario, setFormulario] = useState(ESTADO_INICIAL);
-  const [mostrarNuevaPresentacion, setMostrarNuevaPresentacion] = useState(false);
-  const [creandoPresentacion, setCreandoPresentacion] = useState(false);
+  const [mostrarFormularioPresentacion, setMostrarFormularioPresentacion] = useState(false);
+  const [presentacionEditando, setPresentacionEditando] = useState(null);
+  const [presentacionAEliminar, setPresentacionAEliminar] = useState(null);
+  const [procesandoPresentacion, setProcesandoPresentacion] = useState(false);
+  const [errorEliminarPresentacion, setErrorEliminarPresentacion] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
+
+    setMostrarFormularioPresentacion(false);
+    setPresentacionEditando(null);
+    setPresentacionAEliminar(null);
+    setErrorEliminarPresentacion(null);
 
     if (modoEdicion && producto) {
       setFormulario({
@@ -68,14 +81,54 @@ export default function ProductoFormModal({
 
   if (!isOpen || typeof document === 'undefined') return null;
 
-  const crearPresentacion = async (datos) => {
+  const guardarPresentacion = async (datos) => {
     try {
-      setCreandoPresentacion(true);
-      const nueva = await onCrearPresentacion(datos);
-      setFormulario((prev) => ({ ...prev, id_presentacion: String(nueva.id_presentacion) }));
-      setMostrarNuevaPresentacion(false);
+      setProcesandoPresentacion(true);
+      const guardada = presentacionEditando
+        ? await onActualizarPresentacion(presentacionEditando.id_presentacion, datos)
+        : await onCrearPresentacion(datos);
+      setFormulario((prev) => ({
+        ...prev,
+        id_presentacion: String(guardada.id_presentacion),
+      }));
+      setMostrarFormularioPresentacion(false);
+      setPresentacionEditando(null);
     } finally {
-      setCreandoPresentacion(false);
+      setProcesandoPresentacion(false);
+    }
+  };
+
+  const abrirCreacionPresentacion = () => {
+    setPresentacionEditando(null);
+    setMostrarFormularioPresentacion(true);
+  };
+
+  const abrirEdicionPresentacion = () => {
+    if (!presentacionSeleccionada) return;
+    setPresentacionEditando(presentacionSeleccionada);
+    setMostrarFormularioPresentacion(true);
+  };
+
+  const solicitarEliminarPresentacion = () => {
+    if (!presentacionSeleccionada) return;
+    setErrorEliminarPresentacion(null);
+    setPresentacionAEliminar(presentacionSeleccionada);
+  };
+
+  const confirmarEliminarPresentacion = async () => {
+    if (!presentacionAEliminar) return;
+    try {
+      setProcesandoPresentacion(true);
+      setErrorEliminarPresentacion(null);
+      await onEliminarPresentacion(presentacionAEliminar.id_presentacion);
+      setFormulario((prev) => ({ ...prev, id_presentacion: '' }));
+      setPresentacionAEliminar(null);
+    } catch (err) {
+      setErrorEliminarPresentacion(
+        err.response?.data?.mensaje || 'No se pudo eliminar la presentación.',
+      );
+    } finally {
+      setProcesandoPresentacion(false);
     }
   };
 
@@ -99,6 +152,7 @@ export default function ProductoFormModal({
   const presentacionSeleccionada = (presentaciones || []).find(
     (p) => String(p.id_presentacion) === formulario.id_presentacion,
   );
+  const productosAsociados = Number(presentacionSeleccionada?.productos_asociados || 0);
   const sufijo = sufijoPresentacion(presentacionSeleccionada?.nombre);
   const codigoMostrado = modoEdicion && producto?.codigo
     ? producto.codigo
@@ -197,35 +251,63 @@ export default function ProductoFormModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-slate-700">
-                Concentración <span className="text-error">*</span>
+              <label htmlFor="concentracion" className="text-sm font-semibold text-slate-700">
+                Concentración <span className="font-normal text-slate-500">(opcional)</span>
               </label>
               <input
+                id="concentracion"
                 type="text"
                 name="concentracion"
                 value={formulario.concentracion}
                 onChange={manejarCambio}
                 placeholder="Ej. 500 mg"
                 maxLength={50}
-                required
                 className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <label htmlFor="id_presentacion" className="text-sm font-semibold text-slate-700">
                 Presentación <span className="text-error">*</span>
               </label>
-              <button
-                type="button"
-                onClick={() => setMostrarNuevaPresentacion(true)}
-                className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-              >
-                <PlusCircle className="h-3.5 w-3.5" />
-                Nueva presentación
-              </button>
+              <div className="flex items-center gap-2">
+                {puedeGestionarPresentaciones && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={abrirCreacionPresentacion}
+                      className="flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      Nueva presentación
+                    </button>
+                    <button
+                      type="button"
+                      onClick={abrirEdicionPresentacion}
+                      disabled={!presentacionSeleccionada}
+                      className="rounded-md p-1 text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-35"
+                      aria-label="Editar presentación seleccionada"
+                      title="Editar presentación seleccionada"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                )}
+                {puedeEliminarPresentaciones && (
+                  <button
+                    type="button"
+                    onClick={solicitarEliminarPresentacion}
+                    disabled={!presentacionSeleccionada}
+                    className="rounded-md p-1 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-35"
+                    aria-label="Eliminar presentación seleccionada"
+                    title="Eliminar presentación seleccionada"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="relative">
               <select
@@ -418,10 +500,29 @@ export default function ProductoFormModal({
       </motion.div>
 
       <PresentacionQuickCreateModal
-        isOpen={mostrarNuevaPresentacion}
-        guardando={creandoPresentacion}
-        onClose={() => setMostrarNuevaPresentacion(false)}
-        onCrear={crearPresentacion}
+        isOpen={mostrarFormularioPresentacion}
+        guardando={procesandoPresentacion}
+        presentacion={presentacionEditando}
+        onClose={() => {
+          if (procesandoPresentacion) return;
+          setMostrarFormularioPresentacion(false);
+          setPresentacionEditando(null);
+        }}
+        onGuardar={guardarPresentacion}
+      />
+
+      <PresentacionDeleteModal
+        isOpen={Boolean(presentacionAEliminar)}
+        presentacion={presentacionAEliminar}
+        productosAsociados={productosAsociados}
+        eliminando={procesandoPresentacion}
+        error={errorEliminarPresentacion}
+        onClose={() => {
+          if (procesandoPresentacion) return;
+          setPresentacionAEliminar(null);
+          setErrorEliminarPresentacion(null);
+        }}
+        onConfirm={confirmarEliminarPresentacion}
       />
     </div>,
     document.body,

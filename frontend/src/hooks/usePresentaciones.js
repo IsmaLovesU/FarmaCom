@@ -23,9 +23,38 @@ export default function usePresentaciones() {
 
   const crear = async (payload) => {
     const { data } = await api.post('/presentaciones', payload);
-    setPresentaciones((prev) => [...prev, data].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+    const nueva = { ...data, productos_asociados: data.productos_asociados ?? 0 };
+    setPresentaciones((prev) => [...prev, nueva].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+    return nueva;
+  };
+
+  const actualizar = async (id, payload) => {
+    const { data } = await api.put(`/presentaciones/${id}`, payload);
+    setPresentaciones((prev) => prev
+      .map((presentacion) => {
+        if (presentacion.id_presentacion !== id) return presentacion;
+        return {
+          ...presentacion,
+          ...data,
+          productos_asociados: data.productos_asociados ?? presentacion.productos_asociados ?? 0,
+        };
+      })
+      .sort((a, b) => a.nombre.localeCompare(b.nombre)));
     return data;
   };
 
-  return { presentaciones, cargando, error, crear, refrescar: obtenerTodas };
+  const eliminar = async (id) => {
+    await api.delete(`/presentaciones/${id}`);
+    setPresentaciones((prev) => prev.filter((p) => p.id_presentacion !== id));
+  };
+
+  return {
+    presentaciones,
+    cargando,
+    error,
+    crear,
+    actualizar,
+    eliminar,
+    refrescar: obtenerTodas,
+  };
 }
