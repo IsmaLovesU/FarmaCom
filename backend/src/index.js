@@ -39,6 +39,7 @@ const InventarioRoutes = require('./routes/InventarioRoutes');
 const clienteRoutes = require('./routes/ClienteRoutes');
 const ventaRoutes = require('./routes/VentaRoutes');
 const presentacionRoutes = require('./routes/PresentacionRoutes');
+const cajaRoutes = require('./routes/CajaRoutes');
 
 app.get('/api/ping', (req, res) => {
     res.json({ status: 'ok', message: 'pong' });
@@ -57,6 +58,7 @@ app.use('/api/lotes', LoteRoutes);
 app.use('/api/clientes', clienteRoutes);
 app.use('/api/ventas', ventaRoutes);
 app.use('/api/presentaciones', presentacionRoutes);
+app.use('/api/cajas', cajaRoutes);
 app.use('/api/sucursales/:id_sucursal/inventario', InventarioRoutes);
 // Rutas anidadas: GET y POST bajo /api/sucursales/:id_sucursal/telefonos|correos
 app.use('/api/sucursales/:id_sucursal/telefonos', telefonoSucursalRoutes);
