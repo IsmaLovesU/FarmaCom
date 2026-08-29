@@ -51,6 +51,85 @@ class ProductoDAO {
     return rows;
   }
 
+  async autocompletarParaPOS(busqueda, id_sucursal, limite) {
+    // LIKE interpreta %, _ y \\ como comodines. Se escapan para que la busqueda
+    // siempre trate la entrada del usuario como texto literal.
+    const patronBusqueda = busqueda.replace(/[\\%_]/g, '\\$&');
+    const query = `
+      WITH productos_coincidentes AS (
+        SELECT
+          p.id_producto,
+          p.codigo,
+          p.nombre_comercial,
+          p.nombre_generico,
+          p.concentracion,
+          p.aplica_mayoreo,
+          pre.nombre AS presentacion,
+          TRANSLATE(
+            LOWER(CONCAT_WS(' ', p.codigo, p.nombre_comercial, p.nombre_generico,
+              p.concentracion, pre.nombre)),
+            'áéíóúüñ',
+            'aeiouun'
+          ) AS texto_busqueda
+        FROM producto p
+        JOIN presentacion pre ON pre.id_presentacion = p.id_presentacion
+        WHERE p.activo = TRUE
+      ),
+      termino AS (
+        SELECT TRANSLATE(LOWER($1), 'áéíóúüñ', 'aeiouun') AS valor
+      )
+      SELECT
+        p.id_producto,
+        lote_pos.id_lote,
+        p.codigo,
+        p.nombre_comercial,
+        p.nombre_generico,
+        p.concentracion,
+        p.presentacion,
+        lote_pos.numero_lote,
+        lote_pos.fecha_vencimiento,
+        lote_pos.stock_actual AS stock_disponible,
+        lote_pos.precio_venta,
+        p.aplica_mayoreo,
+        lote_pos.precio_mayoreo,
+        lote_pos.cantidad_mayoreo
+      FROM productos_coincidentes p
+      CROSS JOIN termino t
+      JOIN LATERAL (
+        SELECT
+          l.id_lote,
+          l.numero_lote,
+          l.fecha_vencimiento,
+          l.stock_actual,
+          l.precio_venta,
+          l.precio_mayoreo,
+          l.cantidad_mayoreo
+        FROM lote l
+        WHERE l.id_producto = p.id_producto
+          AND l.id_sucursal = $2
+          AND l.stock_actual > 0
+          AND l.precio_venta > 0
+          AND l.fecha_vencimiento >= CURRENT_DATE
+        ORDER BY l.fecha_vencimiento ASC, l.id_lote ASC
+        LIMIT 1
+      ) lote_pos ON TRUE
+      WHERE p.texto_busqueda LIKE '%' || TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\'
+      ORDER BY
+        CASE
+          WHEN TRANSLATE(LOWER(p.codigo), 'áéíóúüñ', 'aeiouun') = t.valor THEN 0
+          WHEN TRANSLATE(LOWER(p.codigo), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 1
+          WHEN TRANSLATE(LOWER(p.nombre_comercial), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 2
+          WHEN TRANSLATE(LOWER(p.nombre_generico), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 3
+          ELSE 4
+        END,
+        p.nombre_comercial ASC,
+        p.id_producto ASC
+      LIMIT $3
+    `;
+    const { rows } = await pool.query(query, [busqueda, id_sucursal, limite, patronBusqueda]);
+    return rows;
+  }
+
   async obtenerPorId(id_producto) {
     const query = `
       SELECT

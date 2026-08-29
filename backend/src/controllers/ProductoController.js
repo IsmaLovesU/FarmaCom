@@ -24,6 +24,24 @@ const obtenerTodos = async (req, res) => {
   }
 };
 
+const autocompletarParaPOS = async (req, res) => {
+  const errores = validationResult(req);
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ errores: errores.array() });
+  }
+
+  try {
+    const productos = await ProductoService.autocompletarParaPOS({
+      busqueda: req.query.busqueda,
+      limite: req.query.limite,
+      id_sucursal: req.usuario.id_sucursal,
+    });
+    return res.status(200).json(productos);
+  } catch (error) {
+    return res.status(error.status || 500).json({ mensaje: error.message });
+  }
+};
+
 const obtenerPorId = async (req, res) => {
   try {
     const producto = await ProductoService.obtenerPorId(Number(req.params.id));
@@ -82,4 +100,12 @@ const cambiarEstado = async (req, res) => {
   }
 };
 
-module.exports = { crear, obtenerTodos, obtenerPorId, actualizar, cambiarAplicaMayoreo, cambiarEstado };
+module.exports = {
+  crear,
+  obtenerTodos,
+  autocompletarParaPOS,
+  obtenerPorId,
+  actualizar,
+  cambiarAplicaMayoreo,
+  cambiarEstado,
+};

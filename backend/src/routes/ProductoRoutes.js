@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const ProductoController      = require('../controllers/ProductoController');
 const PromocionController     = require('../controllers/PromocionController');
 const verificarToken          = require('../middlewares/verificarToken');
@@ -170,6 +170,17 @@ const validarCambioMayoreo = [
     .toBoolean(),
 ];
 
+const validarAutocompletado = [
+  query('busqueda')
+    .trim()
+    .notEmpty().withMessage('busqueda es requerida')
+    .isLength({ max: 100 }).withMessage('busqueda no puede superar los 100 caracteres'),
+  query('limite')
+    .optional()
+    .isInt({ min: 1, max: 20 }).withMessage('limite debe ser un entero entre 1 y 20')
+    .toInt(),
+];
+
 // ── validadores — Promocion (anidados) ────────────────────────────────────────
 
 const validarCreacionPromocion = [
@@ -201,6 +212,15 @@ router.get('/',
   verificarToken,
   verificarRol('dueno', 'administrador', 'dependiente'),
   ProductoController.obtenerTodos,
+);
+
+// GET /api/productos/autocompletar?busqueda=...&limite=10
+// Debe declararse antes de /:id para evitar que Express interprete la ruta como un id.
+router.get('/autocompletar',
+  verificarToken,
+  verificarRol('dueno', 'administrador', 'dependiente'),
+  validarAutocompletado,
+  ProductoController.autocompletarParaPOS,
 );
 
 // GET    /api/productos/:id
