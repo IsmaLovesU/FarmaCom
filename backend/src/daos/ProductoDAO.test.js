@@ -44,3 +44,23 @@ describe('ProductoDAO - concentración opcional', () => {
     expect(valores[13]).toBe(false);
   });
 });
+
+describe('ProductoDAO - autocompletado para POS', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('filtra productos y selecciona un lote vendible de la sucursal', async () => {
+    pool.query.mockResolvedValue({ rows: [{ id_producto: 3, id_lote: 9 }] });
+
+    const resultado = await ProductoDAO.autocompletarParaPOS('Pará_50%', 2, 8);
+
+    const [consulta, valores] = pool.query.mock.calls[0];
+    expect(consulta).toContain('p.activo = TRUE');
+    expect(consulta).toContain('l.id_sucursal = $2');
+    expect(consulta).toContain('l.stock_actual > 0');
+    expect(consulta).toContain('l.precio_venta > 0');
+    expect(consulta).toContain('l.fecha_vencimiento >= CURRENT_DATE');
+    expect(consulta).toContain('ORDER BY l.fecha_vencimiento ASC');
+    expect(valores).toEqual(['Pará_50%', 2, 8, 'Pará\\_50\\%']);
+    expect(resultado).toEqual([{ id_producto: 3, id_lote: 9 }]);
+  });
+});

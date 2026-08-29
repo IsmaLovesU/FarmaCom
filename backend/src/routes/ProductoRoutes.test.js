@@ -1,4 +1,7 @@
-jest.mock('../middlewares/verificarToken', () => (_req, _res, next) => next());
+jest.mock('../middlewares/verificarToken', () => (req, _res, next) => {
+  req.usuario = { id_usuario: 8, id_sucursal: 3, rol: 'dependiente' };
+  next();
+});
 jest.mock('../middlewares/verificarRol', () => () => (_req, _res, next) => next());
 jest.mock('../services/ProductoService');
 jest.mock('../controllers/PromocionController');
@@ -70,5 +73,45 @@ describe('ProductoRoutes - concentración opcional', () => {
       'La concentración no puede superar los 50 caracteres',
     );
     expect(ProductoService.crearProducto).not.toHaveBeenCalled();
+  });
+});
+
+describe('ProductoRoutes - autocompletado para POS', () => {
+  beforeEach(() => {
+    ProductoService.autocompletarParaPOS.mockResolvedValue([
+      { id_producto: 5, id_lote: 12, nombre_comercial: 'Paracetamol' },
+    ]);
+  });
+
+  it('busca productos usando la sucursal del usuario autenticado', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/productos/autocompletar')
+      .query({ busqueda: '  para  ', limite: 5 });
+
+    expect(respuesta.status).toBe(200);
+    expect(ProductoService.autocompletarParaPOS).toHaveBeenCalledWith({
+      busqueda: 'para',
+      limite: 5,
+      id_sucursal: 3,
+    });
+    expect(respuesta.body[0].id_lote).toBe(12);
+  });
+
+  it('rechaza una búsqueda vacía', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/productos/autocompletar')
+      .query({ busqueda: '   ' });
+
+    expect(respuesta.status).toBe(400);
+    expect(ProductoService.autocompletarParaPOS).not.toHaveBeenCalled();
+  });
+
+  it('rechaza límites mayores a 20', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/productos/autocompletar')
+      .query({ busqueda: 'para', limite: 21 });
+
+    expect(respuesta.status).toBe(400);
+    expect(ProductoService.autocompletarParaPOS).not.toHaveBeenCalled();
   });
 });

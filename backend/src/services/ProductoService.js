@@ -56,6 +56,25 @@ const obtenerTodos = async () => {
   return await ProductoDAO.obtenerTodos();
 };
 
+const autocompletarParaPOS = async ({ busqueda, id_sucursal, limite = 10 }) => {
+  const termino = typeof busqueda === 'string' ? busqueda.trim() : '';
+  if (!termino) lanzarError('La busqueda es requerida', 400);
+  if (!Number.isInteger(id_sucursal) || id_sucursal <= 0) {
+    lanzarError('El usuario no tiene una sucursal valida asignada', 403);
+  }
+
+  const limiteNormalizado = limite === undefined ? 10 : Number(limite);
+  if (!Number.isInteger(limiteNormalizado) || limiteNormalizado < 1 || limiteNormalizado > 20) {
+    lanzarError('El limite debe ser un entero entre 1 y 20', 400);
+  }
+
+  return await ProductoDAO.autocompletarParaPOS(
+    termino,
+    id_sucursal,
+    limiteNormalizado,
+  );
+};
+
 const obtenerPorId = async (id_producto) => {
   const producto = await ProductoDAO.obtenerPorId(id_producto);
   if (!producto) lanzarError('Producto no encontrado', 404);
@@ -153,6 +172,7 @@ const reactivarProducto = async (id_producto) => {
 module.exports = {
   crearProducto,
   obtenerTodos,
+  autocompletarParaPOS,
   obtenerPorId,
   actualizarProducto,
   cambiarAplicaMayoreo,
