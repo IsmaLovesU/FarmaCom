@@ -86,3 +86,38 @@ describe('ProductoService - concentración opcional', () => {
     });
   });
 });
+
+describe('ProductoService - autocompletado para POS', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('normaliza la búsqueda y usa diez resultados por defecto', async () => {
+    ProductoDAO.autocompletarParaPOS.mockResolvedValue([{ id_producto: 2 }]);
+
+    const resultado = await ProductoService.autocompletarParaPOS({
+      busqueda: '  acetaminofen  ',
+      id_sucursal: 4,
+    });
+
+    expect(ProductoDAO.autocompletarParaPOS).toHaveBeenCalledWith('acetaminofen', 4, 10);
+    expect(resultado).toEqual([{ id_producto: 2 }]);
+  });
+
+  it('rechaza usuarios sin una sucursal válida', async () => {
+    await expect(ProductoService.autocompletarParaPOS({
+      busqueda: 'acetaminofen',
+      id_sucursal: null,
+    })).rejects.toMatchObject({ status: 403 });
+
+    expect(ProductoDAO.autocompletarParaPOS).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un límite fuera del rango permitido', async () => {
+    await expect(ProductoService.autocompletarParaPOS({
+      busqueda: 'acetaminofen',
+      id_sucursal: 4,
+      limite: 25,
+    })).rejects.toMatchObject({ status: 400 });
+
+    expect(ProductoDAO.autocompletarParaPOS).not.toHaveBeenCalled();
+  });
+});
