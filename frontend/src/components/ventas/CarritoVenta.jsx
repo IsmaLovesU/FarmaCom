@@ -111,7 +111,7 @@ export default function CarritoVenta({
               El carrito está vacío
             </p>
             <p className="mt-1 max-w-xs text-sm text-slate-400">
-              Selecciona un producto del catálogo para iniciar la venta.
+              Busca y selecciona un producto para iniciar la venta.
             </p>
           </div>
         ) : (
