@@ -90,6 +90,8 @@ class ProductoDAO {
         lote_pos.fecha_vencimiento,
         lote_pos.stock_actual AS stock_disponible,
         lote_pos.precio_venta,
+        lote_pos.estado_stock,
+        lote_pos.estado_vencimiento,
         p.aplica_mayoreo,
         lote_pos.precio_mayoreo,
         lote_pos.cantidad_mayoreo
@@ -102,9 +104,11 @@ class ProductoDAO {
           l.fecha_vencimiento,
           l.stock_actual,
           l.precio_venta,
+          l.estado_stock,
+          l.estado_vencimiento,
           l.precio_mayoreo,
           l.cantidad_mayoreo
-        FROM lote l
+        FROM v_lote_estado l
         WHERE l.id_producto = p.id_producto
           AND l.id_sucursal = $2
           AND l.stock_actual > 0
