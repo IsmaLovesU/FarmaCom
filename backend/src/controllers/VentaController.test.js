@@ -84,4 +84,23 @@ describe('VentaController', () => {
       mensaje: 'Stock insuficiente para el lote 3',
     });
   });
+
+  it('responde con las métricas de ventas solicitadas', async () => {
+    const metricas = {
+      ingresos_totales: '450.00',
+      total_ventas: 9,
+      top_productos: [],
+    };
+    const query = { id_sucursal: 1, limite: 5 };
+    const usuario = { id_usuario: 7, id_sucursal: 1, rol: 'dependiente' };
+    VentaService.obtenerMetricas.mockResolvedValue(metricas);
+    const req = { query, usuario };
+    const res = mockResponse();
+
+    await VentaController.obtenerMetricas(req, res);
+
+    expect(VentaService.obtenerMetricas).toHaveBeenCalledWith(query, usuario);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(metricas);
+  });
 });
