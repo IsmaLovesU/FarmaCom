@@ -67,6 +67,14 @@ router.get(
 );
 
 router.get(
+  '/ventas/metodos-pago',
+  verificarToken,
+  rolesReportes,
+  validarFiltrosReporte,
+  ReporteController.obtenerMetodosPago,
+);
+
+router.get(
   '/productos/top',
   verificarToken,
   rolesReportes,

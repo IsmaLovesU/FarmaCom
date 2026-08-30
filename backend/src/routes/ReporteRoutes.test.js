@@ -29,6 +29,7 @@ describe('ReporteRoutes - resumen de ventas', () => {
     });
     ReporteService.obtenerTopProductos.mockResolvedValue([]);
     ReporteService.obtenerSerieVentas.mockResolvedValue([]);
+    ReporteService.obtenerMetodosPago.mockResolvedValue([]);
   });
 
   it('rechaza el acceso de un dependiente', async () => {
@@ -105,6 +106,23 @@ describe('ReporteRoutes - resumen de ventas', () => {
 
     expect(respuesta.status).toBe(400);
     expect(ReporteService.obtenerSerieVentas).not.toHaveBeenCalled();
+  });
+
+  it('valida y normaliza los filtros de métodos de pago', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/reportes/ventas/metodos-pago')
+      .query({
+        id_sucursal: 2,
+        fecha_desde: '2026-08-01',
+        fecha_hasta: '2026-08-31',
+      });
+
+    expect(respuesta.status).toBe(200);
+    expect(ReporteService.obtenerMetodosPago).toHaveBeenCalledWith({
+      id_sucursal: 2,
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+    });
   });
 
   it('valida y normaliza los filtros del top de productos', async () => {

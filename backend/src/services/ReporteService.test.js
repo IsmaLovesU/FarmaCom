@@ -86,6 +86,24 @@ describe('ReporteService', () => {
     expect(ReporteDAO.obtenerSerieVentas).not.toHaveBeenCalled();
   });
 
+  it('normaliza la sucursal al solicitar métodos de pago', async () => {
+    const metodos = [{ metodo_pago: 'efectivo', total_ventas: 3 }];
+    ReporteDAO.obtenerMetodosPago.mockResolvedValue(metodos);
+
+    const resultado = await ReporteService.obtenerMetodosPago({
+      id_sucursal: '2',
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+    });
+
+    expect(ReporteDAO.obtenerMetodosPago).toHaveBeenCalledWith({
+      id_sucursal: 2,
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+    });
+    expect(resultado).toEqual(metodos);
+  });
+
   it('aplica los valores predeterminados al top de productos', async () => {
     const productos = [{ id_producto: 1, cantidad_vendida: 10 }];
     ReporteDAO.obtenerTopProductos.mockResolvedValue(productos);

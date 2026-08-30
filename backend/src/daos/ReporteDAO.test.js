@@ -94,6 +94,63 @@ describe('ReporteDAO', () => {
     expect(valores).toEqual([null, '2026-08-01', '2026-08-31']);
   });
 
+  it('calcula ventas, ingresos y porcentajes por método de pago', async () => {
+    const metodos = [
+      {
+        metodo_pago: 'efectivo',
+        total_ventas: 6,
+        ingresos: '300.00',
+        porcentaje_ingresos: '60.00',
+      },
+      {
+        metodo_pago: 'tarjeta',
+        total_ventas: 4,
+        ingresos: '200.00',
+        porcentaje_ingresos: '40.00',
+      },
+    ];
+    pool.query.mockResolvedValue({ rows: metodos });
+
+    const resultado = await ReporteDAO.obtenerMetodosPago({
+      id_sucursal: 2,
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+    });
+
+    const [consulta, valores] = pool.query.mock.calls[0];
+    expect(consulta).toContain('efectivo');
+    expect(consulta).toContain('tarjeta');
+    expect(consulta).toContain('completada');
+    expect(consulta).toContain('America/Guatemala');
+    expect(consulta).toContain('porcentaje_ingresos');
+    expect(consulta).toContain('WHEN it.total = 0');
+    expect(valores).toEqual([2, '2026-08-01', '2026-08-31']);
+    expect(resultado).toEqual(metodos);
+  });
+
+  it('conserva ambos métodos cuando no existen ventas', async () => {
+    const metodos = [
+      {
+        metodo_pago: 'efectivo',
+        total_ventas: 0,
+        ingresos: '0.00',
+        porcentaje_ingresos: '0.00',
+      },
+      {
+        metodo_pago: 'tarjeta',
+        total_ventas: 0,
+        ingresos: '0.00',
+        porcentaje_ingresos: '0.00',
+      },
+    ];
+    pool.query.mockResolvedValue({ rows: metodos });
+
+    const resultado = await ReporteDAO.obtenerMetodosPago();
+
+    expect(pool.query.mock.calls[0][1]).toEqual([null, null, null]);
+    expect(resultado).toEqual(metodos);
+  });
+
   it('ordena el top por cantidad vendida y aplica los filtros', async () => {
     const productos = [
       {

@@ -131,6 +131,66 @@ class ReporteDAO {
     return rows;
   }
 
+  async obtenerMetodosPago({
+    id_sucursal,
+    fecha_desde,
+    fecha_hasta,
+  } = {}) {
+    const { rows } = await pool.query(
+      `WITH metodos_pago (metodo_pago, orden) AS (
+         VALUES ('efectivo'::VARCHAR, 1), ('tarjeta'::VARCHAR, 2)
+       ),
+       ventas_filtradas AS (
+         SELECT v.metodo_pago, v.total
+         FROM venta v
+         WHERE v.estado = 'completada'
+           AND ($1::INTEGER IS NULL OR v.id_sucursal = $1)
+           AND (
+             $2::DATE IS NULL
+             OR v.fecha_venta >= (
+               $2::DATE::TIMESTAMP AT TIME ZONE 'America/Guatemala'
+             )
+           )
+           AND (
+             $3::DATE IS NULL
+             OR v.fecha_venta < (
+               ($3::DATE + 1)::TIMESTAMP AT TIME ZONE 'America/Guatemala'
+             )
+           )
+       ),
+       ventas_agrupadas AS (
+         SELECT
+           vf.metodo_pago,
+           COUNT(*)::INTEGER AS total_ventas,
+           SUM(vf.total)::NUMERIC(14,2) AS ingresos
+         FROM ventas_filtradas vf
+         GROUP BY vf.metodo_pago
+       ),
+       ingresos_totales AS (
+         SELECT COALESCE(SUM(vf.total), 0)::NUMERIC(14,2) AS total
+         FROM ventas_filtradas vf
+       )
+       SELECT
+         mp.metodo_pago,
+         COALESCE(va.total_ventas, 0)::INTEGER AS total_ventas,
+         COALESCE(va.ingresos, 0)::NUMERIC(14,2) AS ingresos,
+         CASE
+           WHEN it.total = 0 THEN 0::NUMERIC(5,2)
+           ELSE ROUND(
+             (COALESCE(va.ingresos, 0) * 100) / it.total,
+             2
+           )::NUMERIC(5,2)
+         END AS porcentaje_ingresos
+       FROM metodos_pago mp
+       LEFT JOIN ventas_agrupadas va ON va.metodo_pago = mp.metodo_pago
+       CROSS JOIN ingresos_totales it
+       ORDER BY mp.orden ASC`,
+      [id_sucursal || null, fecha_desde || null, fecha_hasta || null],
+    );
+
+    return rows;
+  }
+
   async obtenerTopProductos({
     id_sucursal,
     fecha_desde,

@@ -67,6 +67,33 @@ describe('ReporteController', () => {
     expect(res.json).toHaveBeenCalledWith(periodos);
   });
 
+  it('responde con la distribución por método de pago', async () => {
+    const metodos = [
+      {
+        metodo_pago: 'efectivo',
+        total_ventas: 6,
+        ingresos: '300.00',
+        porcentaje_ingresos: '60.00',
+      },
+      {
+        metodo_pago: 'tarjeta',
+        total_ventas: 4,
+        ingresos: '200.00',
+        porcentaje_ingresos: '40.00',
+      },
+    ];
+    const query = { id_sucursal: 1 };
+    ReporteService.obtenerMetodosPago.mockResolvedValue(metodos);
+    const req = { query };
+    const res = mockResponse();
+
+    await ReporteController.obtenerMetodosPago(req, res);
+
+    expect(ReporteService.obtenerMetodosPago).toHaveBeenCalledWith(query);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(metodos);
+  });
+
   it('no consulta el servicio cuando los filtros son inválidos', async () => {
     validationResult.mockReturnValue({
       isEmpty: () => false,

@@ -38,6 +38,11 @@ const obtenerSerieVentas = async (filtros = {}) => {
   return ReporteDAO.obtenerSerieVentas(filtrosAplicados);
 };
 
+const obtenerMetodosPago = async (filtros = {}) => {
+  const filtrosAplicados = normalizarFiltrosComunes(filtros);
+  return ReporteDAO.obtenerMetodosPago(filtrosAplicados);
+};
+
 const obtenerTopProductos = async (filtros = {}) => {
   const filtrosAplicados = normalizarFiltrosComunes({
     ...filtros,
@@ -55,5 +60,6 @@ const obtenerTopProductos = async (filtros = {}) => {
 module.exports = {
   obtenerResumenVentas,
   obtenerSerieVentas,
+  obtenerMetodosPago,
   obtenerTopProductos,
 };
