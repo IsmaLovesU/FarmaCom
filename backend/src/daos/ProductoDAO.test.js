@@ -59,6 +59,8 @@ describe('ProductoDAO - autocompletado para POS', () => {
     expect(consulta).toContain('l.stock_actual > 0');
     expect(consulta).toContain('l.precio_venta > 0');
     expect(consulta).toContain('l.fecha_vencimiento >= CURRENT_DATE');
+    expect(consulta).toContain('FROM v_lote_estado l');
+    expect(consulta).toContain('lote_pos.estado_vencimiento');
     expect(consulta).toContain('ORDER BY l.fecha_vencimiento ASC');
     expect(valores).toEqual(['Pará_50%', 2, 8, 'Pará\\_50\\%']);
     expect(resultado).toEqual([{ id_producto: 3, id_lote: 9 }]);

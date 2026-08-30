@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Info, X } from 'lucide-react';
 import { crearCheckoutTarjeta, crearVenta } from '../../api/ventas';
-import CatalogoProductosPOS from '../../components/ventas/CatalogoProductosPOS';
+import AutocompletadoProductosPOS from '../../components/ventas/AutocompletadoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
 import CobroModal from '../../components/ventas/CobroModal';
 import ComprobanteModal from '../../components/ventas/ComprobanteModal';
@@ -9,11 +9,12 @@ import NuevoClienteModal from '../../components/ventas/NuevoClienteModal';
 import VencimientoAvisoModal from '../../components/ventas/VencimientoAvisoModal';
 import { useAuth } from '../../context/AuthContext';
 import { useCarrito } from '../../context/CarritoContext';
-import useCatalogoPOS from '../../hooks/useCatalogoPOS';
+import useAutocompletadoPOS from '../../hooks/useAutocompletadoPOS';
 import useClientes from '../../hooks/useClientes';
 
 export default function PuntoVenta() {
   const { sucursalActivaId } = useAuth();
+  const [busquedaProducto, setBusquedaProducto] = useState('');
   const {
     items,
     cantidadTotal,
@@ -30,7 +31,8 @@ export default function PuntoVenta() {
     cargando,
     error,
     refrescar,
-  } = useCatalogoPOS(sucursalActivaId);
+    buscarAhora,
+  } = useAutocompletadoPOS(busquedaProducto);
   const {
     clientes,
     cargando: cargandoClientes,
@@ -241,11 +243,14 @@ export default function PuntoVenta() {
       )}
 
       <div className="grid w-full items-stretch gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(390px,0.65fr)]">
-        <CatalogoProductosPOS
+        <AutocompletadoProductosPOS
+          busqueda={busquedaProducto}
+          onBusquedaChange={setBusquedaProducto}
           productos={productos}
           cargando={cargando}
           error={error}
           onAgregar={agregarProducto}
+          onBuscarAhora={buscarAhora}
           onRefrescar={refrescar}
         />
 

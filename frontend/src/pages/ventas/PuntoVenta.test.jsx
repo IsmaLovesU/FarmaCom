@@ -72,12 +72,13 @@ vi.mock('../../context/CarritoContext', () => ({
 }));
 
 let productosCatalogo = [];
-vi.mock('../../hooks/useCatalogoPOS', () => ({
+vi.mock('../../hooks/useAutocompletadoPOS', () => ({
   default: () => ({
     productos: productosCatalogo,
     cargando: false,
     error: null,
     refrescar: refrescarCatalogo,
+    buscarAhora: vi.fn(async () => productosCatalogo),
   }),
 }));
 
@@ -137,7 +138,7 @@ describe('PuntoVenta', () => {
   it('renderiza el catalogo, el carrito y el selector de cliente con "Consumidor final" por defecto', () => {
     render(<PuntoVenta />);
 
-    expect(screen.getByText(/Cat.logo de productos/)).toBeInTheDocument();
+    expect(screen.getByText('Buscar productos')).toBeInTheDocument();
     expect(screen.getByText('Caja / salida')).toBeInTheDocument();
     expect(screen.getByText(/El carrito est. vac.o/)).toBeInTheDocument();
     expect(screen.getByText('Consumidor final')).toBeInTheDocument();
@@ -180,6 +181,7 @@ describe('PuntoVenta', () => {
     const user = userEvent.setup();
     render(<PuntoVenta />);
 
+    await user.type(screen.getByLabelText('Buscar productos'), 'ibuprofeno');
     await user.click(screen.getByText('Ibuprofeno'));
 
     expect(screen.getByText(/Producto pr.ximo a vencer/)).toBeInTheDocument();
@@ -198,6 +200,7 @@ describe('PuntoVenta', () => {
     const user = userEvent.setup();
     render(<PuntoVenta />);
 
+    await user.type(screen.getByLabelText('Buscar productos'), 'paracetamol');
     await user.click(screen.getByText('Paracetamol'));
 
     expect(agregarAlCarrito).toHaveBeenCalledWith(
@@ -286,6 +289,7 @@ describe('PuntoVenta', () => {
 
     expect(vaciarCarrito).toHaveBeenCalled();
     expect(refrescarCatalogo).toHaveBeenCalled();
-    expect(screen.getByText('Venta #16 registrada. Pago con tarjeta confirmado.')).toBeInTheDocument();
+    expect(screen.getByText('Venta registrada')).toBeInTheDocument();
+    expect(screen.getByText(/Comprobante #16/)).toBeInTheDocument();
   });
 });
