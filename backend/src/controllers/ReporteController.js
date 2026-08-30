@@ -9,17 +9,17 @@ const responderErrores = (req, res) => {
   return true;
 };
 
-const obtenerMetricas = async (req, res) => {
+const obtenerResumenVentas = async (req, res) => {
   if (responderErrores(req, res)) return;
 
   try {
-    const metricas = await ReporteService.obtenerMetricas(req.query);
-    return res.status(200).json(metricas);
+    const resumen = await ReporteService.obtenerResumenVentas(req.query);
+    return res.status(200).json(resumen);
   } catch (error) {
     return res.status(error.status || 500).json({ mensaje: error.message });
   }
 };
 
 module.exports = {
-  obtenerMetricas,
+  obtenerResumenVentas,
 };

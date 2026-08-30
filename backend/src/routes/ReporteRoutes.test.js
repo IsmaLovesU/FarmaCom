@@ -18,59 +18,49 @@ const crearApp = () => {
   return app;
 };
 
-describe('ReporteRoutes - métricas', () => {
+describe('ReporteRoutes - resumen de ventas', () => {
   beforeEach(() => {
     mockUsuario = { id_usuario: 2, id_sucursal: 1, rol: 'administrador' };
-    ReporteService.obtenerMetricas.mockResolvedValue({
+    ReporteService.obtenerResumenVentas.mockResolvedValue({
       ingresos_totales: '250.00',
       total_ventas: 6,
-      top_productos: [],
+      ticket_promedio: '41.67',
+      unidades_vendidas: 15,
     });
   });
 
   it('rechaza el acceso de un dependiente', async () => {
     mockUsuario = { id_usuario: 7, id_sucursal: 1, rol: 'dependiente' };
 
-    const respuesta = await request(crearApp()).get('/api/reportes/metricas');
+    const respuesta = await request(crearApp()).get('/api/reportes/ventas/resumen');
 
     expect(respuesta.status).toBe(403);
-    expect(ReporteService.obtenerMetricas).not.toHaveBeenCalled();
+    expect(ReporteService.obtenerResumenVentas).not.toHaveBeenCalled();
   });
 
-  it('valida y normaliza los filtros de las métricas', async () => {
+  it('valida y normaliza los filtros del resumen', async () => {
     const respuesta = await request(crearApp())
-      .get('/api/reportes/metricas')
+      .get('/api/reportes/ventas/resumen')
       .query({
         id_sucursal: 2,
         fecha_desde: '2026-08-01',
         fecha_hasta: '2026-08-31',
-        limite: 8,
       });
 
     expect(respuesta.status).toBe(200);
-    expect(ReporteService.obtenerMetricas).toHaveBeenCalledWith({
+    expect(ReporteService.obtenerResumenVentas).toHaveBeenCalledWith({
       id_sucursal: 2,
       fecha_desde: '2026-08-01',
       fecha_hasta: '2026-08-31',
-      limite: 8,
     });
-  });
-
-  it('rechaza un límite mayor a veinte', async () => {
-    const respuesta = await request(crearApp())
-      .get('/api/reportes/metricas')
-      .query({ limite: 21 });
-
-    expect(respuesta.status).toBe(400);
-    expect(ReporteService.obtenerMetricas).not.toHaveBeenCalled();
   });
 
   it('rechaza un rango de fechas invertido', async () => {
     const respuesta = await request(crearApp())
-      .get('/api/reportes/metricas')
+      .get('/api/reportes/ventas/resumen')
       .query({ fecha_desde: '2026-08-20', fecha_hasta: '2026-08-01' });
 
     expect(respuesta.status).toBe(400);
-    expect(ReporteService.obtenerMetricas).not.toHaveBeenCalled();
+    expect(ReporteService.obtenerResumenVentas).not.toHaveBeenCalled();
   });
 });

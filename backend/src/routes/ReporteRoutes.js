@@ -7,7 +7,7 @@ const verificarRol = require('../middlewares/verificarRol');
 const router = Router();
 const rolesReportes = verificarRol('dueno', 'administrador');
 
-const validarFiltrosMetricas = [
+const validarFiltrosReporte = [
   query('id_sucursal')
     .optional()
     .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
@@ -23,18 +23,14 @@ const validarFiltrosMetricas = [
     .custom((fechaHasta, { req }) => (
       !req.query.fecha_desde || fechaHasta >= req.query.fecha_desde
     )).withMessage('fecha_hasta debe ser igual o posterior a fecha_desde'),
-  query('limite')
-    .optional()
-    .isInt({ min: 1, max: 20 }).withMessage('limite debe ser un entero entre 1 y 20')
-    .toInt(),
 ];
 
 router.get(
-  '/metricas',
+  '/ventas/resumen',
   verificarToken,
   rolesReportes,
-  validarFiltrosMetricas,
-  ReporteController.obtenerMetricas,
+  validarFiltrosReporte,
+  ReporteController.obtenerResumenVentas,
 );
 
 module.exports = router;
