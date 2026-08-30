@@ -49,7 +49,10 @@ describe('ProductoDAO - autocompletado para POS', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('filtra productos y selecciona un lote vendible de la sucursal', async () => {
-    pool.query.mockResolvedValue({ rows: [{ id_producto: 3, id_lote: 9 }] });
+    pool.query.mockResolvedValue({ rows: [
+      { id_producto: 3, id_lote: 9 },
+      { id_producto: 3, id_lote: 10 },
+    ] });
 
     const resultado = await ProductoDAO.autocompletarParaPOS('Pará_50%', 2, 8);
 
@@ -59,10 +62,17 @@ describe('ProductoDAO - autocompletado para POS', () => {
     expect(consulta).toContain('l.stock_actual > 0');
     expect(consulta).toContain('l.precio_venta > 0');
     expect(consulta).toContain('l.fecha_vencimiento >= CURRENT_DATE');
-    expect(consulta).toContain('FROM v_lote_estado l');
+    expect(consulta).toContain('FROM productos_limitados p');
+    expect(consulta).toContain('JOIN v_lote_estado lote_pos');
     expect(consulta).toContain('lote_pos.estado_vencimiento');
-    expect(consulta).toContain('ORDER BY l.fecha_vencimiento ASC');
+    expect(consulta).toContain('lote_pos.fecha_vencimiento ASC');
+    expect(consulta).toContain('LIMIT $3');
+    expect(consulta).not.toContain('JOIN LATERAL');
+    expect(consulta).not.toContain('LIMIT 1');
     expect(valores).toEqual(['Pará_50%', 2, 8, 'Pará\\_50\\%']);
-    expect(resultado).toEqual([{ id_producto: 3, id_lote: 9 }]);
+    expect(resultado).toEqual([
+      { id_producto: 3, id_lote: 9 },
+      { id_producto: 3, id_lote: 10 },
+    ]);
   });
 });

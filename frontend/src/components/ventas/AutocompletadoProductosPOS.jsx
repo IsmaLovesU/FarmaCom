@@ -5,7 +5,6 @@ import {
   PackageSearch,
   RefreshCw,
   Search,
-  SearchCheck,
   X,
 } from 'lucide-react';
 import ProductoVentaCard from './ProductoVentaCard';
@@ -45,10 +44,6 @@ export default function AutocompletadoProductosPOS({
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-primary">
-              <SearchCheck className="h-3.5 w-3.5" />
-              Autocompletado inteligente
-            </div>
             <h1 className="font-headline text-2xl font-extrabold tracking-tight text-on-surface">
               Buscar productos
             </h1>

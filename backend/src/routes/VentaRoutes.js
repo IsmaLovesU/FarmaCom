@@ -93,6 +93,28 @@ const validarFiltros = [
     .withMessage('fecha_hasta debe tener formato YYYY-MM-DD'),
 ];
 
+const validarFiltrosMetricas = [
+  query('id_sucursal')
+    .optional()
+    .isInt({ min: 1 }).withMessage('id_sucursal debe ser un entero positivo')
+    .toInt(),
+  query('fecha_desde')
+    .optional()
+    .matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('fecha_desde debe tener formato YYYY-MM-DD')
+    .isISO8601({ strict: true }).withMessage('fecha_desde debe ser una fecha válida'),
+  query('fecha_hasta')
+    .optional()
+    .matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('fecha_hasta debe tener formato YYYY-MM-DD')
+    .isISO8601({ strict: true }).withMessage('fecha_hasta debe ser una fecha válida')
+    .custom((fechaHasta, { req }) => (
+      !req.query.fecha_desde || fechaHasta >= req.query.fecha_desde
+    )).withMessage('fecha_hasta debe ser igual o posterior a fecha_desde'),
+  query('limite')
+    .optional()
+    .isInt({ min: 1, max: 20 }).withMessage('limite debe ser un entero entre 1 y 20')
+    .toInt(),
+];
+
 const validarAsociacionCliente = [
   body('id_cliente')
     .custom((valor) => (
@@ -117,6 +139,14 @@ router.post(
   rolesVenta,
   validarCheckoutTarjeta,
   VentaController.crearCheckoutTarjeta,
+);
+
+router.get(
+  '/metricas',
+  verificarToken,
+  rolesVenta,
+  validarFiltrosMetricas,
+  VentaController.obtenerMetricas,
 );
 
 router.post(

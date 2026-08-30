@@ -49,7 +49,7 @@ describe('AutocompletadoProductosPOS', () => {
     render(<Escenario />);
 
     expect(screen.getByText('Encuentra un producto')).toBeInTheDocument();
-    expect(screen.getByText('Autocompletado inteligente')).toBeInTheDocument();
+    expect(screen.getByText('Buscar productos')).toBeInTheDocument();
   });
 
   it('muestra las coincidencias y permite limpiar la búsqueda', async () => {
