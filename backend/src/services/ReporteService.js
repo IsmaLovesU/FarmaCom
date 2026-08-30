@@ -1,6 +1,13 @@
 const ReporteDAO = require('../daos/ReporteDAO');
 
 const CRITERIOS_TOP_PRODUCTOS = ['cantidad', 'ingresos'];
+const AGRUPACIONES_SERIE_VENTAS = ['dia', 'semana', 'mes'];
+
+const lanzarError = (mensaje, status = 400) => {
+  const error = new Error(mensaje);
+  error.status = status;
+  throw error;
+};
 
 const normalizarFiltrosComunes = (filtros = {}) => {
   const filtrosAplicados = { ...filtros };
@@ -17,6 +24,20 @@ const obtenerResumenVentas = async (filtros = {}) => {
   return ReporteDAO.obtenerResumenVentas(filtrosAplicados);
 };
 
+const obtenerSerieVentas = async (filtros = {}) => {
+  const filtrosAplicados = normalizarFiltrosComunes(filtros);
+
+  if (!filtrosAplicados.fecha_desde || !filtrosAplicados.fecha_hasta) {
+    lanzarError('fecha_desde y fecha_hasta son requeridas');
+  }
+
+  if (!AGRUPACIONES_SERIE_VENTAS.includes(filtrosAplicados.agrupacion)) {
+    lanzarError('La agrupación debe ser dia, semana o mes');
+  }
+
+  return ReporteDAO.obtenerSerieVentas(filtrosAplicados);
+};
+
 const obtenerTopProductos = async (filtros = {}) => {
   const filtrosAplicados = normalizarFiltrosComunes({
     ...filtros,
@@ -25,9 +46,7 @@ const obtenerTopProductos = async (filtros = {}) => {
   });
 
   if (!CRITERIOS_TOP_PRODUCTOS.includes(filtrosAplicados.criterio)) {
-    const error = new Error('El criterio debe ser cantidad o ingresos');
-    error.status = 400;
-    throw error;
+    lanzarError('El criterio debe ser cantidad o ingresos');
   }
 
   return ReporteDAO.obtenerTopProductos(filtrosAplicados);
@@ -35,5 +54,6 @@ const obtenerTopProductos = async (filtros = {}) => {
 
 module.exports = {
   obtenerResumenVentas,
+  obtenerSerieVentas,
   obtenerTopProductos,
 };

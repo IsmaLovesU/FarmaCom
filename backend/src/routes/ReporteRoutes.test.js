@@ -28,6 +28,7 @@ describe('ReporteRoutes - resumen de ventas', () => {
       unidades_vendidas: 15,
     });
     ReporteService.obtenerTopProductos.mockResolvedValue([]);
+    ReporteService.obtenerSerieVentas.mockResolvedValue([]);
   });
 
   it('rechaza el acceso de un dependiente', async () => {
@@ -63,6 +64,47 @@ describe('ReporteRoutes - resumen de ventas', () => {
 
     expect(respuesta.status).toBe(400);
     expect(ReporteService.obtenerResumenVentas).not.toHaveBeenCalled();
+  });
+
+  it('valida y normaliza los filtros de la serie de ventas', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/reportes/ventas/serie')
+      .query({
+        id_sucursal: 2,
+        fecha_desde: '2026-08-01',
+        fecha_hasta: '2026-08-31',
+        agrupacion: 'semana',
+      });
+
+    expect(respuesta.status).toBe(200);
+    expect(ReporteService.obtenerSerieVentas).toHaveBeenCalledWith({
+      id_sucursal: 2,
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+      agrupacion: 'semana',
+    });
+  });
+
+  it('requiere ambas fechas para generar la serie', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/reportes/ventas/serie')
+      .query({ fecha_desde: '2026-08-01', agrupacion: 'dia' });
+
+    expect(respuesta.status).toBe(400);
+    expect(ReporteService.obtenerSerieVentas).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una agrupación desconocida', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/reportes/ventas/serie')
+      .query({
+        fecha_desde: '2026-08-01',
+        fecha_hasta: '2026-08-31',
+        agrupacion: 'trimestre',
+      });
+
+    expect(respuesta.status).toBe(400);
+    expect(ReporteService.obtenerSerieVentas).not.toHaveBeenCalled();
   });
 
   it('valida y normaliza los filtros del top de productos', async () => {

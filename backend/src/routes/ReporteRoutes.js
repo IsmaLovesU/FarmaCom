@@ -37,12 +37,33 @@ const validarFiltrosTopProductos = [
     .withMessage('criterio debe ser cantidad o ingresos'),
 ];
 
+const validarFiltrosSerieVentas = [
+  ...validarFiltrosReporte,
+  query('fecha_desde')
+    .exists().withMessage('fecha_desde es requerida'),
+  query('fecha_hasta')
+    .exists().withMessage('fecha_hasta es requerida'),
+  query('agrupacion')
+    .exists().withMessage('agrupacion es requerida')
+    .bail()
+    .isIn(['dia', 'semana', 'mes'])
+    .withMessage('agrupacion debe ser dia, semana o mes'),
+];
+
 router.get(
   '/ventas/resumen',
   verificarToken,
   rolesReportes,
   validarFiltrosReporte,
   ReporteController.obtenerResumenVentas,
+);
+
+router.get(
+  '/ventas/serie',
+  verificarToken,
+  rolesReportes,
+  validarFiltrosSerieVentas,
+  ReporteController.obtenerSerieVentas,
 );
 
 router.get(

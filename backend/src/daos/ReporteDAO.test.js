@@ -45,6 +45,55 @@ describe('ReporteDAO', () => {
     expect(pool.query.mock.calls[0][1]).toEqual([null, null, null]);
   });
 
+  it('genera una serie diaria y conserva períodos sin ventas', async () => {
+    const periodos = [
+      {
+        periodo: '2026-08-01',
+        ingresos: '0.00',
+        total_ventas: 0,
+        ticket_promedio: '0.00',
+        unidades_vendidas: 0,
+      },
+    ];
+    pool.query.mockResolvedValue({ rows: periodos });
+
+    const resultado = await ReporteDAO.obtenerSerieVentas({
+      id_sucursal: 2,
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-07',
+      agrupacion: 'dia',
+    });
+
+    const [consulta, valores] = pool.query.mock.calls[0];
+    expect(consulta).toContain('GENERATE_SERIES');
+    expect(consulta).toContain('1 day');
+    expect(consulta).toContain('America/Guatemala');
+    expect(consulta).toContain('ventas_agrupadas');
+    expect(consulta).toContain('unidades_agrupadas');
+    expect(consulta).toContain('LEFT JOIN ventas_agrupadas');
+    expect(consulta).toContain('COALESCE(va.ingresos, 0)');
+    expect(valores).toEqual([2, '2026-08-01', '2026-08-07']);
+    expect(resultado).toEqual(periodos);
+  });
+
+  it.each([
+    ['semana', 'week', '1 week'],
+    ['mes', 'month', '1 month'],
+  ])('configura correctamente la agrupación %s', async (agrupacion, unidad, paso) => {
+    pool.query.mockResolvedValue({ rows: [] });
+
+    await ReporteDAO.obtenerSerieVentas({
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+      agrupacion,
+    });
+
+    const [consulta, valores] = pool.query.mock.calls[0];
+    expect(consulta).toContain(unidad);
+    expect(consulta).toContain(paso);
+    expect(valores).toEqual([null, '2026-08-01', '2026-08-31']);
+  });
+
   it('ordena el top por cantidad vendida y aplica los filtros', async () => {
     const productos = [
       {

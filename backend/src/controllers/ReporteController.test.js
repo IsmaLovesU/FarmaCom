@@ -41,6 +41,32 @@ describe('ReporteController', () => {
     expect(res.json).toHaveBeenCalledWith(resumen);
   });
 
+  it('responde con la serie de ventas solicitada', async () => {
+    const periodos = [
+      {
+        periodo: '2026-08-01',
+        ingresos: '450.00',
+        total_ventas: 9,
+        ticket_promedio: '50.00',
+        unidades_vendidas: 22,
+      },
+    ];
+    const query = {
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+      agrupacion: 'dia',
+    };
+    ReporteService.obtenerSerieVentas.mockResolvedValue(periodos);
+    const req = { query };
+    const res = mockResponse();
+
+    await ReporteController.obtenerSerieVentas(req, res);
+
+    expect(ReporteService.obtenerSerieVentas).toHaveBeenCalledWith(query);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(periodos);
+  });
+
   it('no consulta el servicio cuando los filtros son inválidos', async () => {
     validationResult.mockReturnValue({
       isEmpty: () => false,

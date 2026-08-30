@@ -20,6 +20,17 @@ const obtenerResumenVentas = async (req, res) => {
   }
 };
 
+const obtenerSerieVentas = async (req, res) => {
+  if (responderErrores(req, res)) return;
+
+  try {
+    const periodos = await ReporteService.obtenerSerieVentas(req.query);
+    return res.status(200).json(periodos);
+  } catch (error) {
+    return res.status(error.status || 500).json({ mensaje: error.message });
+  }
+};
+
 const obtenerTopProductos = async (req, res) => {
   if (responderErrores(req, res)) return;
 
@@ -33,5 +44,6 @@ const obtenerTopProductos = async (req, res) => {
 
 module.exports = {
   obtenerResumenVentas,
+  obtenerSerieVentas,
   obtenerTopProductos,
 };

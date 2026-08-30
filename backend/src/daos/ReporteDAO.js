@@ -1,5 +1,11 @@
 const pool = require('../database/db');
 
+const CONFIGURACION_SERIE_VENTAS = {
+  dia: { unidad: 'day', paso: '1 day' },
+  semana: { unidad: 'week', paso: '1 week' },
+  mes: { unidad: 'month', paso: '1 month' },
+};
+
 class ReporteDAO {
   async obtenerResumenVentas({
     id_sucursal,
@@ -49,6 +55,80 @@ class ReporteDAO {
     );
 
     return rows[0];
+  }
+
+  async obtenerSerieVentas({
+    id_sucursal,
+    fecha_desde,
+    fecha_hasta,
+    agrupacion,
+  }) {
+    const configuracion = CONFIGURACION_SERIE_VENTAS[agrupacion]
+      || CONFIGURACION_SERIE_VENTAS.dia;
+
+    const { rows } = await pool.query(
+      `WITH parametros AS (
+         SELECT
+           DATE_TRUNC('${configuracion.unidad}', $2::DATE::TIMESTAMP) AS periodo_desde,
+           DATE_TRUNC('${configuracion.unidad}', $3::DATE::TIMESTAMP) AS periodo_hasta
+       ),
+       periodos AS (
+         SELECT GENERATE_SERIES(
+           p.periodo_desde,
+           p.periodo_hasta,
+           INTERVAL '${configuracion.paso}'
+         ) AS periodo
+         FROM parametros p
+       ),
+       ventas_filtradas AS (
+         SELECT
+           v.id_venta,
+           v.total,
+           DATE_TRUNC(
+             '${configuracion.unidad}',
+             v.fecha_venta AT TIME ZONE 'America/Guatemala'
+           ) AS periodo
+         FROM venta v
+         WHERE v.estado = 'completada'
+           AND ($1::INTEGER IS NULL OR v.id_sucursal = $1)
+           AND v.fecha_venta >= (
+             $2::DATE::TIMESTAMP AT TIME ZONE 'America/Guatemala'
+           )
+           AND v.fecha_venta < (
+             ($3::DATE + 1)::TIMESTAMP AT TIME ZONE 'America/Guatemala'
+           )
+       ),
+       ventas_agrupadas AS (
+         SELECT
+           vf.periodo,
+           SUM(vf.total)::NUMERIC(14,2) AS ingresos,
+           COUNT(*)::INTEGER AS total_ventas,
+           AVG(vf.total)::NUMERIC(14,2) AS ticket_promedio
+         FROM ventas_filtradas vf
+         GROUP BY vf.periodo
+       ),
+       unidades_agrupadas AS (
+         SELECT
+           vf.periodo,
+           SUM(dv.cantidad)::INTEGER AS unidades_vendidas
+         FROM ventas_filtradas vf
+         JOIN detalle_venta dv ON dv.id_venta = vf.id_venta
+         GROUP BY vf.periodo
+       )
+       SELECT
+         p.periodo::DATE AS periodo,
+         COALESCE(va.ingresos, 0)::NUMERIC(14,2) AS ingresos,
+         COALESCE(va.total_ventas, 0)::INTEGER AS total_ventas,
+         COALESCE(va.ticket_promedio, 0)::NUMERIC(14,2) AS ticket_promedio,
+         COALESCE(ua.unidades_vendidas, 0)::INTEGER AS unidades_vendidas
+       FROM periodos p
+       LEFT JOIN ventas_agrupadas va ON va.periodo = p.periodo
+       LEFT JOIN unidades_agrupadas ua ON ua.periodo = p.periodo
+       ORDER BY p.periodo ASC`,
+      [id_sucursal || null, fecha_desde, fecha_hasta],
+    );
+
+    return rows;
   }
 
   async obtenerTopProductos({
