@@ -77,6 +77,31 @@ class ProductoDAO {
       ),
       termino AS (
         SELECT TRANSLATE(LOWER($1), 'áéíóúüñ', 'aeiouun') AS valor
+      ),
+      productos_limitados AS (
+        SELECT
+          p.*,
+          CASE
+            WHEN TRANSLATE(LOWER(p.codigo), 'áéíóúüñ', 'aeiouun') = t.valor THEN 0
+            WHEN TRANSLATE(LOWER(p.codigo), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 1
+            WHEN TRANSLATE(LOWER(p.nombre_comercial), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 2
+            WHEN TRANSLATE(LOWER(p.nombre_generico), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 3
+            ELSE 4
+          END AS prioridad
+        FROM productos_coincidentes p
+        CROSS JOIN termino t
+        WHERE p.texto_busqueda LIKE '%' || TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\'
+          AND EXISTS (
+            SELECT 1
+            FROM lote l
+            WHERE l.id_producto = p.id_producto
+              AND l.id_sucursal = $2
+              AND l.stock_actual > 0
+              AND l.precio_venta > 0
+              AND l.fecha_vencimiento >= CURRENT_DATE
+          )
+        ORDER BY prioridad, p.nombre_comercial ASC, p.id_producto ASC
+        LIMIT $3
       )
       SELECT
         p.id_producto,
@@ -95,40 +120,19 @@ class ProductoDAO {
         p.aplica_mayoreo,
         lote_pos.precio_mayoreo,
         lote_pos.cantidad_mayoreo
-      FROM productos_coincidentes p
-      CROSS JOIN termino t
-      JOIN LATERAL (
-        SELECT
-          l.id_lote,
-          l.numero_lote,
-          l.fecha_vencimiento,
-          l.stock_actual,
-          l.precio_venta,
-          l.estado_stock,
-          l.estado_vencimiento,
-          l.precio_mayoreo,
-          l.cantidad_mayoreo
-        FROM v_lote_estado l
-        WHERE l.id_producto = p.id_producto
-          AND l.id_sucursal = $2
-          AND l.stock_actual > 0
-          AND l.precio_venta > 0
-          AND l.fecha_vencimiento >= CURRENT_DATE
-        ORDER BY l.fecha_vencimiento ASC, l.id_lote ASC
-        LIMIT 1
-      ) lote_pos ON TRUE
-      WHERE p.texto_busqueda LIKE '%' || TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\'
+      FROM productos_limitados p
+      JOIN v_lote_estado lote_pos
+        ON lote_pos.id_producto = p.id_producto
+       AND lote_pos.id_sucursal = $2
+       AND lote_pos.stock_actual > 0
+       AND lote_pos.precio_venta > 0
+       AND lote_pos.fecha_vencimiento >= CURRENT_DATE
       ORDER BY
-        CASE
-          WHEN TRANSLATE(LOWER(p.codigo), 'áéíóúüñ', 'aeiouun') = t.valor THEN 0
-          WHEN TRANSLATE(LOWER(p.codigo), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 1
-          WHEN TRANSLATE(LOWER(p.nombre_comercial), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 2
-          WHEN TRANSLATE(LOWER(p.nombre_generico), 'áéíóúüñ', 'aeiouun') LIKE TRANSLATE(LOWER($4), 'áéíóúüñ', 'aeiouun') || '%' ESCAPE '\\' THEN 3
-          ELSE 4
-        END,
+        p.prioridad,
         p.nombre_comercial ASC,
-        p.id_producto ASC
-      LIMIT $3
+        p.id_producto ASC,
+        lote_pos.fecha_vencimiento ASC,
+        lote_pos.id_lote ASC
     `;
     const { rows } = await pool.query(query, [busqueda, id_sucursal, limite, patronBusqueda]);
     return rows;
