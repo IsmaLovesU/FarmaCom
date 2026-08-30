@@ -27,6 +27,7 @@ describe('ReporteRoutes - resumen de ventas', () => {
       ticket_promedio: '41.67',
       unidades_vendidas: 15,
     });
+    ReporteService.obtenerTopProductos.mockResolvedValue([]);
   });
 
   it('rechaza el acceso de un dependiente', async () => {
@@ -62,5 +63,44 @@ describe('ReporteRoutes - resumen de ventas', () => {
 
     expect(respuesta.status).toBe(400);
     expect(ReporteService.obtenerResumenVentas).not.toHaveBeenCalled();
+  });
+
+  it('valida y normaliza los filtros del top de productos', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/reportes/productos/top')
+      .query({
+        id_sucursal: 3,
+        fecha_desde: '2026-08-01',
+        fecha_hasta: '2026-08-31',
+        limite: 8,
+        criterio: 'ingresos',
+      });
+
+    expect(respuesta.status).toBe(200);
+    expect(ReporteService.obtenerTopProductos).toHaveBeenCalledWith({
+      id_sucursal: 3,
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+      limite: 8,
+      criterio: 'ingresos',
+    });
+  });
+
+  it('rechaza un límite inválido para el top de productos', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/reportes/productos/top')
+      .query({ limite: 21 });
+
+    expect(respuesta.status).toBe(400);
+    expect(ReporteService.obtenerTopProductos).not.toHaveBeenCalled();
+  });
+
+  it('rechaza un criterio desconocido para el top de productos', async () => {
+    const respuesta = await request(crearApp())
+      .get('/api/reportes/productos/top')
+      .query({ criterio: 'margen' });
+
+    expect(respuesta.status).toBe(400);
+    expect(ReporteService.obtenerTopProductos).not.toHaveBeenCalled();
   });
 });

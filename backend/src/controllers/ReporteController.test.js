@@ -54,4 +54,25 @@ describe('ReporteController', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(ReporteService.obtenerResumenVentas).not.toHaveBeenCalled();
   });
+
+  it('responde con el top de productos solicitado', async () => {
+    const productos = [
+      {
+        id_producto: 4,
+        nombre_comercial: 'Analgésico',
+        cantidad_vendida: 25,
+        ingresos_generados: '200.00',
+      },
+    ];
+    const query = { limite: 5, criterio: 'cantidad' };
+    ReporteService.obtenerTopProductos.mockResolvedValue(productos);
+    const req = { query };
+    const res = mockResponse();
+
+    await ReporteController.obtenerTopProductos(req, res);
+
+    expect(ReporteService.obtenerTopProductos).toHaveBeenCalledWith(query);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(productos);
+  });
 });

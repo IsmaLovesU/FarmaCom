@@ -25,12 +25,32 @@ const validarFiltrosReporte = [
     )).withMessage('fecha_hasta debe ser igual o posterior a fecha_desde'),
 ];
 
+const validarFiltrosTopProductos = [
+  ...validarFiltrosReporte,
+  query('limite')
+    .optional()
+    .isInt({ min: 1, max: 20 }).withMessage('limite debe ser un entero entre 1 y 20')
+    .toInt(),
+  query('criterio')
+    .optional()
+    .isIn(['cantidad', 'ingresos'])
+    .withMessage('criterio debe ser cantidad o ingresos'),
+];
+
 router.get(
   '/ventas/resumen',
   verificarToken,
   rolesReportes,
   validarFiltrosReporte,
   ReporteController.obtenerResumenVentas,
+);
+
+router.get(
+  '/productos/top',
+  verificarToken,
+  rolesReportes,
+  validarFiltrosTopProductos,
+  ReporteController.obtenerTopProductos,
 );
 
 module.exports = router;

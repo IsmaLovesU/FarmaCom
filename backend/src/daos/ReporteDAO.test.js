@@ -44,4 +44,43 @@ describe('ReporteDAO', () => {
 
     expect(pool.query.mock.calls[0][1]).toEqual([null, null, null]);
   });
+
+  it('ordena el top por cantidad vendida y aplica los filtros', async () => {
+    const productos = [
+      {
+        id_producto: 4,
+        cantidad_vendida: 25,
+        ingresos_generados: '200.00',
+      },
+    ];
+    pool.query.mockResolvedValue({ rows: productos });
+
+    const resultado = await ReporteDAO.obtenerTopProductos({
+      id_sucursal: 2,
+      fecha_desde: '2026-08-01',
+      fecha_hasta: '2026-08-31',
+      limite: 7,
+      criterio: 'cantidad',
+    });
+
+    const [consulta, valores] = pool.query.mock.calls[0];
+    expect(consulta).toContain('completada');
+    expect(consulta).toContain('America/Guatemala');
+    expect(consulta).toContain('SUM(dv.cantidad)');
+    expect(consulta).toContain('SUM(dv.subtotal)');
+    expect(consulta).toContain('ORDER BY cantidad_vendida DESC');
+    expect(consulta).toContain('LIMIT $4');
+    expect(valores).toEqual([2, '2026-08-01', '2026-08-31', 7]);
+    expect(resultado).toEqual(productos);
+  });
+
+  it('permite ordenar el top global por ingresos', async () => {
+    pool.query.mockResolvedValue({ rows: [] });
+
+    await ReporteDAO.obtenerTopProductos({ criterio: 'ingresos' });
+
+    const [consulta, valores] = pool.query.mock.calls[0];
+    expect(consulta).toContain('ORDER BY ingresos_generados DESC');
+    expect(valores).toEqual([null, null, null, 5]);
+  });
 });
