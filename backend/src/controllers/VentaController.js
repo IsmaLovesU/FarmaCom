@@ -42,17 +42,6 @@ const obtenerTodas = async (req, res) => {
   }
 };
 
-const obtenerMetricas = async (req, res) => {
-  if (responderErrores(req, res)) return;
-
-  try {
-    const metricas = await VentaService.obtenerMetricas(req.query, req.usuario);
-    return res.status(200).json(metricas);
-  } catch (error) {
-    return res.status(error.status || 500).json({ mensaje: error.message });
-  }
-};
-
 const obtenerPorId = async (req, res) => {
   if (responderErrores(req, res)) return;
 
@@ -101,7 +90,6 @@ module.exports = {
   crear,
   crearCheckoutTarjeta,
   obtenerTodas,
-  obtenerMetricas,
   obtenerPorId,
   asociarCliente,
   anular,

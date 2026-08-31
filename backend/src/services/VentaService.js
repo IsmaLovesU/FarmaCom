@@ -251,27 +251,6 @@ const obtenerTodas = async (filtros, usuario) => {
   return VentaDAO.obtenerTodas(filtrosAplicados);
 };
 
-const obtenerMetricas = async (filtros = {}, usuario) => {
-  const filtrosAplicados = {
-    ...filtros,
-    limite: filtros.limite === undefined ? 5 : Number(filtros.limite),
-  };
-
-  if (usuario.rol === 'dependiente') {
-    if (
-      filtrosAplicados.id_sucursal
-      && Number(filtrosAplicados.id_sucursal) !== Number(usuario.id_sucursal)
-    ) {
-      lanzarError('No tienes permiso para consultar métricas de otra sucursal', 403);
-    }
-    filtrosAplicados.id_sucursal = Number(usuario.id_sucursal);
-  } else if (filtrosAplicados.id_sucursal) {
-    filtrosAplicados.id_sucursal = Number(filtrosAplicados.id_sucursal);
-  }
-
-  return VentaDAO.obtenerMetricas(filtrosAplicados);
-};
-
 const obtenerPorId = (id_venta, usuario) =>
   obtenerVentaAutorizada(id_venta, usuario);
 
@@ -320,7 +299,6 @@ module.exports = {
   crearCheckoutTarjeta,
   crearVenta,
   obtenerTodas,
-  obtenerMetricas,
   obtenerPorId,
   asociarCliente,
   anularVenta,

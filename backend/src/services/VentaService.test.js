@@ -282,55 +282,6 @@ describe('VentaService', () => {
     });
   });
 
-  describe('obtenerMetricas', () => {
-    it('restringe al dependiente a las métricas de su sucursal', async () => {
-      const metricas = {
-        ingresos_totales: '150.00',
-        total_ventas: 4,
-        top_productos: [],
-      };
-      VentaDAO.obtenerMetricas.mockResolvedValue(metricas);
-
-      const resultado = await VentaService.obtenerMetricas(
-        { fecha_desde: '2026-08-01' },
-        usuarioDependiente,
-      );
-
-      expect(VentaDAO.obtenerMetricas).toHaveBeenCalledWith({
-        id_sucursal: 1,
-        fecha_desde: '2026-08-01',
-        limite: 5,
-      });
-      expect(resultado).toEqual(metricas);
-    });
-
-    it('impide que un dependiente consulte métricas de otra sucursal', async () => {
-      await expect(VentaService.obtenerMetricas(
-        { id_sucursal: 2 },
-        usuarioDependiente,
-      )).rejects.toMatchObject({
-        status: 403,
-        message: 'No tienes permiso para consultar métricas de otra sucursal',
-      });
-
-      expect(VentaDAO.obtenerMetricas).not.toHaveBeenCalled();
-    });
-
-    it('permite métricas globales a un administrador', async () => {
-      VentaDAO.obtenerMetricas.mockResolvedValue({ ingresos_totales: '900.00' });
-
-      await VentaService.obtenerMetricas(
-        { fecha_hasta: '2026-08-31', limite: 10 },
-        { id_usuario: 2, id_sucursal: 1, rol: 'administrador' },
-      );
-
-      expect(VentaDAO.obtenerMetricas).toHaveBeenCalledWith({
-        fecha_hasta: '2026-08-31',
-        limite: 10,
-      });
-    });
-  });
-
   describe('asociarCliente', () => {
     it('permite asociar una venta existente a un cliente', async () => {
       VentaDAO.obtenerParaActualizar.mockResolvedValue({
