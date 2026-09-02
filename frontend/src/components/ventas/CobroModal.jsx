@@ -6,10 +6,8 @@ import {
   Banknote,
   CheckCircle2,
   CreditCard,
-  ExternalLink,
   Loader2,
   ReceiptText,
-  RefreshCw,
   User,
   X,
 } from 'lucide-react';
@@ -32,11 +30,11 @@ export default function CobroModal({
   total,
   metodoPago,
   clienteSeleccionado,
-  checkoutTarjeta,
+  pagoPOS,
   procesando = false,
   error,
   onClose,
-  onCrearCheckoutTarjeta,
+  onCrearPagoPOS,
   onConfirm,
 }) {
   const [montoRecibido, setMontoRecibido] = useState('');
@@ -54,19 +52,15 @@ export default function CobroModal({
   const esTarjeta = metodoPago === 'tarjeta';
   const metodoSoportado = esEfectivo || esTarjeta;
   const montoInsuficiente = esEfectivo && montoNumerico < totalNumerico;
-  const checkoutListo = Boolean(checkoutTarjeta?.id_checkout);
+  const pagoEnviado = Boolean(pagoPOS?.external_id);
   const puedeConfirmarEfectivo = esEfectivo
     && items.length > 0
     && !montoInsuficiente
     && !procesando;
-  const puedeGenerarCheckout = esTarjeta
+  const puedeEnviarPagoPOS = esTarjeta
     && items.length > 0
     && !procesando
-    && !checkoutListo;
-  const puedeConfirmarTarjeta = esTarjeta
-    && items.length > 0
-    && !procesando
-    && checkoutListo;
+    && !pagoEnviado;
 
   const resumenItems = useMemo(() => items.slice(0, 3), [items]);
   const restantes = Math.max(0, items.length - resumenItems.length);
@@ -80,19 +74,9 @@ export default function CobroModal({
       return;
     }
 
-    if (puedeGenerarCheckout) {
-      onCrearCheckoutTarjeta();
-      return;
+    if (puedeEnviarPagoPOS) {
+      onCrearPagoPOS();
     }
-
-    if (puedeConfirmarTarjeta) {
-      onConfirm({ referenciaPago: checkoutTarjeta.id_checkout });
-    }
-  };
-
-  const abrirCheckout = () => {
-    if (!checkoutTarjeta?.checkout_url) return;
-    window.open(checkoutTarjeta.checkout_url, '_blank', 'noopener,noreferrer');
   };
 
   return createPortal(
@@ -172,7 +156,7 @@ export default function CobroModal({
                   Estado
                 </p>
                 <p className="mt-1 truncate text-sm font-bold text-on-surface">
-                  {checkoutListo ? 'Checkout generado' : 'Pendiente de generar'}
+                  {pagoEnviado ? 'Cobro enviado al POS' : 'Pendiente de enviar'}
                 </p>
               </div>
             )}
@@ -211,29 +195,23 @@ export default function CobroModal({
                   Cobro con tarjeta
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Genera checkout y valida la referencia para registrar la venta.
+                  Envía el monto al POS de Recurrente. La venta se registrará cuando el webhook confirme el pago.
                 </p>
               </div>
 
-              {checkoutListo && (
+              {pagoEnviado && (
                 <div className="space-y-3">
                   <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
                     <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-                      Referencia
+                      Referencia de seguimiento
                     </p>
                     <p className="mt-1 truncate font-mono text-sm font-bold text-primary">
-                      {checkoutTarjeta.id_checkout}
+                      {pagoPOS.external_id}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={abrirCheckout}
-                    disabled={procesando || !checkoutTarjeta.checkout_url}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-white px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/5 disabled:opacity-60"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Abrir checkout de Recurrente
-                  </button>
+                  <p className="text-sm font-semibold text-amber-700">
+                    Completa el cobro en el dispositivo POS para continuar.
+                  </p>
                 </div>
               )}
             </div>
@@ -294,26 +272,23 @@ export default function CobroModal({
               type="submit"
               disabled={
                 !puedeConfirmarEfectivo
-                && !puedeGenerarCheckout
-                && !puedeConfirmarTarjeta
+                && !puedeEnviarPagoPOS
               }
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
               {procesando ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : esTarjeta && !checkoutListo ? (
+              ) : esTarjeta && !pagoEnviado ? (
                 <CreditCard className="h-4 w-4" />
-              ) : esTarjeta ? (
-                <RefreshCw className="h-4 w-4" />
               ) : (
                 <CheckCircle2 className="h-4 w-4" />
               )}
               {procesando
                 ? 'Procesando...'
-                : esTarjeta && !checkoutListo
-                  ? 'Generar cobro con tarjeta'
+                : esTarjeta && !pagoEnviado
+                  ? 'Enviar cobro al POS'
                   : esTarjeta
-                    ? 'Validar y registrar venta'
+                    ? 'Esperando confirmación del POS'
                     : 'Confirmar cobro'}
             </button>
           </div>

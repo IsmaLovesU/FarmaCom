@@ -6,6 +6,7 @@ jest.mock('express-validator', () => ({
 const { validationResult } = require('express-validator');
 const VentaService = require('../services/VentaService');
 const VentaController = require('./VentaController');
+const RecurrenteWebhookController = require('./RecurrenteWebhookController');
 
 const mockResponse = () => {
   const res = {};
@@ -36,23 +37,23 @@ describe('VentaController', () => {
     expect(res.json).toHaveBeenCalledWith({ id_venta: 15 });
   });
 
-  it('responde 201 con el checkout de tarjeta creado por el usuario autenticado', async () => {
+  it('responde 201 con el comando POS creado por el usuario autenticado', async () => {
     const usuario = { id_usuario: 7, id_sucursal: 1, rol: 'dependiente' };
     const body = { id_sucursal: 1, detalles: [] };
-    VentaService.crearCheckoutTarjeta.mockResolvedValue({
-      id_checkout: 'ch_test_123',
-      checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+    VentaService.crearPagoPOS.mockResolvedValue({
+      external_id: 'farmacom-pos-test',
+      estado: 'pendiente',
     });
     const req = { body, usuario };
     const res = mockResponse();
 
-    await VentaController.crearCheckoutTarjeta(req, res);
+    await VentaController.crearPagoPOS(req, res);
 
-    expect(VentaService.crearCheckoutTarjeta).toHaveBeenCalledWith(body, usuario);
+    expect(VentaService.crearPagoPOS).toHaveBeenCalledWith(body, usuario);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
-      id_checkout: 'ch_test_123',
-      checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+      external_id: 'farmacom-pos-test',
+      estado: 'pendiente',
     });
   });
 
@@ -82,6 +83,32 @@ describe('VentaController', () => {
     expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith({
       mensaje: 'Stock insuficiente para el lote 3',
+    });
+  });
+
+  it('responde 200 al recibir un webhook de Recurrente', async () => {
+    const body = Buffer.from('{"event_type":"payment_intent.succeeded"}');
+    const headers = {
+      'svix-id': 'msg_test_123',
+      'svix-timestamp': '1700000000',
+      'svix-signature': 'v1,signature',
+    };
+    VentaService.procesarWebhookRecurrente.mockResolvedValue({
+      procesado: true,
+      estado: 'pagado',
+      id_venta: 22,
+    });
+    const req = { body, headers };
+    const res = mockResponse();
+
+    await RecurrenteWebhookController.recibir(req, res);
+
+    expect(VentaService.procesarWebhookRecurrente).toHaveBeenCalledWith(body, headers);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      procesado: true,
+      estado: 'pagado',
+      id_venta: 22,
     });
   });
 

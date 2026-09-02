@@ -20,12 +20,26 @@ const crear = async (req, res) => {
   }
 };
 
-const crearCheckoutTarjeta = async (req, res) => {
+const crearPagoPOS = async (req, res) => {
   if (responderErrores(req, res)) return;
 
   try {
-    const checkout = await VentaService.crearCheckoutTarjeta(req.body, req.usuario);
-    return res.status(201).json(checkout);
+    const pago = await VentaService.crearPagoPOS(req.body, req.usuario);
+    return res.status(201).json(pago);
+  } catch (error) {
+    return res.status(error.status || 500).json({ mensaje: error.message });
+  }
+};
+
+const obtenerEstadoPagoPOS = async (req, res) => {
+  if (responderErrores(req, res)) return;
+
+  try {
+    const pago = await VentaService.obtenerEstadoPagoPOS(
+      req.params.externalId,
+      req.usuario,
+    );
+    return res.status(200).json(pago);
   } catch (error) {
     return res.status(error.status || 500).json({ mensaje: error.message });
   }
@@ -88,7 +102,8 @@ const anular = async (req, res) => {
 
 module.exports = {
   crear,
-  crearCheckoutTarjeta,
+  crearPagoPOS,
+  obtenerEstadoPagoPOS,
   obtenerTodas,
   obtenerPorId,
   asociarCliente,

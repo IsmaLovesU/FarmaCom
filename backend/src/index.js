@@ -20,6 +20,12 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+const recurrenteWebhookRoutes = require('./routes/RecurrenteWebhookRoutes');
+app.use(
+    '/api/webhooks/recurrente',
+    express.raw({ type: 'application/json', limit: '1mb' }),
+    recurrenteWebhookRoutes,
+);
 app.use(express.json());
 app.use(cookieParser());
 

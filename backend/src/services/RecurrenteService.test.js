@@ -1,44 +1,44 @@
+const crypto = require('crypto');
 const RecurrenteService = require('./RecurrenteService');
 
 describe('RecurrenteService', () => {
   const fetchOriginal = global.fetch;
   const secretOriginal = process.env.RECURRENTE_SECRET_KEY;
-  const frontendOriginal = process.env.FRONTEND_URL;
+  const webhookSecretOriginal = process.env.RECURRENTE_WEBHOOK_SECRET;
 
   beforeEach(() => {
     process.env.RECURRENTE_SECRET_KEY = 'rk_test_123';
-    process.env.FRONTEND_URL = 'http://localhost:5173';
+    process.env.RECURRENTE_WEBHOOK_SECRET = `whsec_${Buffer.from('webhook-secret').toString('base64')}`;
     global.fetch = jest.fn();
   });
 
   afterEach(() => {
     global.fetch = fetchOriginal;
     process.env.RECURRENTE_SECRET_KEY = secretOriginal;
-    process.env.FRONTEND_URL = frontendOriginal;
+    process.env.RECURRENTE_WEBHOOK_SECRET = webhookSecretOriginal;
   });
 
-  it('crea un checkout de venta con monto en centavos y moneda GTQ', async () => {
+  it('crea un comando de terminal con monto en centavos y external_id', async () => {
     global.fetch.mockResolvedValue({
       ok: true,
       status: 201,
       text: jest.fn().mockResolvedValue(JSON.stringify({
-        id: 'ch_test_123',
-        status: 'unpaid',
-        checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
+        id: 'tsc_test_123',
+        status: 'pending',
+        terminal_id: 'trm_test_123',
+        amount_in_cents: 2500,
         currency: 'GTQ',
-        live_mode: false,
       })),
     });
 
-    const resultado = await RecurrenteService.crearCheckoutVenta({
+    const resultado = await RecurrenteService.crearComandoTerminal({
+      terminalId: 'trm_test_123',
       totalCentavos: 2500,
-      idSucursal: 1,
-      idCliente: null,
-      idUsuario: 7,
+      externalId: 'farmacom-pos-test',
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://app.recurrente.com/api/checkouts',
+      'https://app.recurrente.com/api/terminal_session_commands',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
@@ -48,30 +48,21 @@ describe('RecurrenteService', () => {
       }),
     );
     const [, opciones] = global.fetch.mock.calls[0];
-    expect(JSON.parse(opciones.body)).toMatchObject({
-      items: [
-        {
-          name: 'Venta FarmaCom',
-          amount_in_cents: 2500,
-          currency: 'GTQ',
-          charge_type: 'one_time',
-          quantity: 1,
-          payment_method_types: ['card'],
-        },
-      ],
-      success_url: 'http://localhost:5173/ventas?recurrente=exito',
-      cancel_url: 'http://localhost:5173/ventas?recurrente=cancelado',
+    expect(JSON.parse(opciones.body)).toEqual({
+      terminal_id: 'trm_test_123',
+      amount_in_cents: 2500,
+      currency: 'GTQ',
+      external_id: 'farmacom-pos-test',
     });
-    expect(resultado.id).toBe('ch_test_123');
+    expect(resultado.id).toBe('tsc_test_123');
   });
 
-  it('rechaza checkouts menores a Q5.00', async () => {
+  it('rechaza comandos menores a Q5.00', async () => {
     await expect(
-      RecurrenteService.crearCheckoutVenta({
+      RecurrenteService.crearComandoTerminal({
+        terminalId: 'trm_test_123',
         totalCentavos: 499,
-        idSucursal: 1,
-        idCliente: null,
-        idUsuario: 7,
+        externalId: 'farmacom-pos-test',
       }),
     ).rejects.toMatchObject({
       status: 400,
@@ -80,72 +71,55 @@ describe('RecurrenteService', () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it('incluye detalles de validacion devueltos por Recurrente', async () => {
-    global.fetch.mockResolvedValue({
-      ok: false,
-      status: 400,
-      text: jest.fn().mockResolvedValue(JSON.stringify({
-        message: 'Checkout Inválido',
-        errors: {
-          base: ['Debes tener al menos un método de pago activado'],
-        },
-      })),
-    });
+  it('verifica la firma Svix utilizando el body crudo', () => {
+    const body = JSON.stringify({ id: 'pi_test', status: 'succeeded' });
+    const id = 'msg_test_123';
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = crypto
+      .createHmac('sha256', Buffer.from('webhook-secret'))
+      .update(`${id}.${timestamp}.${body}`)
+      .digest('base64');
 
-    await expect(
-      RecurrenteService.crearCheckoutVenta({
-        totalCentavos: 500,
-        idSucursal: 1,
-        idCliente: null,
-        idUsuario: 7,
+    expect(
+      RecurrenteService.verificarFirmaWebhook(Buffer.from(body), {
+        'svix-id': id,
+        'svix-timestamp': timestamp,
+        'svix-signature': `v1,${signature}`,
       }),
-    ).rejects.toMatchObject({
-      status: 400,
-      message: 'Checkout Inválido: Debes tener al menos un método de pago activado',
-    });
+    ).toBe(true);
   });
 
-  it('valida que un checkout pagado coincida con el total esperado', async () => {
-    global.fetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      text: jest.fn().mockResolvedValue(JSON.stringify({
-        id: 'ch_test_123',
-        status: 'paid',
-        total_in_cents: 2500,
+  it('rechaza una firma de webhook invalida', () => {
+    expect(() => RecurrenteService.verificarFirmaWebhook('{}', {
+      'svix-id': 'msg_test_123',
+      'svix-timestamp': String(Math.floor(Date.now() / 1000)),
+      'svix-signature': 'v1,firma-invalida',
+    })).toThrow('Firma de webhook invalida');
+  });
+
+  it('normaliza eventos de terminal con metadata.external_id', () => {
+    expect(RecurrenteService.normalizarEventoWebhook({
+      event: 'payment_intent.succeeded',
+      data: {
+        id: 'pi_test_123',
+        amount_in_cents: 2500,
         currency: 'GTQ',
-        latest_intent: { id: 'pi_123', data: { auth_code: 'auth_123' } },
+        checkout: {
+          id: 'ch_test_123',
+          metadata: { external_id: 'farmacom-pos-test' },
+        },
+        payment: { id: 'pa_test_123' },
         payment_method: { card: { last4: '4242' } },
-      })),
-    });
-
-    await expect(
-      RecurrenteService.validarCheckoutPagado('ch_test_123', 2500),
-    ).resolves.toEqual({
-      referencia_pago: 'ch_test_123',
-      estado_pago: 'pagado',
-      autorizacion_pago: 'auth_123',
-      tarjeta_ultimos4: '4242',
-    });
-  });
-
-  it('rechaza un checkout que no esta pagado', async () => {
-    global.fetch.mockResolvedValue({
-      ok: true,
-      status: 200,
-      text: jest.fn().mockResolvedValue(JSON.stringify({
-        id: 'ch_unpaid',
-        status: 'unpaid',
-        total_in_cents: 2500,
-        currency: 'GTQ',
-      })),
-    });
-
-    await expect(
-      RecurrenteService.validarCheckoutPagado('ch_unpaid', 2500),
-    ).rejects.toMatchObject({
-      status: 409,
-      message: 'El pago con tarjeta aun no esta confirmado',
+      },
+    })).toMatchObject({
+      idEvento: 'pi_test_123',
+      eventType: 'payment_intent.succeeded',
+      estado: 'succeeded',
+      externalId: 'farmacom-pos-test',
+      referenciaPago: 'pi_test_123',
+      amountInCents: 2500,
+      currency: 'GTQ',
+      tarjetaUltimos4: '4242',
     });
   });
 });

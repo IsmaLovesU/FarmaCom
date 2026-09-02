@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PuntoVenta from './PuntoVenta';
-import { crearCheckoutTarjeta, crearVenta } from '../../api/ventas';
+import { crearPagoPOS, crearVenta } from '../../api/ventas';
 
 const productoNormal = {
   carritoKey: 'lote-1-presentacion-1',
@@ -49,7 +49,7 @@ const refrescarCatalogo = vi.fn();
 const mockCrearCliente = vi.fn();
 
 vi.mock('../../api/ventas', () => ({
-  crearCheckoutTarjeta: vi.fn(),
+  crearPagoPOS: vi.fn(),
   crearVenta: vi.fn(),
 }));
 
@@ -103,14 +103,13 @@ describe('PuntoVenta', () => {
       nombre_cliente: 'Ana Pérez',
       observaciones: null,
     });
-    crearCheckoutTarjeta.mockReset();
-    crearCheckoutTarjeta.mockResolvedValue({
-      id_checkout: 'ch_test_123',
-      checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
-      estado: 'unpaid',
+    crearPagoPOS.mockReset();
+    crearPagoPOS.mockResolvedValue({
+      id_pago_pos: 5,
+      external_id: 'farmacom-pos-test',
+      estado: 'pendiente',
       total: '17.00',
       moneda: 'GTQ',
-      live_mode: false,
     });
     crearVenta.mockReset();
     crearVenta.mockResolvedValue({
@@ -251,7 +250,7 @@ describe('PuntoVenta', () => {
     expect(screen.getByRole('button', { name: 'Imprimir comprobante' })).toBeInTheDocument();
   });
 
-  it('genera checkout y registra una venta con tarjeta confirmada', async () => {
+  it('envia el cobro al POS para que el webhook confirme la venta', async () => {
     carritoItems = [{ ...productoNormal, cantidad: 2, precioUnitario: 8.5 }];
     crearVenta.mockResolvedValue({
       id_venta: 16,
@@ -263,33 +262,18 @@ describe('PuntoVenta', () => {
 
     await user.click(screen.getByRole('button', { name: 'Tarjeta' }));
     await user.click(screen.getByRole('button', { name: 'Procesar venta' }));
-    await user.click(screen.getByRole('button', { name: 'Generar cobro con tarjeta' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar cobro al POS' }));
 
     await waitFor(() => {
-      expect(crearCheckoutTarjeta).toHaveBeenCalledWith({
+      expect(crearPagoPOS).toHaveBeenCalledWith({
         id_sucursal: 1,
         id_cliente: null,
         detalles: [{ id_lote: 1, cantidad: 2 }],
       });
     });
 
-    expect(screen.getByText('ch_test_123')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Validar y registrar venta' }));
-
-    await waitFor(() => {
-      expect(crearVenta).toHaveBeenCalledWith({
-        id_sucursal: 1,
-        id_cliente: null,
-        metodo_pago: 'tarjeta',
-        referencia_pago: 'ch_test_123',
-        detalles: [{ id_lote: 1, cantidad: 2 }],
-      });
-    });
-
-    expect(vaciarCarrito).toHaveBeenCalled();
-    expect(refrescarCatalogo).toHaveBeenCalled();
-    expect(screen.getByText('Venta registrada')).toBeInTheDocument();
-    expect(screen.getByText(/Comprobante #16/)).toBeInTheDocument();
+    expect(screen.getByText('farmacom-pos-test')).toBeInTheDocument();
+    expect(screen.getByText(/Completa el cobro en el dispositivo POS/)).toBeInTheDocument();
+    expect(crearVenta).not.toHaveBeenCalled();
   });
 });
