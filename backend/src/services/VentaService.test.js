@@ -4,6 +4,7 @@ jest.mock('./RecurrenteService');
 const VentaDAO = require('../daos/VentaDAO');
 const RecurrenteService = require('./RecurrenteService');
 const VentaService = require('./VentaService');
+const terminalOriginal = process.env.RECURRENTE_TERMINAL_ID;
 
 const usuarioDependiente = {
   id_usuario: 7,
@@ -43,7 +44,12 @@ const lotesDisponibles = [
 
 describe('VentaService', () => {
   beforeEach(() => {
+    delete process.env.RECURRENTE_TERMINAL_ID;
     VentaDAO.ejecutarEnTransaccion.mockImplementation((operacion) => operacion({}));
+  });
+
+  afterAll(() => {
+    process.env.RECURRENTE_TERMINAL_ID = terminalOriginal;
   });
 
   describe('crearVenta', () => {
@@ -79,55 +85,6 @@ describe('VentaService', () => {
         precio_unitario: '7.50',
       }, {});
       expect(resultado).toEqual({ id_venta: 21, total: '25.00' });
-    });
-
-    it('registra una venta con tarjeta cuando Recurrente confirma el checkout', async () => {
-      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
-      VentaDAO.crearVenta.mockResolvedValue({ id_venta: 22 });
-      VentaDAO.descontarStock.mockResolvedValue({ id_lote: 1 });
-      VentaDAO.crearDetalle.mockResolvedValue({});
-      VentaDAO.obtenerPorId.mockResolvedValue({
-        id_venta: 22,
-        metodo_pago: 'tarjeta',
-        total: '25.00',
-      });
-      RecurrenteService.validarCheckoutPagado.mockResolvedValue({
-        referencia_pago: 'ch_test_123',
-        estado_pago: 'pagado',
-        autorizacion_pago: 'auth_123',
-        tarjeta_ultimos4: '4242',
-      });
-
-      const resultado = await VentaService.crearVenta({
-        ...datosVenta,
-        metodo_pago: 'tarjeta',
-        monto_recibido: undefined,
-        referencia_pago: 'ch_test_123',
-      }, usuarioDependiente);
-
-      expect(RecurrenteService.validarCheckoutPagado).toHaveBeenCalledWith(
-        'ch_test_123',
-        2500,
-      );
-      expect(VentaDAO.crearVenta).toHaveBeenCalledWith({
-        id_sucursal: 1,
-        id_usuario: 7,
-        id_cliente: null,
-        metodo_pago: 'tarjeta',
-        proveedor_pago: 'recurrente',
-        referencia_pago: 'ch_test_123',
-        estado_pago: 'pagado',
-        autorizacion_pago: 'auth_123',
-        tarjeta_ultimos4: '4242',
-        total: '25.00',
-        monto_recibido: '25.00',
-        cambio: '0.00',
-      }, {});
-      expect(resultado).toEqual({
-        id_venta: 22,
-        metodo_pago: 'tarjeta',
-        total: '25.00',
-      });
     });
 
     it('rechaza la venta completa si un lote no tiene stock suficiente', async () => {
@@ -167,42 +124,9 @@ describe('VentaService', () => {
         ),
       ).rejects.toMatchObject({
         status: 400,
-        message: 'metodo_pago debe ser efectivo o tarjeta',
+        message: 'Los pagos con tarjeta deben iniciarse desde el POS de Recurrente',
       });
       expect(VentaDAO.ejecutarEnTransaccion).not.toHaveBeenCalled();
-    });
-
-    it('rechaza ventas con tarjeta sin referencia de pago', async () => {
-      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
-
-      await expect(
-        VentaService.crearVenta(
-          { ...datosVenta, metodo_pago: 'tarjeta', referencia_pago: null },
-          usuarioDependiente,
-        ),
-      ).rejects.toMatchObject({
-        status: 400,
-        message: 'referencia_pago es requerida para ventas con tarjeta',
-      });
-      expect(VentaDAO.crearVenta).not.toHaveBeenCalled();
-    });
-
-    it('rechaza ventas con tarjeta si el checkout no esta pagado', async () => {
-      const error = new Error('El pago con tarjeta aun no esta confirmado');
-      error.status = 409;
-      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
-      RecurrenteService.validarCheckoutPagado.mockRejectedValue(error);
-
-      await expect(
-        VentaService.crearVenta(
-          { ...datosVenta, metodo_pago: 'tarjeta', referencia_pago: 'ch_unpaid' },
-          usuarioDependiente,
-        ),
-      ).rejects.toMatchObject({
-        status: 409,
-        message: 'El pago con tarjeta aun no esta confirmado',
-      });
-      expect(VentaDAO.crearVenta).not.toHaveBeenCalled();
     });
 
     it('rechaza un monto recibido menor que el total calculado', async () => {
@@ -247,38 +171,120 @@ describe('VentaService', () => {
     });
   });
 
-  describe('crearCheckoutTarjeta', () => {
-    it('calcula el total en backend y crea un checkout en Recurrente', async () => {
+  describe('crearPagoPOS', () => {
+    it('calcula el total, guarda la orden pendiente y crea el comando de terminal', async () => {
+      process.env.RECURRENTE_TERMINAL_ID = 'trm_test_123';
       VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
-      RecurrenteService.crearCheckoutVenta.mockResolvedValue({
-        id: 'ch_test_123',
-        checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
-        status: 'unpaid',
-        currency: 'GTQ',
-        live_mode: false,
+      VentaDAO.crearPagoPOS.mockResolvedValue({
+        id_pago_pos: 5,
+        external_id: 'farmacom-pos-test',
+        terminal_id: 'trm_test_123',
+        total: '25.00',
+        estado: 'pendiente',
+      });
+      VentaDAO.actualizarPagoPOS.mockResolvedValue({
+        id_pago_pos: 5,
+        external_id: 'farmacom-pos-test',
+        terminal_id: 'trm_test_123',
+        total: '25.00',
+        estado: 'pendiente',
+      });
+      RecurrenteService.crearComandoTerminal.mockResolvedValue({
+        id: 'tsc_test_123',
+        status: 'pending',
       });
 
-      const resultado = await VentaService.crearCheckoutTarjeta(
+      const resultado = await VentaService.crearPagoPOS(
         datosVenta,
         usuarioDependiente,
       );
 
-      expect(RecurrenteService.crearCheckoutVenta).toHaveBeenCalledWith({
+      expect(RecurrenteService.crearComandoTerminal).toHaveBeenCalledWith({
+        terminalId: 'trm_test_123',
         totalCentavos: 2500,
-        idSucursal: 1,
-        idCliente: null,
-        idUsuario: 7,
+        externalId: expect.any(String),
       });
       expect(resultado).toEqual({
-        id_checkout: 'ch_test_123',
-        checkout_url: 'https://app.recurrente.com/checkout-session/ch_test_123',
-        estado: 'unpaid',
+        id_pago_pos: 5,
+        external_id: 'farmacom-pos-test',
+        estado: 'pendiente',
+        terminal_id: 'trm_test_123',
         total: '25.00',
         moneda: 'GTQ',
-        live_mode: false,
       });
       expect(VentaDAO.crearVenta).not.toHaveBeenCalled();
       expect(VentaDAO.descontarStock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('procesarWebhookRecurrente', () => {
+    it('crea la venta y descuenta stock cuando el pago fue confirmado', async () => {
+      VentaDAO.obtenerPagoPOSPorExternalId.mockResolvedValue({
+        id_pago_pos: 5,
+        external_id: 'farmacom-pos-test',
+        id_sucursal: 1,
+        id_usuario: 7,
+        id_cliente: null,
+        total: '25.00',
+        detalles: [
+          { id_lote: 2, cantidad: 2 },
+          { id_lote: 1, cantidad: 1 },
+        ],
+        estado: 'pendiente',
+      });
+      RecurrenteService.verificarFirmaWebhook.mockReturnValue(true);
+      RecurrenteService.normalizarEventoWebhook.mockReturnValue({
+        idEvento: 'pi_test_123',
+        eventType: 'payment_intent.succeeded',
+        estado: 'succeeded',
+        externalId: 'farmacom-pos-test',
+        referenciaPago: 'pi_test_123',
+        amountInCents: 2500,
+        currency: 'GTQ',
+        autorizacionPago: 'auth_123',
+        tarjetaUltimos4: '4242',
+      });
+      VentaDAO.obtenerLotesParaVenta.mockResolvedValue(lotesDisponibles);
+      VentaDAO.crearVenta.mockResolvedValue({ id_venta: 22 });
+      VentaDAO.descontarStock.mockResolvedValue({ id_lote: 1 });
+      VentaDAO.crearDetalle.mockResolvedValue({});
+      VentaDAO.actualizarPagoPOS.mockResolvedValue({ estado: 'pagado' });
+
+      await expect(VentaService.procesarWebhookRecurrente('{}', {})).resolves.toEqual({
+        procesado: true,
+        estado: 'pagado',
+        id_venta: 22,
+      });
+      expect(VentaDAO.crearVenta).toHaveBeenCalledWith(expect.objectContaining({
+        metodo_pago: 'tarjeta',
+        proveedor_pago: 'recurrente',
+        referencia_pago: 'pi_test_123',
+        estado_pago: 'pagado',
+        total: '25.00',
+        cambio: '0.00',
+      }), {});
+      expect(VentaDAO.descontarStock).toHaveBeenCalledTimes(2);
+    });
+
+    it('no vuelve a crear una venta para un webhook duplicado', async () => {
+      RecurrenteService.verificarFirmaWebhook.mockReturnValue(true);
+      RecurrenteService.normalizarEventoWebhook.mockReturnValue({
+        externalId: 'farmacom-pos-test',
+        eventType: 'payment_intent.succeeded',
+        estado: 'succeeded',
+      });
+      VentaDAO.obtenerPagoPOSPorExternalId.mockResolvedValue({
+        estado: 'pagado',
+        id_venta: 22,
+      });
+
+      await expect(VentaService.procesarWebhookRecurrente('{}', {})).resolves.toEqual({
+        procesado: true,
+        duplicado: true,
+        estado: 'pagado',
+        id_venta: 22,
+      });
+      expect(VentaDAO.crearVenta).not.toHaveBeenCalled();
     });
   });
 

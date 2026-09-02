@@ -1,8 +1,9 @@
+const crypto = require('crypto');
 const VentaDAO = require('../daos/VentaDAO');
 const RecurrenteService = require('./RecurrenteService');
 
 const MAXIMO_CENTAVOS = 999999999999;
-const METODOS_PERMITIDOS = ['efectivo', 'tarjeta'];
+const METODOS_PERMITIDOS = ['efectivo'];
 
 const lanzarError = (mensaje, status) => {
   const error = new Error(mensaje);
@@ -119,95 +120,39 @@ const prepararVenta = async (datos, usuario, client) => {
   };
 };
 
-const crearCheckoutTarjeta = async (datos, usuario) => {
-  validarDatosBasicosVenta(datos, usuario);
-
-  const ventaPreparada = await VentaDAO.ejecutarEnTransaccion((client) => (
-    prepararVenta(datos, usuario, client)
-  ));
-
-  const checkout = await RecurrenteService.crearCheckoutVenta({
-    totalCentavos: ventaPreparada.totalCentavos,
-    idSucursal: ventaPreparada.id_sucursal,
-    idCliente: ventaPreparada.id_cliente,
-    idUsuario: usuario.id_usuario,
-  });
-
-  return {
-    id_checkout: checkout.id,
-    checkout_url: checkout.checkout_url,
-    estado: checkout.status,
-    total: aMonto(ventaPreparada.totalCentavos),
-    moneda: checkout.currency || 'GTQ',
-    live_mode: checkout.live_mode,
-  };
-};
-
 const crearVenta = async (datos, usuario) => {
   const {
     metodo_pago,
     monto_recibido,
-    referencia_pago,
   } = datos;
 
   if (!METODOS_PERMITIDOS.includes(metodo_pago)) {
-    lanzarError('metodo_pago debe ser efectivo o tarjeta', 400);
+    lanzarError('Los pagos con tarjeta deben iniciarse desde el POS de Recurrente', 400);
   }
 
   validarDatosBasicosVenta(datos, usuario);
 
-  let datosPagoVerificado = {};
-  let totalPagadoCentavos = null;
-
-  if (metodo_pago === 'tarjeta') {
-    if (!referencia_pago) {
-      lanzarError('referencia_pago es requerida para ventas con tarjeta', 400);
-    }
-
-    const ventaParaPago = await VentaDAO.ejecutarEnTransaccion((client) => (
-      prepararVenta(datos, usuario, client)
-    ));
-    totalPagadoCentavos = ventaParaPago.totalCentavos;
-    datosPagoVerificado = await RecurrenteService.validarCheckoutPagado(
-      referencia_pago,
-      totalPagadoCentavos,
-    );
-  }
-
   const idVenta = await VentaDAO.ejecutarEnTransaccion(async (client) => {
     const ventaPreparada = await prepararVenta(datos, usuario, client);
-    let recibidoCentavos;
-    let cambioCentavos;
-    let datosPago = {};
-
-    if (metodo_pago === 'efectivo') {
-      recibidoCentavos = aCentavos(monto_recibido);
-      if (recibidoCentavos < ventaPreparada.totalCentavos) {
-        lanzarError(
-          `El monto recibido es insuficiente. El total es Q${aMonto(ventaPreparada.totalCentavos)}`,
-          400,
-        );
-      }
-      cambioCentavos = recibidoCentavos - ventaPreparada.totalCentavos;
-    } else {
-      if (ventaPreparada.totalCentavos !== totalPagadoCentavos) {
-        lanzarError('El total de la venta cambio despues de confirmar el pago', 409);
-      }
-      datosPago = datosPagoVerificado;
-      recibidoCentavos = ventaPreparada.totalCentavos;
-      cambioCentavos = 0;
+    const recibidoCentavos = aCentavos(monto_recibido);
+    if (recibidoCentavos < ventaPreparada.totalCentavos) {
+      lanzarError(
+        `El monto recibido es insuficiente. El total es Q${aMonto(ventaPreparada.totalCentavos)}`,
+        400,
+      );
     }
+    const cambioCentavos = recibidoCentavos - ventaPreparada.totalCentavos;
 
     const venta = await VentaDAO.crearVenta({
       id_sucursal: ventaPreparada.id_sucursal,
       id_usuario: Number(usuario.id_usuario),
       id_cliente: ventaPreparada.id_cliente,
       metodo_pago,
-      proveedor_pago: metodo_pago === 'tarjeta' ? 'recurrente' : null,
-      referencia_pago: datosPago.referencia_pago || null,
-      estado_pago: datosPago.estado_pago || null,
-      autorizacion_pago: datosPago.autorizacion_pago || null,
-      tarjeta_ultimos4: datosPago.tarjeta_ultimos4 || null,
+      proveedor_pago: null,
+      referencia_pago: null,
+      estado_pago: null,
+      autorizacion_pago: null,
+      tarjeta_ultimos4: null,
       total: aMonto(ventaPreparada.totalCentavos),
       monto_recibido: aMonto(recibidoCentavos),
       cambio: aMonto(cambioCentavos),
@@ -233,6 +178,222 @@ const crearVenta = async (datos, usuario) => {
   });
 
   return VentaDAO.obtenerPorId(idVenta);
+};
+
+const crearPagoPOS = async (datos, usuario) => {
+  validarDatosBasicosVenta(datos, usuario);
+  const terminalId = process.env.RECURRENTE_TERMINAL_ID;
+  if (!terminalId) {
+    lanzarError('Configura RECURRENTE_TERMINAL_ID para procesar pagos con POS', 503);
+  }
+
+  const externalId = `farmacom-pos-${crypto.randomUUID()}`;
+  const pago = await VentaDAO.ejecutarEnTransaccion(async (client) => {
+    const ventaPreparada = await prepararVenta(datos, usuario, client);
+    return VentaDAO.crearPagoPOS({
+      external_id: externalId,
+      id_sucursal: ventaPreparada.id_sucursal,
+      id_usuario: Number(usuario.id_usuario),
+      id_cliente: ventaPreparada.id_cliente,
+      terminal_id: terminalId,
+      total: aMonto(ventaPreparada.totalCentavos),
+      detalles: ventaPreparada.detallesCalculados,
+    }, client);
+  });
+
+  let comando;
+  try {
+    comando = await RecurrenteService.crearComandoTerminal({
+      terminalId,
+      totalCentavos: aCentavos(pago.total),
+      externalId,
+    });
+  } catch (error) {
+    await VentaDAO.ejecutarEnTransaccion((client) => VentaDAO.actualizarPagoPOS({
+      external_id: externalId,
+      estado: 'fallido',
+      estado_pago: 'error_al_iniciar',
+    }, client));
+    throw error;
+  }
+
+  const estadoComando = comando.status === 'dispatched' ? 'procesando' : (
+    comando.status === 'failed' ? 'fallido' : 'pendiente'
+  );
+  const pagoActualizado = await VentaDAO.ejecutarEnTransaccion((client) => (
+    VentaDAO.actualizarPagoPOS({
+      external_id: externalId,
+      estado: estadoComando,
+      comando_recurrente_id: comando.id || comando.command_id || null,
+    }, client)
+  ));
+
+  return {
+    id_pago_pos: pagoActualizado.id_pago_pos,
+    external_id: pagoActualizado.external_id,
+    estado: pagoActualizado.estado,
+    terminal_id: pagoActualizado.terminal_id,
+    total: pagoActualizado.total,
+    moneda: 'GTQ',
+  };
+};
+
+const mapearEstadoWebhook = (estado, eventType) => {
+  if (estado === 'succeeded' || eventType?.endsWith('.succeeded')) return 'pagado';
+  if (estado === 'failed' || eventType?.endsWith('.failed')) return 'fallido';
+  if (estado === 'canceled' || eventType?.endsWith('.canceled')) return 'cancelado';
+  return 'pendiente';
+};
+
+const procesarWebhookRecurrente = async (body, headers) => {
+  RecurrenteService.verificarFirmaWebhook(body, headers);
+  const evento = RecurrenteService.normalizarEventoWebhook(body);
+
+  if (!evento.externalId) {
+    return { procesado: false, razon: 'Evento sin external_id de FarmaCom' };
+  }
+
+  return VentaDAO.ejecutarEnTransaccion(async (client) => {
+    const pago = await VentaDAO.obtenerPagoPOSPorExternalId(
+      evento.externalId,
+      client,
+      true,
+    );
+    if (!pago) {
+      return { procesado: false, razon: 'Pago POS no encontrado' };
+    }
+
+    if (
+      pago.estado === 'pagado'
+      || pago.estado === 'fallido'
+      || pago.estado === 'cancelado'
+      || pago.estado === 'rechazado'
+    ) {
+      return {
+        procesado: true,
+        duplicado: pago.estado === 'pagado',
+        estado: pago.estado,
+        id_venta: pago.id_venta,
+      };
+    }
+
+    const estadoPago = mapearEstadoWebhook(evento.estado, evento.eventType);
+    if (estadoPago !== 'pagado') {
+      const actualizado = await VentaDAO.actualizarPagoPOS({
+        external_id: evento.externalId,
+        estado: estadoPago,
+        estado_pago: evento.estado,
+        evento_recurrente_id: evento.idEvento,
+      }, client);
+      return { procesado: true, estado: actualizado.estado };
+    }
+
+    if (
+      Number(evento.amountInCents) !== aCentavos(pago.total)
+      || (evento.currency && evento.currency !== 'GTQ')
+      || !evento.referenciaPago
+    ) {
+      const actualizado = await VentaDAO.actualizarPagoPOS({
+        external_id: evento.externalId,
+        estado: 'rechazado',
+        estado_pago: 'monto_o_moneda_invalida',
+        evento_recurrente_id: evento.idEvento,
+        referencia_pago: evento.referenciaPago,
+      }, client);
+      return { procesado: true, estado: actualizado.estado };
+    }
+
+    const datosVenta = {
+      id_sucursal: pago.id_sucursal,
+      id_cliente: pago.id_cliente,
+      detalles: pago.detalles,
+    };
+    const usuarioSistema = {
+      id_usuario: pago.id_usuario,
+      rol: 'dueno',
+    };
+    let ventaPreparada;
+    try {
+      ventaPreparada = await prepararVenta(datosVenta, usuarioSistema, client);
+    } catch (error) {
+      const actualizado = await VentaDAO.actualizarPagoPOS({
+        external_id: evento.externalId,
+        estado: 'rechazado',
+        estado_pago: 'inventario_no_disponible',
+        evento_recurrente_id: evento.idEvento,
+        referencia_pago: evento.referenciaPago,
+      }, client);
+      return { procesado: true, estado: actualizado.estado };
+    }
+    if (ventaPreparada.totalCentavos !== aCentavos(pago.total)) {
+      const actualizado = await VentaDAO.actualizarPagoPOS({
+        external_id: evento.externalId,
+        estado: 'rechazado',
+        estado_pago: 'total_venta_invalido',
+        evento_recurrente_id: evento.idEvento,
+        referencia_pago: evento.referenciaPago,
+      }, client);
+      return { procesado: true, estado: actualizado.estado };
+    }
+
+    const venta = await VentaDAO.crearVenta({
+      id_sucursal: ventaPreparada.id_sucursal,
+      id_usuario: Number(pago.id_usuario),
+      id_cliente: ventaPreparada.id_cliente,
+      metodo_pago: 'tarjeta',
+      proveedor_pago: 'recurrente',
+      referencia_pago: evento.referenciaPago,
+      estado_pago: 'pagado',
+      autorizacion_pago: evento.autorizacionPago,
+      tarjeta_ultimos4: evento.tarjetaUltimos4,
+      total: aMonto(ventaPreparada.totalCentavos),
+      monto_recibido: aMonto(ventaPreparada.totalCentavos),
+      cambio: '0.00',
+    }, client);
+
+    for (const detalle of ventaPreparada.detallesCalculados) {
+      const loteActualizado = await VentaDAO.descontarStock(
+        detalle.id_lote,
+        detalle.cantidad,
+        client,
+      );
+      if (!loteActualizado) {
+        lanzarError(`Stock insuficiente para el lote ${detalle.id_lote}`, 409);
+      }
+      await VentaDAO.crearDetalle({ id_venta: venta.id_venta, ...detalle }, client);
+    }
+
+    const actualizado = await VentaDAO.actualizarPagoPOS({
+      external_id: evento.externalId,
+      estado: 'pagado',
+      estado_pago: evento.estado,
+      evento_recurrente_id: evento.idEvento,
+      referencia_pago: evento.referenciaPago,
+      autorizacion_pago: evento.autorizacionPago,
+      tarjeta_ultimos4: evento.tarjetaUltimos4,
+      id_venta: venta.id_venta,
+    }, client);
+
+    return {
+      procesado: true,
+      estado: actualizado.estado,
+      id_venta: venta.id_venta,
+    };
+  });
+};
+
+const obtenerEstadoPagoPOS = async (externalId, usuario) => {
+  const pago = await VentaDAO.obtenerPagoPOSPorExternalId(externalId);
+  if (!pago) lanzarError('Pago POS no encontrado', 404);
+  validarAccesoSucursal(usuario, pago.id_sucursal);
+  return {
+    id_pago_pos: pago.id_pago_pos,
+    external_id: pago.external_id,
+    estado: pago.estado,
+    estado_pago: pago.estado_pago,
+    id_venta: pago.id_venta,
+    total: pago.total,
+  };
 };
 
 const obtenerTodas = async (filtros, usuario) => {
@@ -296,8 +457,10 @@ const anularVenta = async (id_venta, motivo_anulacion, usuario) => {
 };
 
 module.exports = {
-  crearCheckoutTarjeta,
+  crearPagoPOS,
   crearVenta,
+  procesarWebhookRecurrente,
+  obtenerEstadoPagoPOS,
   obtenerTodas,
   obtenerPorId,
   asociarCliente,

@@ -10,12 +10,12 @@ export const crearVenta = async (payload) => {
   }
 };
 
-export const crearCheckoutTarjeta = async (payload) => {
+export const crearPagoPOS = async (payload) => {
   try {
-    const { data } = await api.post('/ventas/tarjeta/checkout', payload);
+    const { data } = await api.post('/ventas/tarjeta/pos', payload);
     return data;
   } catch (err) {
-    const mensaje = err.response?.data?.mensaje || 'No se pudo generar el cobro con tarjeta.';
+    const mensaje = err.response?.data?.mensaje || 'No se pudo enviar el cobro al POS.';
     throw new Error(mensaje);
   }
 };

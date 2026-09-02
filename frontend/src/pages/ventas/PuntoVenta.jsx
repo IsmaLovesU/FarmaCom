@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Info, X } from 'lucide-react';
-import { crearCheckoutTarjeta, crearVenta } from '../../api/ventas';
+import { crearPagoPOS, crearVenta } from '../../api/ventas';
 import AutocompletadoProductosPOS from '../../components/ventas/AutocompletadoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
 import CobroModal from '../../components/ventas/CobroModal';
@@ -49,7 +49,7 @@ export default function PuntoVenta() {
   const [procesandoCobro, setProcesandoCobro] = useState(false);
   const [errorCobro, setErrorCobro] = useState(null);
   const [ventaCompletada, setVentaCompletada] = useState(null);
-  const [checkoutTarjeta, setCheckoutTarjeta] = useState(null);
+  const [pagoPOS, setPagoPOS] = useState(null);
 
   const agregarAlCarritoValidandoStock = useCallback((producto) => {
     const existente = items.find((item) => item.clave === producto.carritoKey);
@@ -124,7 +124,7 @@ export default function PuntoVenta() {
 
   const abrirCobro = useCallback(() => {
     setErrorCobro(null);
-    setCheckoutTarjeta(null);
+    setPagoPOS(null);
     setMostrandoCobro(true);
     setConfirmandoVenta(false);
   }, []);
@@ -149,12 +149,12 @@ export default function PuntoVenta() {
     if (procesandoCobro) return;
     setMostrandoCobro(false);
     setErrorCobro(null);
-    setCheckoutTarjeta(null);
+    setPagoPOS(null);
   }, [procesandoCobro]);
 
   const cambiarMetodoPago = useCallback((metodo) => {
     setMetodoPago(metodo);
-    setCheckoutTarjeta(null);
+    setPagoPOS(null);
     setErrorCobro(null);
   }, []);
 
@@ -179,21 +179,21 @@ export default function PuntoVenta() {
     };
   }, [clienteSeleccionado, items, sucursalActivaId]);
 
-  const generarCheckoutTarjeta = useCallback(async () => {
+  const iniciarPagoPOS = useCallback(async () => {
     setErrorCobro(null);
 
     try {
       setProcesandoCobro(true);
-      const checkout = await crearCheckoutTarjeta(construirPayloadBaseVenta());
-      setCheckoutTarjeta(checkout);
+      const pago = await crearPagoPOS(construirPayloadBaseVenta());
+      setPagoPOS(pago);
     } catch (err) {
-      setErrorCobro(err.message || 'No se pudo generar el cobro con tarjeta.');
+      setErrorCobro(err.message || 'No se pudo enviar el cobro al POS.');
     } finally {
       setProcesandoCobro(false);
     }
   }, [construirPayloadBaseVenta]);
 
-  const confirmarCobro = useCallback(async ({ montoRecibido, referenciaPago } = {}) => {
+  const confirmarCobro = useCallback(async ({ montoRecibido } = {}) => {
     setErrorCobro(null);
 
     try {
@@ -201,15 +201,13 @@ export default function PuntoVenta() {
       const venta = await crearVenta({
         ...construirPayloadBaseVenta(),
         metodo_pago: metodoPago,
-        ...(metodoPago === 'efectivo'
-          ? { monto_recibido: montoRecibido }
-          : { referencia_pago: referenciaPago }),
+        monto_recibido: montoRecibido,
       });
 
       vaciarCarrito();
       setMostrandoCobro(false);
       setVentaCompletada(venta);
-      setCheckoutTarjeta(null);
+      setPagoPOS(null);
       refrescar();
     } catch (err) {
       setErrorCobro(err.message || 'No se pudo registrar la venta.');
@@ -304,11 +302,11 @@ export default function PuntoVenta() {
         total={total}
         metodoPago={metodoPago}
         clienteSeleccionado={clienteSeleccionado}
-        checkoutTarjeta={checkoutTarjeta}
+        pagoPOS={pagoPOS}
         procesando={procesandoCobro}
         error={errorCobro}
         onClose={cerrarCobro}
-        onCrearCheckoutTarjeta={generarCheckoutTarjeta}
+        onCrearPagoPOS={iniciarPagoPOS}
         onConfirm={confirmarCobro}
       />
 

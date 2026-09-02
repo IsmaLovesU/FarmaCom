@@ -44,7 +44,7 @@ const validarDatosVenta = [
 const validarCreacion = [
   ...validarDatosVenta,
   body('metodo_pago')
-    .isIn(['efectivo', 'tarjeta']).withMessage('metodo_pago debe ser efectivo o tarjeta'),
+    .equals('efectivo').withMessage('metodo_pago debe ser efectivo'),
   body('monto_recibido')
     .if(body('metodo_pago').equals('efectivo'))
     .custom(esMontoValido)
@@ -55,19 +55,17 @@ const validarCreacion = [
     .custom(esMontoValido)
     .withMessage('monto_recibido debe ser un monto valido con maximo dos decimales')
     .toFloat(),
-  body('referencia_pago')
-    .if(body('metodo_pago').equals('tarjeta'))
-    .trim()
-    .notEmpty().withMessage('referencia_pago es requerida para pagos con tarjeta')
-    .isLength({ max: 120 }).withMessage('referencia_pago no puede superar 120 caracteres'),
-  body('referencia_pago')
-    .optional()
-    .trim()
-    .isLength({ max: 120 }).withMessage('referencia_pago no puede superar 120 caracteres'),
 ];
 
-const validarCheckoutTarjeta = [
+const validarPagoPOS = [
   ...validarDatosVenta,
+];
+
+const validarExternalId = [
+  param('externalId')
+    .trim()
+    .notEmpty().withMessage('externalId es requerido')
+    .isLength({ max: 120 }).withMessage('externalId no puede superar 120 caracteres'),
 ];
 
 const validarFiltros = [
@@ -112,11 +110,19 @@ const validarAnulacion = [
 ];
 
 router.post(
-  '/tarjeta/checkout',
+  '/tarjeta/pos',
   verificarToken,
   rolesVenta,
-  validarCheckoutTarjeta,
-  VentaController.crearCheckoutTarjeta,
+  validarPagoPOS,
+  VentaController.crearPagoPOS,
+);
+
+router.get(
+  '/tarjeta/pos/:externalId',
+  verificarToken,
+  rolesVenta,
+  validarExternalId,
+  VentaController.obtenerEstadoPagoPOS,
 );
 
 router.post(

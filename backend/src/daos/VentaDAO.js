@@ -96,6 +96,90 @@ class VentaDAO {
     return rows[0];
   }
 
+  async crearPagoPOS({
+    external_id,
+    id_sucursal,
+    id_usuario,
+    id_cliente,
+    terminal_id,
+    total,
+    detalles,
+  }, client) {
+    const { rows } = await client.query(
+      `INSERT INTO pago_pos (
+         external_id,
+         id_sucursal,
+         id_usuario,
+         id_cliente,
+         terminal_id,
+         total,
+         detalles
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+       RETURNING *`,
+      [
+        external_id,
+        id_sucursal,
+        id_usuario,
+        id_cliente ?? null,
+        terminal_id,
+        total,
+        JSON.stringify(detalles),
+      ],
+    );
+    return rows[0];
+  }
+
+  async obtenerPagoPOSPorExternalId(external_id, client = pool, bloquear = false) {
+    const { rows } = await client.query(
+      `SELECT *
+       FROM pago_pos
+       WHERE external_id = $1
+       ${bloquear ? 'FOR UPDATE' : ''}`,
+      [external_id],
+    );
+    return rows[0] || null;
+  }
+
+  async actualizarPagoPOS({
+    external_id,
+    estado,
+    estado_pago,
+    comando_recurrente_id,
+    evento_recurrente_id,
+    referencia_pago,
+    autorizacion_pago,
+    tarjeta_ultimos4,
+    id_venta,
+  }, client) {
+    const { rows } = await client.query(
+      `UPDATE pago_pos
+       SET estado = COALESCE($2, estado),
+           estado_pago = COALESCE($3, estado_pago),
+           comando_recurrente_id = COALESCE($4, comando_recurrente_id),
+           evento_recurrente_id = COALESCE($5, evento_recurrente_id),
+           referencia_pago = COALESCE($6, referencia_pago),
+           autorizacion_pago = COALESCE($7, autorizacion_pago),
+           tarjeta_ultimos4 = COALESCE($8, tarjeta_ultimos4),
+           id_venta = COALESCE($9, id_venta),
+           actualizado_en = CURRENT_TIMESTAMP
+       WHERE external_id = $1
+       RETURNING *`,
+      [
+        external_id,
+        estado ?? null,
+        estado_pago ?? null,
+        comando_recurrente_id ?? null,
+        evento_recurrente_id ?? null,
+        referencia_pago ?? null,
+        autorizacion_pago ?? null,
+        tarjeta_ultimos4 ?? null,
+        id_venta ?? null,
+      ],
+    );
+    return rows[0] || null;
+  }
+
   async crearDetalle({
     id_venta,
     id_lote,
