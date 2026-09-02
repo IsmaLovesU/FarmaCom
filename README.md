@@ -164,34 +164,6 @@ El usuario de acceso para desarrollo se compartirá por otro medio para mayor se
 
 ---
 
-## Variables de Recurrente para POS
-
-El cobro con tarjeta se realiza mediante Terminal Sessions; ya no se usa el checkout desde FarmaCom.
-Agrega al `.env` del backend:
-
-```env
-RECURRENTE_SECRET_KEY=sk_test_...
-RECURRENTE_TERMINAL_ID=trm_...
-RECURRENTE_WEBHOOK_SECRET=whsec_...
-```
-
-El endpoint que debe registrarse en Recurrente es:
-`POST https://tu-dominio/api/webhooks/recurrente`.
-El webhook valida los headers `svix-id`, `svix-timestamp` y `svix-signature`, y usa
-`checkout.metadata.external_id` para relacionar el cobro con la orden POS.
-
-Para iniciar un cobro, el frontend usa `POST /api/ventas/tarjeta/pos`; la venta se crea
-unicamente despues de recibir `payment_intent.succeeded` y validar monto, moneda y firma.
-
-Recurrente ofrece Sandboxes aislados con llaves `sk_test_...`; esas pruebas simulan el
-API y los webhooks, pero no ejecutan hardware POS ni mueven dinero real. Para probar un
-celular/terminal fisico de punta a punta se requiere una cuenta LIVE y un cobro real.
-Consulta [Terminal Sessions](https://docs.recurrente.com/guias-espanol/guias/terminal-sessions),
-[Webhooks](https://docs.recurrente.com/guias-espanol/comenzar/webhooks) y
-[Sandboxes](https://docs.recurrente.com/guides-english/guides/sandboxes-and-test-clocks).
-
----
-
 ## Integrantes del equipo
 
 | Nombre | Carnet |
