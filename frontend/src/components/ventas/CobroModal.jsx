@@ -96,7 +96,7 @@ export default function CobroModal({
                 Cobro de venta
               </h3>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                {items.length} {items.length === 1 ? 'articulo' : 'articulos'}
+                {items.length} {items.length === 1 ? 'artículo' : 'artículos'}
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function CobroModal({
                   Estado
                 </p>
                 <p className="mt-1 truncate text-sm font-bold text-on-surface">
-                  {pagoEnviado ? 'Cobro enviado al POS' : 'Pendiente de enviar'}
+                  {pagoEnviado ? 'Pago en proceso' : 'Pendiente de iniciar'}
                 </p>
               </div>
             )}
@@ -195,24 +195,14 @@ export default function CobroModal({
                   Cobro con tarjeta
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Envía el monto al POS de Recurrente. La venta se registrará cuando el webhook confirme el pago.
+                  Acerca o inserta la tarjeta en el dispositivo. La venta se registrará cuando se verifique el pago.
                 </p>
               </div>
 
               {pagoEnviado && (
-                <div className="space-y-3">
-                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-                    <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-                      Referencia de seguimiento
-                    </p>
-                    <p className="mt-1 truncate font-mono text-sm font-bold text-primary">
-                      {pagoPOS.external_id}
-                    </p>
-                  </div>
-                  <p className="text-sm font-semibold text-amber-700">
-                    Completa el cobro en el dispositivo POS para continuar.
-                  </p>
-                </div>
+                <p className="text-sm font-semibold text-amber-700">
+                  Confirma el pago en el dispositivo para continuar.
+                </p>
               )}
             </div>
           )}
@@ -239,7 +229,7 @@ export default function CobroModal({
               ))}
               {restantes > 0 && (
                 <p className="px-4 py-3 text-sm font-semibold text-slate-500">
-                  + {restantes} productos mas
+                  + {restantes} productos más
                 </p>
               )}
             </div>
@@ -248,7 +238,7 @@ export default function CobroModal({
           {!metodoSoportado && (
             <div className="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              Este metodo de pago aun no esta disponible.
+              Este método de pago aún no está disponible.
             </div>
           )}
 
@@ -286,9 +276,9 @@ export default function CobroModal({
               {procesando
                 ? 'Procesando...'
                 : esTarjeta && !pagoEnviado
-                  ? 'Enviar cobro al POS'
+                  ? 'Cobrar con tarjeta'
                   : esTarjeta
-                    ? 'Esperando confirmación del POS'
+                    ? 'Pago en proceso'
                     : 'Confirmar cobro'}
             </button>
           </div>

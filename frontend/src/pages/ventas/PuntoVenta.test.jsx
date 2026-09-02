@@ -262,7 +262,7 @@ describe('PuntoVenta', () => {
 
     await user.click(screen.getByRole('button', { name: 'Tarjeta' }));
     await user.click(screen.getByRole('button', { name: 'Procesar venta' }));
-    await user.click(screen.getByRole('button', { name: 'Enviar cobro al POS' }));
+    await user.click(screen.getByRole('button', { name: 'Cobrar con tarjeta' }));
 
     await waitFor(() => {
       expect(crearPagoPOS).toHaveBeenCalledWith({
@@ -272,8 +272,52 @@ describe('PuntoVenta', () => {
       });
     });
 
-    expect(screen.getByText('farmacom-pos-test')).toBeInTheDocument();
-    expect(screen.getByText(/Completa el cobro en el dispositivo POS/)).toBeInTheDocument();
+    expect(screen.queryByText('farmacom-pos-test')).not.toBeInTheDocument();
+    expect(screen.getByText(/Confirma el pago en el dispositivo/)).toBeInTheDocument();
+    expect(crearVenta).not.toHaveBeenCalled();
+  });
+
+  it('deshabilita el boton mientras envia el comando al POS', async () => {
+    let resolverPago;
+    crearPagoPOS.mockImplementation(() => new Promise((resolve) => {
+      resolverPago = resolve;
+    }));
+    carritoItems = [{ ...productoNormal, cantidad: 1, precioUnitario: 8.5 }];
+    const user = userEvent.setup();
+    render(<PuntoVenta />);
+
+    await user.click(screen.getByRole('button', { name: 'Tarjeta' }));
+    await user.click(screen.getByRole('button', { name: 'Procesar venta' }));
+    const botonPOS = screen.getByRole('button', { name: 'Cobrar con tarjeta' });
+    await user.click(botonPOS);
+
+    await waitFor(() => {
+      expect(crearPagoPOS).toHaveBeenCalledTimes(1);
+    });
+    expect(botonPOS).toBeDisabled();
+
+    resolverPago({
+      id_pago_pos: 6,
+      external_id: 'farmacom-pos-test-2',
+      estado: 'pendiente',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Confirma el pago en el dispositivo/)).toBeInTheDocument();
+    });
+  });
+
+  it('muestra el error del backend si no se puede enviar el cobro al POS', async () => {
+    crearPagoPOS.mockRejectedValue(new Error('El dispositivo no está listo para cobrar. Verifica que esté abierto e inténtalo de nuevo.'));
+    carritoItems = [{ ...productoNormal, cantidad: 1, precioUnitario: 8.5 }];
+    const user = userEvent.setup();
+    render(<PuntoVenta />);
+
+    await user.click(screen.getByRole('button', { name: 'Tarjeta' }));
+    await user.click(screen.getByRole('button', { name: 'Procesar venta' }));
+    await user.click(screen.getByRole('button', { name: 'Cobrar con tarjeta' }));
+
+    expect(await screen.findByText(/El dispositivo no está listo para cobrar/)).toBeInTheDocument();
     expect(crearVenta).not.toHaveBeenCalled();
   });
 });
