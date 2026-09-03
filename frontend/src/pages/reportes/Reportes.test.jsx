@@ -42,6 +42,17 @@ vi.mock('../../hooks/useReportes', () => ({
       cargando: false,
       error: null,
     },
+    serie: {
+      datos: [{
+        periodo: '2026-08-05',
+        ingresos: 500,
+        total_ventas: 10,
+        ticket_promedio: 50,
+        unidades_vendidas: 24,
+      }],
+      cargando: false,
+      error: null,
+    },
     recargar: controles.recargar,
   }),
 }));
@@ -63,5 +74,6 @@ describe('Reportes', () => {
     expect(screen.queryByText('Información consolidada')).not.toBeInTheDocument();
     expect(screen.getByRole('form', { name: 'Filtros de reportes' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Resumen' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ingresos por período' })).toBeInTheDocument();
   });
 });

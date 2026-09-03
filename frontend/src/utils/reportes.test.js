@@ -3,6 +3,7 @@ import {
   formatearFechaReporte,
   formatearMoneda,
   formatearNumero,
+  formatearPeriodoReporte,
   normalizarMetodosPago,
   normalizarNumeroReporte,
   normalizarResumenVentas,
@@ -23,6 +24,9 @@ describe('utilidades de reportes', () => {
     expect(formatearFechaReporte('2026-08-03')).toBe('03/08/2026');
     expect(formatearFechaReporte('2026-02-31')).toBe('—');
     expect(formatearFechaReporte(null)).toBe('—');
+    expect(formatearPeriodoReporte('2026-08-03', 'dia')).toBe('03/08');
+    expect(formatearPeriodoReporte('2026-08-03', 'semana')).toBe('03/08');
+    expect(formatearPeriodoReporte('2026-08-03', 'mes')).toBe('ago 2026');
   });
 
   it('normaliza el resumen de ventas sin propagar valores inválidos', () => {

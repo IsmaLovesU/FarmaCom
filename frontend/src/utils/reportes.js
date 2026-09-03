@@ -14,6 +14,25 @@ const FORMATO_FECHA = new Intl.DateTimeFormat('es-GT', {
   timeZone: 'UTC',
 });
 
+const FORMATO_MES = new Intl.DateTimeFormat('es-GT', {
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const obtenerFechaReporte = (valor) => {
+  const coincidencia = String(valor ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!coincidencia) return null;
+
+  const [, anio, mes, dia] = coincidencia;
+  const fecha = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
+  const esFechaValida = fecha.getUTCFullYear() === Number(anio)
+    && fecha.getUTCMonth() === Number(mes) - 1
+    && fecha.getUTCDate() === Number(dia);
+
+  return esFechaValida ? fecha : null;
+};
+
 export const normalizarNumeroReporte = (valor, valorPredeterminado = 0) => {
   const numero = Number(valor);
   return Number.isFinite(numero) ? numero : valorPredeterminado;
@@ -28,18 +47,19 @@ export const formatearNumero = (valor) => (
 );
 
 export const formatearFechaReporte = (valor) => {
-  if (!valor) return '—';
+  const fecha = obtenerFechaReporte(valor);
+  return fecha ? FORMATO_FECHA.format(fecha) : '—';
+};
 
-  const coincidencia = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!coincidencia) return '—';
+export const formatearPeriodoReporte = (valor, agrupacion = 'dia') => {
+  const fecha = obtenerFechaReporte(valor);
+  if (!fecha) return '—';
 
-  const [, anio, mes, dia] = coincidencia;
-  const fecha = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
-  const esFechaValida = fecha.getUTCFullYear() === Number(anio)
-    && fecha.getUTCMonth() === Number(mes) - 1
-    && fecha.getUTCDate() === Number(dia);
+  if (agrupacion === 'mes') {
+    return FORMATO_MES.format(fecha).replace('.', '');
+  }
 
-  return esFechaValida ? FORMATO_FECHA.format(fecha) : '—';
+  return FORMATO_FECHA.format(fecha).slice(0, 5);
 };
 
 export const normalizarResumenVentas = (resumen = {}) => ({

@@ -3,6 +3,7 @@ import { BarChart3 } from 'lucide-react';
 import { motion } from 'motion/react';
 import ReporteFiltros from '../../components/reportes/ReporteFiltros.jsx';
 import ResumenVentasGrid from '../../components/reportes/ResumenVentasGrid.jsx';
+import VentasPeriodoChart from '../../components/reportes/VentasPeriodoChart.jsx';
 import useFiltrosReportes from '../../hooks/useFiltrosReportes.js';
 import useReportes from '../../hooks/useReportes.js';
 import useSucursales from '../../hooks/useSucursales.js';
@@ -16,7 +17,7 @@ export default function Reportes() {
     aplicarFiltros,
     restablecerFiltros,
   } = useFiltrosReportes();
-  const { resumen, recargar } = useReportes(filtrosAplicados);
+  const { resumen, serie, recargar } = useReportes(filtrosAplicados);
   const {
     sucursales,
     cargando: cargandoSucursales,
@@ -56,6 +57,14 @@ export default function Reportes() {
         datos={resumen.datos}
         cargando={resumen.cargando}
         error={resumen.error}
+        onReintentar={recargar}
+      />
+
+      <VentasPeriodoChart
+        datos={serie.datos}
+        agrupacion={filtrosAplicados.agrupacion}
+        cargando={serie.cargando}
+        error={serie.error}
         onReintentar={recargar}
       />
     </section>
