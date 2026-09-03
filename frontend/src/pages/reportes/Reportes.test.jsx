@@ -53,6 +53,24 @@ vi.mock('../../hooks/useReportes', () => ({
       cargando: false,
       error: null,
     },
+    metodosPago: {
+      datos: [
+        {
+          metodo_pago: 'efectivo',
+          total_ventas: 6,
+          ingresos: 300,
+          porcentaje_ingresos: 60,
+        },
+        {
+          metodo_pago: 'tarjeta',
+          total_ventas: 4,
+          ingresos: 200,
+          porcentaje_ingresos: 40,
+        },
+      ],
+      cargando: false,
+      error: null,
+    },
     recargar: controles.recargar,
   }),
 }));
@@ -75,5 +93,6 @@ describe('Reportes', () => {
     expect(screen.getByRole('form', { name: 'Filtros de reportes' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Resumen' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ingresos por período' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Métodos de pago' })).toBeInTheDocument();
   });
 });

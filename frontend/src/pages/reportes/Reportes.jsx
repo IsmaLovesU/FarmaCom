@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import ReporteFiltros from '../../components/reportes/ReporteFiltros.jsx';
 import ResumenVentasGrid from '../../components/reportes/ResumenVentasGrid.jsx';
 import VentasPeriodoChart from '../../components/reportes/VentasPeriodoChart.jsx';
+import MetodosPagoChart from '../../components/reportes/MetodosPagoChart.jsx';
 import useFiltrosReportes from '../../hooks/useFiltrosReportes.js';
 import useReportes from '../../hooks/useReportes.js';
 import useSucursales from '../../hooks/useSucursales.js';
@@ -17,7 +18,12 @@ export default function Reportes() {
     aplicarFiltros,
     restablecerFiltros,
   } = useFiltrosReportes();
-  const { resumen, serie, recargar } = useReportes(filtrosAplicados);
+  const {
+    resumen,
+    serie,
+    metodosPago,
+    recargar,
+  } = useReportes(filtrosAplicados);
   const {
     sucursales,
     cargando: cargandoSucursales,
@@ -60,13 +66,21 @@ export default function Reportes() {
         onReintentar={recargar}
       />
 
-      <VentasPeriodoChart
-        datos={serie.datos}
-        agrupacion={filtrosAplicados.agrupacion}
-        cargando={serie.cargando}
-        error={serie.error}
-        onReintentar={recargar}
-      />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+        <VentasPeriodoChart
+          datos={serie.datos}
+          agrupacion={filtrosAplicados.agrupacion}
+          cargando={serie.cargando}
+          error={serie.error}
+          onReintentar={recargar}
+        />
+        <MetodosPagoChart
+          datos={metodosPago.datos}
+          cargando={metodosPago.cargando}
+          error={metodosPago.error}
+          onReintentar={recargar}
+        />
+      </div>
     </section>
   );
 }
