@@ -15,7 +15,12 @@ export const crearPagoPOS = async (payload) => {
     const { data } = await api.post('/ventas/tarjeta/pos', payload);
     return data;
   } catch (err) {
-    const mensaje = err.response?.data?.mensaje || 'No se pudo enviar el cobro al POS.';
+    const mensajeBackend = err.response?.data?.mensaje || '';
+    const mensaje = /modo espera|no est[aá] listo|terminal_not_in_standby/i.test(mensajeBackend)
+      ? 'El dispositivo no está listo para cobrar. Verifica que esté abierto e inténtalo de nuevo.'
+      : /m[ií]nimo.*Q?5|Q5\.00/i.test(mensajeBackend)
+        ? 'El monto mínimo para pagar con tarjeta es Q5.00.'
+        : 'No se pudo iniciar el pago. Inténtalo de nuevo.';
     throw new Error(mensaje);
   }
 };

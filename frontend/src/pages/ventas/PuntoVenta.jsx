@@ -180,20 +180,37 @@ export default function PuntoVenta() {
   }, [clienteSeleccionado, items, sucursalActivaId]);
 
   const iniciarPagoPOS = useCallback(async () => {
+    if (metodoPago !== 'tarjeta') {
+      setErrorCobro('Selecciona tarjeta para enviar el cobro al POS.');
+      return;
+    }
+
+    if (procesandoCobro || pagoPOS?.external_id) return;
+
     setErrorCobro(null);
 
     try {
       setProcesandoCobro(true);
       const pago = await crearPagoPOS(construirPayloadBaseVenta());
+
+      if (!pago?.external_id) {
+        throw new Error('No se pudo iniciar el pago. Inténtalo de nuevo.');
+      }
+
       setPagoPOS(pago);
     } catch (err) {
       setErrorCobro(err.message || 'No se pudo enviar el cobro al POS.');
     } finally {
       setProcesandoCobro(false);
     }
-  }, [construirPayloadBaseVenta]);
+  }, [construirPayloadBaseVenta, metodoPago, pagoPOS, procesandoCobro]);
 
   const confirmarCobro = useCallback(async ({ montoRecibido } = {}) => {
+    if (metodoPago !== 'efectivo') {
+      setErrorCobro('Los pagos con tarjeta deben confirmarse desde el POS.');
+      return;
+    }
+
     setErrorCobro(null);
 
     try {
