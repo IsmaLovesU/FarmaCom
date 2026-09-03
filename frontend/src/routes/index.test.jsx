@@ -22,6 +22,10 @@ vi.mock('../context/AuthContext', () => ({
   }),
 }));
 
+vi.mock('../pages/reportes/Reportes.jsx', () => ({
+  default: () => <h1>Reportes</h1>,
+}));
+
 const renderizarRutaReportes = () => render(
   <MemoryRouter initialEntries={['/reports']}>
     <AppRoutes />
@@ -41,7 +45,7 @@ describe('ruta de reportes', () => {
   it('permite ingresar a un administrador y muestra el acceso en el menú', () => {
     renderizarRutaReportes();
 
-    expect(screen.getByRole('heading', { name: 'Reportes de ventas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Reportes' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Reportes' })).toBeInTheDocument();
   });
 
@@ -56,6 +60,6 @@ describe('ruta de reportes', () => {
 
     expect(screen.getByText('Dashboard (Próximamente)')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Reportes' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Reportes de ventas' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Reportes' })).not.toBeInTheDocument();
   });
 });
