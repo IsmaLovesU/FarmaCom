@@ -39,6 +39,17 @@ describe('useFiltrosReportes', () => {
     expect(result.current.filtrosAplicados.fecha_desde).toBe('2026-08-05');
   });
 
+  it('aplica un cambio inmediato sin depender de una actualización previa', () => {
+    const { result } = renderHook(() => useFiltrosReportes(fechaReferencia));
+
+    act(() => {
+      expect(result.current.aplicarFiltros({ criterio: 'ingresos' })).toBe(true);
+    });
+
+    expect(result.current.filtrosEdicion.criterio).toBe('ingresos');
+    expect(result.current.filtrosAplicados.criterio).toBe('ingresos');
+  });
+
   it('restablece y aplica nuevamente el rango predeterminado', () => {
     const { result } = renderHook(() => useFiltrosReportes(fechaReferencia));
 

@@ -22,6 +22,7 @@ vi.mock('../../hooks/useFiltrosReportes', () => ({
       fecha_desde: '2026-08-05',
       fecha_hasta: '2026-09-03',
       agrupacion: 'dia',
+      criterio: 'cantidad',
     },
     errorFiltros: null,
     actualizarFiltro: controles.actualizarFiltro,
@@ -71,6 +72,18 @@ vi.mock('../../hooks/useReportes', () => ({
       cargando: false,
       error: null,
     },
+    topProductos: {
+      datos: [{
+        id_producto: 3,
+        codigo: 'MED-003',
+        nombre_comercial: 'Acetaminofén',
+        nombre_generico: 'Paracetamol',
+        cantidad_vendida: 25,
+        ingresos_generados: 375,
+      }],
+      cargando: false,
+      error: null,
+    },
     recargar: controles.recargar,
   }),
 }));
@@ -94,5 +107,6 @@ describe('Reportes', () => {
     expect(screen.getByRole('heading', { name: 'Resumen' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ingresos por período' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Métodos de pago' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Productos más vendidos' })).toBeInTheDocument();
   });
 });

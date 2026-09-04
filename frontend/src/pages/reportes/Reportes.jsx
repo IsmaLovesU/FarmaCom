@@ -5,6 +5,7 @@ import ReporteFiltros from '../../components/reportes/ReporteFiltros.jsx';
 import ResumenVentasGrid from '../../components/reportes/ResumenVentasGrid.jsx';
 import VentasPeriodoChart from '../../components/reportes/VentasPeriodoChart.jsx';
 import MetodosPagoChart from '../../components/reportes/MetodosPagoChart.jsx';
+import TopProductosTable from '../../components/reportes/TopProductosTable.jsx';
 import useFiltrosReportes from '../../hooks/useFiltrosReportes.js';
 import useReportes from '../../hooks/useReportes.js';
 import useSucursales from '../../hooks/useSucursales.js';
@@ -22,6 +23,7 @@ export default function Reportes() {
     resumen,
     serie,
     metodosPago,
+    topProductos,
     recargar,
   } = useReportes(filtrosAplicados);
   const {
@@ -81,6 +83,15 @@ export default function Reportes() {
           onReintentar={recargar}
         />
       </div>
+
+      <TopProductosTable
+        datos={topProductos.datos}
+        criterio={filtrosAplicados.criterio}
+        cargando={topProductos.cargando}
+        error={topProductos.error}
+        onCriterioChange={(criterio) => aplicarFiltros({ criterio })}
+        onReintentar={recargar}
+      />
     </section>
   );
 }

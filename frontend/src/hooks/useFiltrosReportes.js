@@ -22,15 +22,17 @@ export default function useFiltrosReportes(fechaReferencia) {
     setErrorFiltros(null);
   }, []);
 
-  const aplicarFiltros = useCallback(() => {
-    const mensajeError = validarFiltrosReporte(filtrosEdicion);
+  const aplicarFiltros = useCallback((cambios = {}) => {
+    const siguientesFiltros = { ...filtrosEdicion, ...cambios };
+    const mensajeError = validarFiltrosReporte(siguientesFiltros);
 
     if (mensajeError) {
       setErrorFiltros(mensajeError);
       return false;
     }
 
-    setFiltrosAplicados(prepararFiltrosReporte(filtrosEdicion));
+    setFiltrosEdicion(siguientesFiltros);
+    setFiltrosAplicados(prepararFiltrosReporte(siguientesFiltros));
     setErrorFiltros(null);
     return true;
   }, [filtrosEdicion]);
