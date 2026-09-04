@@ -42,10 +42,10 @@ describe('ruta de reportes', () => {
     window.localStorage.clear();
   });
 
-  it('permite ingresar a un administrador y muestra el acceso en el menú', () => {
+  it('permite ingresar a un administrador y muestra el acceso en el menú', async () => {
     renderizarRutaReportes();
 
-    expect(screen.getByRole('heading', { name: 'Reportes' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Reportes' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Reportes' })).toBeInTheDocument();
   });
 
