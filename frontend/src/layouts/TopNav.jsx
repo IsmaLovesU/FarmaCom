@@ -38,7 +38,7 @@ export default function TopNav({ sidebarAbierta, onAbrirSidebar }) {
           )}
         </div>
         <h2 className="truncate font-headline text-sm font-extrabold tracking-tight text-primary sm:text-lg">
-          Sucursales de Farmacia
+          San Gabriel
         </h2>
         <span className="hidden h-4 w-[1px] bg-slate-200 lg:block" />
         <span className="hidden text-xs font-medium capitalize text-slate-500 lg:block">{currentDate}</span>

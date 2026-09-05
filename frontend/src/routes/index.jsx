@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import PublicRoute from '../components/auth/PublicRoute.jsx';
@@ -15,6 +15,17 @@ import Proveedores from '../pages/inventario/Proveedores.jsx';
 import Casas from '../pages/inventario/Casas.jsx';
 import Clientes from '../pages/Clientes.jsx';
 import PuntoVenta from '../pages/ventas/PuntoVenta.jsx';
+
+const Reportes = lazy(() => import('../pages/reportes/Reportes.jsx'));
+
+const cargandoReportes = (
+  <div
+    role="status"
+    className="h-24 animate-pulse rounded-2xl border border-slate-100 bg-white/80"
+  >
+    <span className="sr-only">Cargando reportes…</span>
+  </div>
+);
 
 export default function AppRoutes() {
   return (
@@ -44,14 +55,18 @@ export default function AppRoutes() {
             <Route path="/sucursales" element={<Sucursales />} />
             <Route path="/ciudades" element={<Ciudades />} />
             <Route path="/usuarios" element={<Usuarios />} />
+            <Route
+              path="/reports"
+              element={(
+                <Suspense fallback={cargandoReportes}>
+                  <Reportes />
+                </Suspense>
+              )}
+            />
           </Route>
 
           <Route path="/patients" element={<Clientes />} />
           <Route path="/pos" element={<PuntoVenta />} />
-          <Route
-            path="/reports"
-            element={<div className="p-8 font-headline text-2xl font-bold">Reportes (Próximamente)</div>}
-          />
           <Route
             path="/support"
             element={<div className="p-8 font-headline text-2xl font-bold">Ayuda (Próximamente)</div>}

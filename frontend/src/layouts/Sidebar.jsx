@@ -40,7 +40,12 @@ const navItems = [
   { icon: ShoppingCart, label: 'Punto de venta', path: '/pos' },
   { icon: UserCog, label: 'Usuarios', path: '/usuarios', roles: ['dueno', 'administrador'] },
   { icon: Users, label: 'Clientes', path: '/patients' },
-  { icon: BarChart3, label: 'Reportes', path: '/reports' },
+  {
+    icon: BarChart3,
+    label: 'Reportes',
+    path: '/reports',
+    roles: ['dueno', 'administrador'],
+  },
 ];
 
 const bottomNavItems = [
