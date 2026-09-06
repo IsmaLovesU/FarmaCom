@@ -50,3 +50,33 @@ services:
     command:
       - run
       - /scripts/load-queries.js
+
+  k6-stress:
+    image: grafana/k6:2.2.0
+    profiles:
+      - performance
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      K6_API_URL: ${K6_API_URL:-http://backend:3000/api}
+      K6_USER_EMAIL: ${K6_USER_EMAIL:-}
+      K6_USER_PASSWORD: ${K6_USER_PASSWORD:-}
+      K6_BRANCH_ID: ${K6_BRANCH_ID:-1}
+      K6_STRESS_MAX_VUS: ${K6_STRESS_MAX_VUS:-20}
+      K6_STRESS_RECOVERY_VUS: ${K6_STRESS_RECOVERY_VUS:-3}
+      K6_STRESS_WARM_UP: ${K6_STRESS_WARM_UP:-15s}
+      K6_STRESS_STAGE_DURATION: ${K6_STRESS_STAGE_DURATION:-30s}
+      K6_STRESS_RECOVERY_DURATION: ${K6_STRESS_RECOVERY_DURATION:-1m}
+      K6_STRESS_COOL_DOWN: ${K6_STRESS_COOL_DOWN:-15s}
+      K6_REPORT_DATE_FROM: ${K6_REPORT_DATE_FROM:-}
+      K6_REPORT_DATE_TO: ${K6_REPORT_DATE_TO:-}
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: /results/stress.html
+      K6_WEB_DASHBOARD_PERIOD: 1s
+    volumes:
+      - ./tests/performance:/scripts:ro
+      - ./tests/performance/results:/results
+    command:
+      - run
+      - /scripts/stress.js

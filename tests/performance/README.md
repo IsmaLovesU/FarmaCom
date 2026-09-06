@@ -62,3 +62,28 @@ Los usuarios aumentan gradualmente durante 30 segundos, mantienen la carga duran
 - El percentil 95 de los reportes debe ser menor a 3 segundos.
 
 El reporte se genera en `tests/performance/results/load-queries.html`. Este escenario solo realiza consultas y no modifica la base de datos.
+
+## Ejecutar la prueba de estrés
+
+```powershell
+docker compose --env-file .env --env-file tests/performance/.env.performance -f docker-compose.yml -f docker-compose.k6.yml --profile performance run --rm k6-stress
+```
+
+El escenario aumenta progresivamente la cantidad de usuarios virtuales:
+
+1. Inicia con un usuario durante el calentamiento.
+2. Aumenta aproximadamente al 25 %, 50 %, 75 % y 100 % del máximo configurado.
+3. Mantiene brevemente la carga máxima de 20 usuarios.
+4. Reduce la carga a 3 usuarios para observar la recuperación.
+5. Finaliza reduciendo la carga a 0.
+
+Cada iteración consulta simultáneamente el autocompletado del POS, inventario, clientes y dos reportes. La prueba es de solo lectura.
+
+### Criterios de estrés
+
+- Más del 95 % de las comprobaciones debe ser satisfactorio.
+- La tasa de solicitudes HTTP fallidas debe ser menor al 5 %.
+- El percentil 95 general debe mantenerse por debajo de 5 segundos.
+- El sistema debe continuar disponible y recuperar sus tiempos al disminuir la carga.
+
+El reporte se genera en `tests/performance/results/stress.html`. La gráfica temporal debe utilizarse para identificar la degradación durante el pico y la recuperación posterior.

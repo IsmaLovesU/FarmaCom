@@ -23,6 +23,14 @@ export const config = Object.freeze({
     duracionEstable: convertirTexto(__ENV.K6_LOAD_STEADY_DURATION, '4m'),
     descenso: convertirTexto(__ENV.K6_LOAD_RAMP_DOWN, '30s'),
   }),
+  estres: Object.freeze({
+    usuariosMaximos: convertirEnteroPositivo(__ENV.K6_STRESS_MAX_VUS, 20),
+    usuariosRecuperacion: convertirEnteroPositivo(__ENV.K6_STRESS_RECOVERY_VUS, 3),
+    calentamiento: convertirTexto(__ENV.K6_STRESS_WARM_UP, '15s'),
+    duracionEtapa: convertirTexto(__ENV.K6_STRESS_STAGE_DURATION, '30s'),
+    duracionRecuperacion: convertirTexto(__ENV.K6_STRESS_RECOVERY_DURATION, '1m'),
+    enfriamiento: convertirTexto(__ENV.K6_STRESS_COOL_DOWN, '15s'),
+  }),
   reportes: Object.freeze({
     fechaDesde: String(__ENV.K6_REPORT_DATE_FROM || '').trim(),
     fechaHasta: String(__ENV.K6_REPORT_DATE_TO || '').trim(),
