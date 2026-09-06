@@ -10,6 +10,11 @@ const convertirTexto = (valor, valorPredeterminado) => {
   return texto || valorPredeterminado;
 };
 
+const convertirNumeroPositivo = (valor, valorPredeterminado) => {
+  const numero = Number(valor);
+  return Number.isFinite(numero) && numero > 0 ? numero : valorPredeterminado;
+};
+
 export const config = Object.freeze({
   apiUrl: normalizarUrl(__ENV.K6_API_URL || 'http://backend:3000/api'),
   correo: String(__ENV.K6_USER_EMAIL || '').trim(),
@@ -31,6 +36,15 @@ export const config = Object.freeze({
     duracionRecuperacion: convertirTexto(__ENV.K6_STRESS_RECOVERY_DURATION, '1m'),
     enfriamiento: convertirTexto(__ENV.K6_STRESS_COOL_DOWN, '15s'),
   }),
+  ventas: Object.freeze({
+    entorno: convertirTexto(__ENV.K6_TARGET_ENV, ''),
+    permitirEscrituras: String(__ENV.K6_ALLOW_WRITES || '').trim().toLowerCase() === 'true',
+    casos: String(__ENV.K6_SALES_CASES || '').trim(),
+    cantidad: convertirEnteroPositivo(__ENV.K6_SALES_QUANTITY, 1),
+    iteracionesPorUsuario: convertirEnteroPositivo(__ENV.K6_SALES_ITERATIONS_PER_VU, 3),
+    duracionMaxima: convertirTexto(__ENV.K6_SALES_MAX_DURATION, '2m'),
+    pausa: convertirNumeroPositivo(__ENV.K6_SALES_THINK_TIME, 1),
+  }),
   reportes: Object.freeze({
     fechaDesde: String(__ENV.K6_REPORT_DATE_FROM || '').trim(),
     fechaHasta: String(__ENV.K6_REPORT_DATE_TO || '').trim(),
@@ -45,5 +59,26 @@ export const validarConfiguracion = () => {
 
   if (faltantes.length > 0) {
     throw new Error(`Faltan variables requeridas: ${faltantes.join(', ')}`);
+  }
+};
+
+export const validarConfiguracionVentas = () => {
+  validarConfiguracion();
+  const urlLocal = /^https?:\/\/(backend|localhost|127\.0\.0\.1|host\.docker\.internal)(:\d+)?(\/|$)/i;
+
+  if (!config.ventas.permitirEscrituras) {
+    throw new Error('La prueba de ventas requiere K6_ALLOW_WRITES=true');
+  }
+
+  if (config.ventas.entorno.toLowerCase() !== 'local') {
+    throw new Error('La prueba de ventas solo puede ejecutarse con K6_TARGET_ENV=local');
+  }
+
+  if (!urlLocal.test(config.apiUrl)) {
+    throw new Error('La prueba de ventas solo admite una URL local para K6_API_URL');
+  }
+
+  if (!config.ventas.casos) {
+    throw new Error('Falta K6_SALES_CASES con el formato id_sucursal:id_lote');
   }
 };

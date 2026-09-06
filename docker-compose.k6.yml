@@ -80,3 +80,31 @@ services:
     command:
       - run
       - /scripts/stress.js
+
+  k6-transactional-sales:
+    image: grafana/k6:2.2.0
+    profiles:
+      - performance
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      K6_API_URL: ${K6_API_URL:-http://backend:3000/api}
+      K6_USER_EMAIL: ${K6_USER_EMAIL:-}
+      K6_USER_PASSWORD: ${K6_USER_PASSWORD:-}
+      K6_TARGET_ENV: ${K6_TARGET_ENV:-}
+      K6_ALLOW_WRITES: ${K6_ALLOW_WRITES:-false}
+      K6_SALES_CASES: ${K6_SALES_CASES:-}
+      K6_SALES_QUANTITY: ${K6_SALES_QUANTITY:-1}
+      K6_SALES_ITERATIONS_PER_VU: ${K6_SALES_ITERATIONS_PER_VU:-3}
+      K6_SALES_MAX_DURATION: ${K6_SALES_MAX_DURATION:-2m}
+      K6_SALES_THINK_TIME: ${K6_SALES_THINK_TIME:-1}
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: /results/transactional-sales.html
+      K6_WEB_DASHBOARD_PERIOD: 1s
+    volumes:
+      - ./tests/performance:/scripts:ro
+      - ./tests/performance/results:/results
+    command:
+      - run
+      - /scripts/transactional-sales.js

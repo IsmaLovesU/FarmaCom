@@ -87,3 +87,33 @@ Cada iteración consulta simultáneamente el autocompletado del POS, inventario,
 - El sistema debe continuar disponible y recuperar sus tiempos al disminuir la carga.
 
 El reporte se genera en `tests/performance/results/stress.html`. La gráfica temporal debe utilizarse para identificar la degradación durante el pico y la recuperación posterior.
+
+## Ejecutar ventas controladas
+
+Este escenario es opcional y modifica el inventario local. Antes de utilizarlo, configura en `.env.performance` un lote vigente con existencias suficientes y habilita las escrituras de forma consciente:
+
+```dotenv
+K6_TARGET_ENV=local
+K6_ALLOW_WRITES=true
+K6_SALES_CASES=1:15
+```
+
+Cada par de `K6_SALES_CASES` representa una caja virtual mediante `id_sucursal:id_lote`. Para simular las tres cajas de sucursales diferentes se puede usar, por ejemplo, `1:15,2:28,3:41`. Si varias cajas consumen el mismo lote, repite el par; la prevalidación calculará las existencias necesarias para todas.
+
+Ejecuta la prueba con:
+
+```powershell
+docker compose --env-file .env --env-file tests/performance/.env.performance -f docker-compose.yml -f docker-compose.k6.yml --profile performance run --rm k6-transactional-sales
+```
+
+De forma predeterminada, cada caja virtual realiza tres ventas de una unidad. Antes de crear la primera venta, k6 comprueba que cada lote pertenezca a su sucursal, no esté vencido, tenga precio válido y posea existencias para completar todas las iteraciones.
+
+### Criterios de ventas controladas
+
+- Más del 98 % de las comprobaciones debe ser satisfactorio.
+- La tasa de solicitudes HTTP fallidas debe ser menor al 2 %.
+- El percentil 95 de la creación de ventas debe ser menor a 2 segundos.
+- Cada venta debe devolver su identificador, sucursal y detalle correctos.
+- El inventario nunca debe quedar con existencias negativas.
+
+El escenario se bloquea si `K6_ALLOW_WRITES` no es `true`, si `K6_TARGET_ENV` no es `local` o si `K6_API_URL` no apunta a `backend`, `localhost`, `127.0.0.1` o `host.docker.internal`. Debe ejecutarse solo con datos ficticios; no utilices credenciales ni inventario de producción. El reporte se genera en `tests/performance/results/transactional-sales.html`.
