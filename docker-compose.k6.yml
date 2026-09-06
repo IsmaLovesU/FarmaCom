@@ -1,0 +1,22 @@
+services:
+  k6-smoke:
+    image: grafana/k6:2.2.0
+    profiles:
+      - performance
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      K6_API_URL: ${K6_API_URL:-http://backend:3000/api}
+      K6_USER_EMAIL: ${K6_USER_EMAIL:-}
+      K6_USER_PASSWORD: ${K6_USER_PASSWORD:-}
+      K6_BRANCH_ID: ${K6_BRANCH_ID:-1}
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: /results/smoke.html
+      K6_WEB_DASHBOARD_PERIOD: 1s
+    volumes:
+      - ./tests/performance:/scripts:ro
+      - ./tests/performance/results:/results
+    command:
+      - run
+      - /scripts/smoke.js
