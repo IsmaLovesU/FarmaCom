@@ -53,6 +53,7 @@ export default function CobroModal({
   const metodoSoportado = esEfectivo || esTarjeta;
   const montoInsuficiente = esEfectivo && montoNumerico < totalNumerico;
   const pagoEnviado = Boolean(pagoPOS?.external_id);
+  const puedeCerrar = !procesando && !pagoEnviado;
   const puedeConfirmarEfectivo = esEfectivo
     && items.length > 0
     && !montoInsuficiente
@@ -103,7 +104,7 @@ export default function CobroModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={procesando}
+            disabled={!puedeCerrar}
             aria-label="Cerrar"
             className="text-slate-500 hover:text-slate-700 disabled:opacity-50"
           >
@@ -195,13 +196,15 @@ export default function CobroModal({
                   Cobro con tarjeta
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Acerca o inserta la tarjeta en el dispositivo. La venta se registrará cuando se verifique el pago.
+                  {pagoEnviado
+                    ? 'Estamos verificando el pago. Espera un momento, por favor.'
+                    : 'Acerca o inserta la tarjeta en el dispositivo. La venta se registrará cuando se verifique el pago.'}
                 </p>
               </div>
 
               {pagoEnviado && (
                 <p className="text-sm font-semibold text-amber-700">
-                  Confirma el pago en el dispositivo para continuar.
+                  La venta se registrará automáticamente cuando el pago sea confirmado.
                 </p>
               )}
             </div>
@@ -253,7 +256,7 @@ export default function CobroModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={procesando}
+              disabled={!puedeCerrar}
               className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             >
               Cancelar

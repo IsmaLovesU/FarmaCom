@@ -1,6 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Info, X } from 'lucide-react';
-import { crearPagoPOS, crearVenta } from '../../api/ventas';
+import {
+  crearPagoPOS,
+  crearVenta,
+  obtenerEstadoPagoPOS,
+  obtenerVentaPorId,
+} from '../../api/ventas';
 import AutocompletadoProductosPOS from '../../components/ventas/AutocompletadoProductosPOS';
 import CarritoVenta from '../../components/ventas/CarritoVenta';
 import CobroModal from '../../components/ventas/CobroModal';
@@ -50,6 +55,7 @@ export default function PuntoVenta() {
   const [errorCobro, setErrorCobro] = useState(null);
   const [ventaCompletada, setVentaCompletada] = useState(null);
   const [pagoPOS, setPagoPOS] = useState(null);
+  const confirmandoPagoPOS = useRef(false);
 
   const agregarAlCarritoValidandoStock = useCallback((producto) => {
     const existente = items.find((item) => item.clave === producto.carritoKey);
@@ -146,11 +152,11 @@ export default function PuntoVenta() {
   }, [crearCliente]);
 
   const cerrarCobro = useCallback(() => {
-    if (procesandoCobro) return;
+    if (procesandoCobro || pagoPOS?.external_id) return;
     setMostrandoCobro(false);
     setErrorCobro(null);
     setPagoPOS(null);
-  }, [procesandoCobro]);
+  }, [pagoPOS, procesandoCobro]);
 
   const cambiarMetodoPago = useCallback((metodo) => {
     setMetodoPago(metodo);
@@ -204,6 +210,80 @@ export default function PuntoVenta() {
       setProcesandoCobro(false);
     }
   }, [construirPayloadBaseVenta, metodoPago, pagoPOS, procesandoCobro]);
+
+  useEffect(() => {
+    if (!mostrandoCobro || metodoPago !== 'tarjeta' || !pagoPOS?.external_id) {
+      return undefined;
+    }
+
+    let activo = true;
+    let temporizador;
+    const externalId = pagoPOS.external_id;
+
+    const detenerConsulta = () => {
+      activo = false;
+      if (temporizador) window.clearInterval(temporizador);
+    };
+
+    const consultarEstado = async () => {
+      try {
+        const pagoActualizado = await obtenerEstadoPagoPOS(externalId);
+        if (!activo) return;
+
+        setErrorCobro(null);
+        setPagoPOS((pagoAnterior) => ({
+          ...pagoAnterior,
+          ...pagoActualizado,
+        }));
+
+        if (['fallido', 'rechazado', 'cancelado'].includes(pagoActualizado.estado)) {
+          detenerConsulta();
+          setPagoPOS(null);
+          setErrorCobro('El pago no se completó. Puedes intentarlo nuevamente.');
+          return;
+        }
+
+        if (
+          pagoActualizado.estado !== 'pagado'
+          || !pagoActualizado.id_venta
+          || confirmandoPagoPOS.current
+        ) {
+          return;
+        }
+
+        confirmandoPagoPOS.current = true;
+
+        try {
+          const venta = await obtenerVentaPorId(pagoActualizado.id_venta);
+          if (!activo) return;
+
+          detenerConsulta();
+          vaciarCarrito();
+          setMostrandoCobro(false);
+          setPagoPOS(null);
+          setErrorCobro(null);
+          setVentaCompletada(venta);
+          refrescar();
+        } catch (err) {
+          if (activo) {
+            setErrorCobro(err.message || 'No se pudo cargar el comprobante de la venta.');
+          }
+        } finally {
+          confirmandoPagoPOS.current = false;
+        }
+      } catch (err) {
+        // Los errores temporales se reintentan en la siguiente consulta.
+        if (activo) {
+          setErrorCobro(err.message || 'No se pudo verificar el estado del pago.');
+        }
+      }
+    };
+
+    temporizador = window.setInterval(consultarEstado, 2000);
+    consultarEstado();
+
+    return detenerConsulta;
+  }, [metodoPago, mostrandoCobro, pagoPOS?.external_id, refrescar, vaciarCarrito]);
 
   const confirmarCobro = useCallback(async ({ montoRecibido } = {}) => {
     if (metodoPago !== 'efectivo') {

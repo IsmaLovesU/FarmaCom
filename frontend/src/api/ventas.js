@@ -24,3 +24,23 @@ export const crearPagoPOS = async (payload) => {
     throw new Error(mensaje);
   }
 };
+
+export const obtenerEstadoPagoPOS = async (externalId) => {
+  try {
+    const { data } = await api.get(`/ventas/tarjeta/pos/${encodeURIComponent(externalId)}`);
+    return data;
+  } catch (err) {
+    const mensaje = err.response?.data?.mensaje || 'No se pudo verificar el estado del pago.';
+    throw new Error(mensaje);
+  }
+};
+
+export const obtenerVentaPorId = async (idVenta) => {
+  try {
+    const { data } = await api.get(`/ventas/${idVenta}`);
+    return data;
+  } catch (err) {
+    const mensaje = err.response?.data?.mensaje || 'No se pudo cargar el comprobante de la venta.';
+    throw new Error(mensaje);
+  }
+};

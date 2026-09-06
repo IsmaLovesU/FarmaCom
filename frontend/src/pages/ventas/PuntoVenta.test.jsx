@@ -3,7 +3,12 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PuntoVenta from './PuntoVenta';
-import { crearPagoPOS, crearVenta } from '../../api/ventas';
+import {
+  crearPagoPOS,
+  crearVenta,
+  obtenerEstadoPagoPOS,
+  obtenerVentaPorId,
+} from '../../api/ventas';
 
 const productoNormal = {
   carritoKey: 'lote-1-presentacion-1',
@@ -51,6 +56,8 @@ const mockCrearCliente = vi.fn();
 vi.mock('../../api/ventas', () => ({
   crearPagoPOS: vi.fn(),
   crearVenta: vi.fn(),
+  obtenerEstadoPagoPOS: vi.fn(),
+  obtenerVentaPorId: vi.fn(),
 }));
 
 vi.mock('../../context/AuthContext', () => ({
@@ -111,6 +118,14 @@ describe('PuntoVenta', () => {
       total: '17.00',
       moneda: 'GTQ',
     });
+    obtenerEstadoPagoPOS.mockReset();
+    obtenerEstadoPagoPOS.mockResolvedValue({
+      id_pago_pos: 5,
+      external_id: 'farmacom-pos-test',
+      estado: 'pendiente',
+      total: '17.00',
+    });
+    obtenerVentaPorId.mockReset();
     crearVenta.mockReset();
     crearVenta.mockResolvedValue({
       id_venta: 15,
@@ -273,7 +288,7 @@ describe('PuntoVenta', () => {
     });
 
     expect(screen.queryByText('farmacom-pos-test')).not.toBeInTheDocument();
-    expect(screen.getByText(/Confirma el pago en el dispositivo/)).toBeInTheDocument();
+    expect(screen.getByText(/La venta se registrar.*automáticamente/)).toBeInTheDocument();
     expect(crearVenta).not.toHaveBeenCalled();
   });
 
@@ -303,8 +318,74 @@ describe('PuntoVenta', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Confirma el pago en el dispositivo/)).toBeInTheDocument();
+      expect(screen.getByText(/La venta se registrar.*automáticamente/)).toBeInTheDocument();
     });
+  });
+
+  it('consulta el pago y muestra el comprobante cuando el webhook lo confirma', async () => {
+    const ventaPOS = {
+      id_venta: 22,
+      total: '8.50',
+      monto_recibido: '8.50',
+      cambio: '0.00',
+      metodo_pago: 'tarjeta',
+      fecha_venta: '2026-09-05T12:00:00.000Z',
+      nombre_sucursal: 'Sucursal Central',
+      nombre_usuario: 'Dueno General',
+      nombre_cliente: null,
+      detalles: [
+        {
+          id_detalle_venta: 7,
+          nombre_comercial: 'Paracetamol',
+          cantidad: 1,
+          precio_unitario: '8.50',
+          subtotal: '8.50',
+        },
+      ],
+    };
+    obtenerEstadoPagoPOS.mockResolvedValue({
+      id_pago_pos: 5,
+      external_id: 'farmacom-pos-test',
+      estado: 'pagado',
+      id_venta: 22,
+    });
+    obtenerVentaPorId.mockResolvedValue(ventaPOS);
+    carritoItems = [{ ...productoNormal, cantidad: 1, precioUnitario: 8.5 }];
+    const user = userEvent.setup();
+    render(<PuntoVenta />);
+
+    await user.click(screen.getByRole('button', { name: 'Tarjeta' }));
+    await user.click(screen.getByRole('button', { name: 'Procesar venta' }));
+    await user.click(screen.getByRole('button', { name: 'Cobrar con tarjeta' }));
+
+    await waitFor(() => {
+      expect(obtenerEstadoPagoPOS).toHaveBeenCalledWith('farmacom-pos-test');
+      expect(obtenerVentaPorId).toHaveBeenCalledWith(22);
+      expect(vaciarCarrito).toHaveBeenCalled();
+      expect(refrescarCatalogo).toHaveBeenCalled();
+      expect(screen.getByText('Venta registrada')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Comprobante #22/)).toBeInTheDocument();
+  });
+
+  it('permite intentar nuevamente cuando el pago es rechazado', async () => {
+    obtenerEstadoPagoPOS.mockResolvedValue({
+      id_pago_pos: 5,
+      external_id: 'farmacom-pos-test',
+      estado: 'rechazado',
+    });
+    carritoItems = [{ ...productoNormal, cantidad: 1, precioUnitario: 8.5 }];
+    const user = userEvent.setup();
+    render(<PuntoVenta />);
+
+    await user.click(screen.getByRole('button', { name: 'Tarjeta' }));
+    await user.click(screen.getByRole('button', { name: 'Procesar venta' }));
+    await user.click(screen.getByRole('button', { name: 'Cobrar con tarjeta' }));
+
+    expect(await screen.findByText(/El pago no se completó/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cobrar con tarjeta' })).toBeEnabled();
+    expect(vaciarCarrito).not.toHaveBeenCalled();
   });
 
   it('muestra el error del backend si no se puede enviar el cobro al POS', async () => {
