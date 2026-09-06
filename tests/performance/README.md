@@ -39,3 +39,26 @@ El reporte HTML se genera en `tests/performance/results/smoke.html`. Los reporte
 - El percentil 95 del tiempo de respuesta debe ser menor a 2 segundos.
 
 La prueba de humo no crea ventas ni modifica el inventario.
+
+## Ejecutar la carga de consultas
+
+```powershell
+docker compose --env-file .env --env-file tests/performance/.env.performance -f docker-compose.yml -f docker-compose.k6.yml --profile performance run --rm k6-load-queries
+```
+
+La prueba distribuye seis usuarios virtuales de esta forma:
+
+- Tres usuarios consultan el catálogo del punto de venta, inventario y cajas.
+- Dos usuarios consultan clientes, productos y el resumen de inventario.
+- Un usuario consulta los indicadores del dashboard.
+
+Los usuarios aumentan gradualmente durante 30 segundos, mantienen la carga durante cuatro minutos y descienden durante 30 segundos. Las cantidades y duraciones pueden modificarse en `.env.performance`.
+
+### Criterios de carga
+
+- Más del 98 % de las comprobaciones debe ser satisfactorio.
+- La tasa de solicitudes HTTP fallidas debe ser menor al 2 %.
+- El percentil 95 de las consultas debe ser menor a 2 segundos.
+- El percentil 95 de los reportes debe ser menor a 3 segundos.
+
+El reporte se genera en `tests/performance/results/load-queries.html`. Este escenario solo realiza consultas y no modifica la base de datos.
